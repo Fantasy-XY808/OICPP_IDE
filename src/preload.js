@@ -236,8 +236,14 @@ try {
     const imageFigures = require('markdown-it-image-figures');
     const hljs = require('highlight.js');
 
+    // html:false -- the rendered markdown is assigned straight to innerHTML in
+    // tabs.js, and index.html's CSP allows 'unsafe-inline'. With raw HTML on,
+    // opening any .md file and toggling the preview executed whatever that file
+    // contained, with the renderer's full electronAPI bridge in reach (including
+    // the Luogu session cookie). There is no sanitizer here, so the fix is not
+    // to render HTML at all.
     md = new MarkdownIt({
-        html: true,
+        html: false,
         linkify: true,
         typographer: true,
         highlight: function (str, lang) {
@@ -467,7 +473,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getSettings: () => ipcRenderer.invoke('get-settings'),
     sendSettingsPreview: (settings) => ipcRenderer.send('settings-preview', settings),
     updateSettings: (newSettings) => ipcRenderer.invoke('update-settings', newSettings),
-    updateEditorSettings: (editorSettings) => ipcRenderer.invoke('update-editor-settings', editorSettings),
     resetSettings: () => ipcRenderer.invoke('reset-settings'),
     exportSettings: () => ipcRenderer.invoke('export-settings'),
     importSettings: () => ipcRenderer.invoke('import-settings'),
@@ -567,10 +572,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     getCpuThreads: () => ipcRenderer.invoke('get-cpu-threads'),
 
-    sendFeedback: (message) => ipcRenderer.invoke('send-feedback', message),
     listClientLogs: () => ipcRenderer.invoke('list-client-logs'),
-    uploadClientLog: (filePath) => ipcRenderer.invoke('upload-client-log', filePath),
-    getEncodedToken: () => ipcRenderer.invoke('get-encoded-token'),
 
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
 

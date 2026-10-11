@@ -2222,6 +2222,21 @@ class TabManager {
             const handleFileRead = (event, filePath, content, error) => {
                 if (filePath === tab.filePath) {
                     tab.isLoading = false; // 清除加载标志
+                    // The request is per-tab but the apply went through
+                    // setEditorContent(), which writes currentEditor. A reply that
+                    // arrived after the user switched tabs therefore put file A's
+                    // text into file B's editor with markAsSaved=true while the
+                    // dirty flag stayed on A -- so B looked clean and Ctrl+S
+                    // overwrote B with A. Only apply while this tab is still the
+                    // one on screen; the text is cached on the tab either way.
+                    const stillOnScreen = (this.activeTabKey && this.activeTabKey === tab.uniqueKey)
+                        || (this.activeTab && this.activeTab === fileName);
+                    if (!stillOnScreen) {
+                        logInfo('文件内容已读取但该标签页已不再激活，仅缓存不写入编辑器:', fileName);
+                        if (!error) { tab.content = content; }
+                        window.electronIPC.ipcRenderer.removeListener('file-content-read', handleFileRead);
+                        return;
+                    }
                     if (error) {
                         logError('读取文件失败:', error);
                         logWarn('[TabReadFileErrorSuppressed]', '无法读取文件: ' + error);
@@ -3470,7 +3485,17 @@ class TabManager {
             if (!targetGroup) {
                 targetGroup = this.createGroup({ afterGroupId: this.activeGroupId });
                 if (!targetGroup) {
+                    // createGroup returns null when this.editorGroupsElement is
+                    // missing, i.e. no workspace is open. This used to log and
+                    // return, so clicking the built-in browser with no folder
+                    // open did nothing at all -- no tab, no message. Same guard
+                    // wording createNewCppFile already uses.
                     logError('无法创建目标分组，放弃打开浏览器标签页');
+                    if (window.dialogManager) {
+                        const msg = '请先打开一个工作区文件夹，再使用内置浏览器';
+                        try { logError('[DialogError]', { message: msg, from: 'TabManager.openBrowserTab' }); } catch (_) { }
+                        window.dialogManager.showError(msg);
+                    }
                     return;
                 }
             }
@@ -4708,26 +4733,49 @@ class TabManager {
             if (!result) return;
         }
 
-        const tabsToClose = [...this.tabs.keys()];
-        tabsToClose.forEach(fileName => {
-            this.closeTab(fileName, { skipCloseConfirm: true });
+        // these keys are uniqueKeys, not fileNames. For anything opened with a
+        // path the key is the normalised absolute path while fileName is the
+        // basename, so passing the key in the fileName slot made closeTab fall
+        // through to getTabByFileName, match nothing, and return -- leaving every
+        // old-workspace tab, editor and file watcher alive after a workspace
+        // switch. Pass the key explicitly and keep the real name for prompts.
+        const tabsToClose = [...this.tabs.entries()];
+        tabsToClose.forEach(([uniqueKey, tabData]) => {
+            this.closeTab(tabData && tabData.fileName, {
+                skipCloseConfirm: true,
+                uniqueKeyOverride: uniqueKey
+            });
         });
     }
 
     closeOtherTabs() {
         if (!this.activeTab) return;
 
-        const currentTab = this.activeTab;
-        const tabsToClose = [...this.tabs.keys()].filter(fileName => fileName !== currentTab);
+        // Same trap as closeAllTabs: this.tabs is keyed by uniqueKey while
+        // this.activeTab holds a fileName. Mixing them made "close other tabs"
+        // a silent no-op for anything opened by path.
+        const currentKey = this.activeTabKey || (() => {
+            for (const [uniqueKey, value] of this.tabs) {
+                if (value && value.fileName === this.activeTab) return uniqueKey;
+            }
+            return null;
+        })();
 
-        const modifiedTabs = tabsToClose.filter(fileName => this.tabs.get(fileName).modified);
+        const tabsToClose = [...this.tabs.entries()]
+            .filter(([uniqueKey]) => uniqueKey !== currentKey);
+
+        const modifiedTabs = tabsToClose
+            .filter(([, tabData]) => tabData && tabData.modified);
         if (modifiedTabs.length > 0) {
             const result = confirm(`有 ${modifiedTabs.length} 个文件未保存，确定要关闭其他标签页吗？`);
             if (!result) return;
         }
 
-        tabsToClose.forEach(fileName => {
-            this.closeTab(fileName, { skipCloseConfirm: true });
+        tabsToClose.forEach(([uniqueKey, tabData]) => {
+            this.closeTab(tabData && tabData.fileName, {
+                skipCloseConfirm: true,
+                uniqueKeyOverride: uniqueKey
+            });
         });
     }
 
@@ -5509,9 +5557,8 @@ void hello() {
     }
 }
 
-let tabManager;
-document.addEventListener('DOMContentLoaded', () => {
-    tabManager = new TabManager();
-    window.tabManager = tabManager;
-    logInfo('标签页管理器已初始化');
-});
+// TabManager is instantiated exactly once, by init.js. It used to also be
+// constructed here on DOMContentLoaded; because tabs.js loads before init.js,
+// that built a throwaway instance that ran init() and bound all 51 of its event
+// listeners, then init.js overwrote window.tabManager with a second one -- so
+// every listener fired twice against two different managers.

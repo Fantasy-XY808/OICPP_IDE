@@ -181,7 +181,10 @@ jobs:
           } else {
             $version = "${{ github.ref_name }}"
           }
-          $version = $version.Substring(1)
+          # Accept both "v1.2.3" and "1.2.3". The unconditional Substring(1)
+          # chopped a real character whenever the tag or the dispatch input had
+          # no leading "v", producing versions like ".2.3".
+          if ($version.StartsWith('v')) { $version = $version.Substring(1) }
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Setup Node.js
@@ -313,11 +316,48 @@ jobs:
           $version = $env:VERSION
           Write-Host "Building version: $version"
           $nsiPath = "installer.nsi"
-          $content = Get-Content $nsiPath -Raw
 
-          $content = $content -replace '!define PRODUCT_VERSION ".*"', "!define PRODUCT_VERSION ""$version"""
-          $content = $content -replace 'OutFile "OICPP-.*-Setup.exe"', "OutFile ""OICPP-$version-Setup.exe"""
-          $content | Set-Content $nsiPath -Encoding UTF8
+          # installer.nsi is UTF-8 *with* a BOM. NSIS only detects a UTF-8 script
+          # from that BOM and otherwise decodes the literals through the machine
+          # ANSI codepage, turning every Chinese string into mojibake. Reading
+          # it here without -Encoding UTF8 corrupted the text before makensis
+          # ever saw it, so both the read and the write are explicit now.
+          $content = Get-Content $nsiPath -Raw -Encoding UTF8
+          if (-not $content) { Write-Error "Failed to read $nsiPath"; exit 1 }
+
+          # Assert that the pattern is present, then that the value landed.
+          # Comparing before/after strings is wrong: when the file already holds
+          # the target version the replacement is legitimately a no-op, and a
+          # string comparison reports that as "not rewritten". That is exactly
+          # what broke the build once installer.nsi was aligned with 1.0.0.
+          $versionPattern = '!define PRODUCT_VERSION "[^"]*"'
+          if (-not ($content -match $versionPattern)) {
+              Write-Error "Could not find PRODUCT_VERSION in $nsiPath"; exit 1
+          }
+          $content = $content -replace $versionPattern, "!define PRODUCT_VERSION ""$version"""
+          if (-not ($content -match ('!define PRODUCT_VERSION "' + [regex]::Escape($version) + '"'))) {
+              Write-Error "PRODUCT_VERSION was not set to $version in $nsiPath"; exit 1
+          }
+
+          $outFilePattern = 'OutFile "OICPP-[^"]*-Setup\.exe"'
+          if (-not ($content -match $outFilePattern)) {
+              Write-Error "Could not find the OutFile line in $nsiPath"; exit 1
+          }
+          $content = $content -replace $outFilePattern, "OutFile ""OICPP-$version-Setup.exe"""
+          if (-not ($content -match ('OutFile "OICPP-' + [regex]::Escape($version) + '-Setup\.exe"'))) {
+              Write-Error "OutFile was not set for $version in $nsiPath"; exit 1
+          }
+
+          # UTF8Encoding($true) emits the BOM that makensis keys off. Set-Content
+          # is not used on purpose: -Encoding UTF8 means "with BOM" on Windows
+          # PowerShell 5.1 but "without BOM" on PowerShell 7.
+          [System.IO.File]::WriteAllText($nsiPath, $content, (New-Object System.Text.UTF8Encoding $true))
+
+          $bytes = [System.IO.File]::ReadAllBytes($nsiPath)
+          if (-not ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)) {
+            Write-Error "$nsiPath lost its UTF-8 BOM; makensis would read it as ANSI"
+            exit 1
+          }
 
           Copy-Item "ConsolePauser.exe" -Destination "dist\win-unpacked\"
           Copy-Item "oicpp.ico" -Destination "dist\win-unpacked\"

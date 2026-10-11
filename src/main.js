@@ -29,6 +29,10 @@ const recentExternalOpens = new Map();
 // Compiler probing starts child processes and filesystem scans. Results depend
 // on the compiler installation, so reuse them for this application session.
 const compilerInfoCache = new Map();
+// Live run-program children. before-quit previously tore down terminals, LSP and
+// the servers but had no handle on judged programs or an SPJ that hung, so
+// quitting with one running left it spinning with nothing left to kill it.
+const activeRunChildren = new Set();
 const compilerIncludeCache = new Map();
 
 function normalizeExternalOpenUrl(url) {
@@ -1006,7 +1010,10 @@ function startIdeLoginFlow() {
                     csrfToken = await win.webContents.executeJavaScript(
                         "document.querySelector('meta[name=\"csrf-token\"]')?.content || ''"
                     );
-                    if (csrfToken) logInfo('[洛谷登录] CSRF Token:', csrfToken.substring(0, 30) + '...');
+                    // Length only. The first 30 characters of a CSRF token are
+                    // enough to be a usable credential fragment, and this lands
+                    // in ~/.oicpp/logs/ unredacted.
+                    if (csrfToken) logInfo('[洛谷登录] 已获取 CSRF Token，长度:', String(csrfToken).length);
                 } catch (_) { }
 
                 const cookieStr = cookies.map(c => c.name + '=' + c.value).join('; ');
@@ -2953,7 +2960,15 @@ function setupIPC() {
 
 
     ipcMain.handle('get-all-settings', () => {
-        return settings;
+        // Hand out a copy without the account block. settings.account holds the
+        // full Luogu session cookie (see startIdeLoginFlow), and this handler has
+        // 40+ renderer callers -- it is a bulk settings dump for UI config, not
+        // the place a renderer should receive a live credential. No renderer code
+        // reads settings.account from here; login state goes through
+        // ide-login-status instead.
+        const safe = Object.assign({}, settings);
+        delete safe.account;
+        return safe;
     });
 
     ipcMain.handle('get-language', () => {
@@ -4258,6 +4273,12 @@ function setupIPC() {
                 const filePath = result.filePaths[0];
                 const importedSettings = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
+                // mergeSettings walks userSettings[key]; a non-object payload
+                // would either throw deep inside or silently import nothing.
+                if (!importedSettings || typeof importedSettings !== 'object' || Array.isArray(importedSettings)) {
+                    throw new Error('设置文件的顶层必须是一个 JSON 对象');
+                }
+
                 const defaultSettings = getDefaultSettings();
                 settings = mergeSettings(defaultSettings, importedSettings);
 
@@ -4313,6 +4334,13 @@ function setupIPC() {
             args = executablePathOrOptions.args || [];
             workingDirectory = executablePathOrOptions.workingDirectory;
             skipPreKill = !!executablePathOrOptions.skipPreKill;
+            // Lift timeLimit out of the options object exactly like memoryLimit.
+            // It used to be dropped, so every caller using this single-object form
+            // (sampleTester's SPJ at 5000ms, codeComparer's SPJ) ran with no time
+            // limit and no kill timer -- an SPJ that hung could not be stopped.
+            if (executablePathOrOptions.timeLimit !== undefined) {
+                timeLimit = executablePathOrOptions.timeLimit;
+            }
             if (executablePathOrOptions.memoryLimit !== undefined) {
                 memoryLimit = executablePathOrOptions.memoryLimit;
             }
@@ -4404,6 +4432,12 @@ function setupIPC() {
                     cwd: workingDirectory
                 });
             }
+
+            // Track the child so before-quit can drain it.
+            try {
+                activeRunChildren.add(childProcess);
+                childProcess.once('close', () => activeRunChildren.delete(childProcess));
+            } catch (_) { }
 
             const stdoutChunks = [];
             const stderrChunks = [];
@@ -6714,32 +6748,19 @@ function ensureUserIconForLinux() {
 function getSettingsPath() {
     const settingsDir = path.join(os.homedir(), '.oicpp');
     if (!fs.existsSync(settingsDir)) {
-        fs.mkdirSync(settingsDir, { recursive: true });
+        // 0o700: this directory holds settings.json, which contains the Luogu
+        // session cookie. Without a mode the directory is 0755 and any other
+        // local account can list it.
+        fs.mkdirSync(settingsDir, { recursive: true, mode: 0o700 });
     }
     return path.join(settingsDir, 'settings.json');
 }
 
-function mergeSettings(defaultSettings, userSettings) {
-    const result = JSON.parse(JSON.stringify(defaultSettings));
-
-    function merge(target, source) {
-        for (const key in source) {
-            if (source.hasOwnProperty(key)) {
-                if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
-                    if (!target[key] || typeof target[key] !== 'object') {
-                        target[key] = {};
-                    }
-                    merge(target[key], source[key]);
-                } else {
-                    target[key] = source[key];
-                }
-            }
-        }
-    }
-
-    merge(result, userSettings);
-    return result;
-}
+// mergeSettings used to be defined here too, as an unfiltered deep merge.
+// The later allowlist version wins at load time, so this copy was dead -- but
+// it is a landmine: it would silently start accepting arbitrary keys from an
+// imported settings file if anything ever reordered these declarations.
+// Only the allowlist definition below remains.
 
 function loadSettings() {
     try {
@@ -6855,11 +6876,20 @@ function mergeSettings(defaultSettings, userSettings) {
     const validKeys = ['compilerPath', 'pythonInterpreterPath', 'compilerArgs', 'runMode', 'testlibPath', 'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme', 'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors', 'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'fontLigaturesEnabled', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled', 'autoSave', 'autoSaveInterval', 'language', 'autoBackupSettings', 'receiveBetaUpdates', 'markdownMode', 'cppTemplate', 'codeSnippets', 'windowOpacity', 'glassEffectEnabled', 'backgroundImage', 'keybindings', 'autoOpenLastWorkspace', 'account', 'runAllSamples'];
 
     for (const key of validKeys) {
-        if (userSettings[key] !== undefined) {
-            result[key] = userSettings[key];
-        } else {
+        const incoming = userSettings[key];
+        if (incoming === undefined) {
             result[key] = defaultSettings[key];
+            continue;
         }
+        // null passes the undefined check above, so a settings file containing
+        // e.g. "keybindings": null would replace the defaults with something
+        // unusable and every shortcut lookup would throw. Keep the default for
+        // structured settings instead.
+        if (incoming === null && defaultSettings[key] !== null && typeof defaultSettings[key] === 'object') {
+            result[key] = defaultSettings[key];
+            continue;
+        }
+        result[key] = incoming;
     }
 
     return result;
@@ -6868,7 +6898,8 @@ function mergeSettings(defaultSettings, userSettings) {
 function saveSettings() {
     try {
         const settingsPath = getSettingsPath();
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+        // 0o600 for the same reason as the directory mode above.
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { encoding: 'utf8', mode: 0o600 });
         logInfo('[设置] 已保存到:', settingsPath);
     } catch (error) {
         logError('[设置] 保存失败:', error?.message || error);
@@ -6986,10 +7017,15 @@ function resetSettings(settingsType = null) {
 
 function exportSettings(filePath) {
     try {
+        // settings.account carries the live Luogu session cookie. An exported
+        // file is exactly what people paste into an issue or a forum thread to
+        // ask for help, so the credential must not travel with it.
+        const exportable = Object.assign({}, settings);
+        delete exportable.account;
         const exportData = {
             version: '1.0.0',
             timestamp: new Date().toISOString(),
-            settings: settings
+            settings: exportable
         };
 
         fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf8');
@@ -7705,7 +7741,7 @@ async function runExecutable(options) {
             const which = (bin) => {
                 try {
                     const { execSync } = require('child_process');
-                    execSync(`command -v ${bin}`, { stdio: 'pipe' });
+                    execSync(`command -v ${bin}`, { stdio: 'pipe', timeout: 2500 });
                     return true;
                 } catch (_) { return false; }
             };
@@ -7822,6 +7858,20 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+    // Drain the debugger and any live run-program children. Terminals, LSP and
+    // the servers were already torn down here; gdb and judged programs were
+    // not, so quitting with a runaway program left it spinning with no handle.
+    try {
+        if (gdbDebugger && (gdbDebugger.isRunning || gdbDebugger.gdbProcess)) {
+            gdbDebugger.stop();
+        }
+    } catch (_) { }
+    try {
+        for (const child of Array.from(activeRunChildren)) {
+            try { if (child && !child.killed) child.kill('SIGKILL'); } catch (_) { }
+        }
+        activeRunChildren.clear();
+    } catch (_) { }
     disposeAllFileWatchers();
     try { terminalManager.disposeAll(); } catch (_) { }
     try { clangdLspManager.stop(); } catch (_) { }
@@ -9206,8 +9256,12 @@ async function stopDebugSession() {
         // 恢复被暂停的终端 shell（macOS TTY 接管恢复）
         _restoreTTYShell();
 
-        if (gdbDebugger && gdbDebugger.isRunning) {
-            await gdbDebugger.stop();
+        // No isRunning guard. gdbDebugger.isRunning only becomes true near the
+        // end of start(), so across the whole debugger-startup prologue this
+        // read false, stop() was skipped, and the reference was then nulled --
+        // leaving a live gdb.exe and the debuggee as orphans with no handle.
+        if (gdbDebugger && (gdbDebugger.isRunning || gdbDebugger.gdbProcess)) {
+            try { await gdbDebugger.stop(); } catch (_) { }
             await new Promise(r => setTimeout(r, 200));
         }
 

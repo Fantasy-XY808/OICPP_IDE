@@ -254,6 +254,17 @@ class TitlebarManager {
     }
 
     updateMaximizeButton() {
+        // Keep the maximized state on the titlebar element itself. The
+        // stylesheet keys the maximized look off .titlebar.maximized, and
+        // without this the class never landed on the DOM -- so those rules
+        // were dead and the titlebar kept its rounded corners even while
+        // maximized. That rounded corner sits exactly where people reflexively
+        // move the pointer to close the window, and it is not part of the close
+        // button's hit area.
+        if (this.titlebar) {
+            this.titlebar.classList.toggle('maximized', !!this.isMaximized);
+        }
+
         const maximizeBtn = document.getElementById('maximize-btn');
         if (maximizeBtn) {
             const svg = maximizeBtn.querySelector('svg path');

@@ -78,7 +78,33 @@ class Logger {
     }
 
     static stringifyArgs(args, { level = 'info', maxLen = 2000 } = {}) {
-        const redactingReplacer = (key, value) => value;
+        // Credential shapes that must never reach ~/.oicpp/logs/. Keys are
+        // compared after stripping separators, so loginToken, login_token and
+        // LOGIN-TOKEN all match.
+        const SENSITIVE_KEYS = new Set([
+            'password', 'passwd', 'pwd', 'secret', 'token', 'accesstoken', 'refreshtoken',
+            'logintoken', 'encodedtoken', 'cookie', 'cookies', 'setcookie', 'authorization',
+            'auth', 'credential', 'credentials', 'apikey', 'privatekey', 'sessionid',
+            'sessionkey', 'csrf', 'csrftoken'
+        ]);
+        const REDACTED = '[redacted]';
+        const normalizeKey = (key) => String(key || '').toLowerCase().replace(/[\s_-]/g, '');
+        const isSensitiveKey = (key) => SENSITIVE_KEYS.has(normalizeKey(key));
+
+        // Used to be an identity function, which is why nothing was ever
+        // redacted despite the name.
+        const redactingReplacer = (key, value) => (isSensitiveKey(key) ? REDACTED : value);
+
+        // Used to be called further down but was never defined anywhere in the
+        // repo, so that error branch threw a ReferenceError and the outer catch
+        // swallowed it.
+        const redactString = (text) => {
+            if (typeof text !== 'string') return text;
+            return text.replace(
+                /(\b[A-Za-z0-9_.-]*(?:token|cookie|password|passwd|secret|authorization|sessionid|csrf)[A-Za-z0-9_.-]*\s*[=:]\s*)([^\s;,&]+)/gi,
+                (match, prefix) => prefix + REDACTED
+            );
+        };
         const serializeError = (err) => {
             try {
                 const base = {
@@ -107,7 +133,7 @@ class Logger {
         const infoStringify = (v) => {
             if (v === null || v === undefined) return String(v);
             if (v instanceof Error) return JSON.stringify(serializeError(v), null, 2);
-            if (typeof v === 'string') return clamp(v, INFO_PER_ARG_LIMIT);
+            if (typeof v === 'string') return clamp(redactString(v), INFO_PER_ARG_LIMIT);
             try {
                 const full = JSON.stringify(v, redactingReplacer, 2);
                 if (full && full.length <= INFO_PER_ARG_LIMIT) return full;
@@ -137,7 +163,7 @@ class Logger {
         const verbose = (v) => {
             if (v === null || v === undefined) return String(v);
             if (v instanceof Error) return JSON.stringify(serializeError(v), null, 2);
-            if (typeof v === 'string') return v;
+            if (typeof v === 'string') return redactString(v);
             if (typeof v === 'object' && v && v.error instanceof Error && Object.keys(v).length === 1) {
                 return redactString(JSON.stringify({ error: serializeError(v.error) }, null, 2));
             }

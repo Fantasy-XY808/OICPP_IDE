@@ -3845,7 +3845,12 @@ class MonacoEditorManager {
                 }
             });
 
-            window.addEventListener('resize', () => {
+            // Both of these used to be anonymous and unreachable, so closing a
+            // tab left one window listener and one live ResizeObserver behind per
+            // editor -- and every window resize then walked the closures of
+            // already-disposed editors. Stash them on the editor instance so
+            // cleanupEditor can release them.
+            const layoutEditor = () => {
                 if (editor && editor.getModel && editor.getModel()) {
                     try {
                         editor.layout();
@@ -3853,18 +3858,13 @@ class MonacoEditorManager {
                         logWarn('编辑器布局更新失败:', e);
                     }
                 }
-            });
+            };
+            this._windowResizeHandler = layoutEditor;
+            window.addEventListener('resize', layoutEditor);
             
             if (window.ResizeObserver) {
-                const resizeObserver = new ResizeObserver(() => {
-                    if (editor && editor.getModel && editor.getModel()) {
-                        try {
-                            editor.layout();
-                        } catch (e) {
-                            logWarn('编辑器布局更新失败:', e);
-                        }
-                    }
-                });
+                const resizeObserver = new ResizeObserver(layoutEditor);
+                this._containerResizeObserver = resizeObserver;
                 resizeObserver.observe(monacoContainer);
             }
 
@@ -4531,6 +4531,21 @@ class MonacoEditorManager {
                     this.closeLspDocument(model);
                 }
             } catch (_) {}
+            // Release the per-editor window listener and ResizeObserver created
+            // alongside it, plus the decoration entry keyed by this editor.
+            try {
+                if (this._windowResizeHandler) {
+                    window.removeEventListener('resize', this._windowResizeHandler);
+                    this._windowResizeHandler = null;
+                }
+            } catch (_) { }
+            try {
+                if (this._containerResizeObserver) {
+                    this._containerResizeObserver.disconnect();
+                    this._containerResizeObserver = null;
+                }
+            } catch (_) { }
+            try { this._compilerErrorDecorations.delete(editor); } catch (_) { }
             editor.dispose();
             this.editors.delete(tabId);
         }

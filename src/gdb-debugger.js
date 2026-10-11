@@ -102,11 +102,37 @@ class GDBDebugger extends EventEmitter {
             if (text.includes('Failed to set controlling terminal')) return;
             try { global.logWarn?.('[GDB-STDERR]', text); } catch (_) { }
         });
+        // Reject everything still queued when gdb dies. The stored reject was
+        // never invoked anywhere, so a bad gdbPath (spawn ENOENT) or a crash left
+        // every pending command suspended forever -- the debug panel then sat on
+        // "starting debugger" with no error and no way out except restarting.
+        const failAllPending = (reason) => {
+            const current = this._currentCmd;
+            this._currentCmd = null;
+            if (current && current.reject) {
+                try { current.reject(new Error(reason)); } catch (_) { }
+            }
+            const queued = this._cmdQueue.splice(0, this._cmdQueue.length);
+            for (const entry of queued) {
+                if (entry && entry.reject) {
+                    try { entry.reject(new Error(reason)); } catch (_) { }
+                }
+            }
+            this._queueBusy = false;
+        };
+
+        this.gdbProcess.on('error', (err) => {
+            try { global.logError?.('[GDB-SPAWN-ERROR]', err?.message || String(err)); } catch (_) { }
+            failAllPending(`gdb failed to start: ${(err && err.message) || err}`);
+            this.isRunning = false;
+            this.emit('error', err);
+        });
         this.gdbProcess.on('exit', (code, signal) => {
             if (this._buffer) { this._parseOutput(this._buffer); this._buffer = ''; }
             this.isRunning = false; this.programExited = true;
             this._programStopped = true; this._inferiorRunning = false;
             this.emit('exited', { code, signal });
+            failAllPending(`gdb exited (${code === null ? signal : code}) with commands still pending`);
         });
         const runInit = async (cmd) => {
             try { await this._send(cmd); } catch (e) { if (!relaxedInit) throw e; }
@@ -154,7 +180,18 @@ class GDBDebugger extends EventEmitter {
         this._programStopped = true;
         this._inferiorRunning = false;
         this._queueBusy = false;
-        this._cmdQueue = [];
+        // Settle the queue instead of dropping it. `_cmdQueue = []` orphaned
+        // every pending promise (reject was never invoked anywhere), so a stop()
+        // landing during start() -- which is 14 sequential awaits -- left that
+        // whole chain suspended with nobody left to resume it.
+        const orphaned = this._cmdQueue.splice(0, this._cmdQueue.length);
+        const current = this._currentCmd;
+        this._currentCmd = null;
+        for (const entry of [current, ...orphaned]) {
+            if (entry && entry.reject) {
+                try { entry.reject(new Error('debug session stopped')); } catch (_) { }
+            }
+        }
         await this._cleanupLinuxTTY();
     }
     // gdb 收到 quit 会立即退出、不会打印自定义提示符，因此不能依赖 _send('quit')
@@ -524,7 +561,7 @@ class GDBDebugger extends EventEmitter {
         let sp = p;
         try {
             const cmd = process.env.ComSpec || 'cmd.exe';
-            const r = spawnSync(cmd, ['/c', `for %I in ("${p.replace(/"/g, '""')}") do @echo %~sI`], { encoding: 'utf8', windowsHide: true });
+            const r = spawnSync(cmd, ['/c', `for %I in ("${p.replace(/"/g, '""')}") do @echo %~sI`], { encoding: 'utf8', windowsHide: true, timeout: 2500 });
             const o = (r && r.stdout) ? String(r.stdout).trim() : '';
             if (o) sp = o;
         } catch (_) { }
@@ -554,7 +591,7 @@ class GDBDebugger extends EventEmitter {
         for (let i = 0; i < 100; i++) {
             await new Promise(r => setTimeout(r, 200));
             let po = '';
-            try { const ps = spawnSync('ps', ['x', '-o', 'tty,pid,command'], { encoding: 'utf8' }); if (ps && ps.status === 0) po = String(ps.stdout || ''); } catch (_) { }
+            try { const ps = spawnSync('ps', ['x', '-o', 'tty,pid,command'], { encoding: 'utf8', timeout: 2500 }); if (ps && ps.status === 0) po = String(ps.stdout || ''); } catch (_) { }
             if (!po) continue;
             for (const pl of po.split(/\r?\n/)) {
                 if (!pl || !pl.includes(sleepCmd) || pl.includes('ps x -o tty,pid,command')) continue;

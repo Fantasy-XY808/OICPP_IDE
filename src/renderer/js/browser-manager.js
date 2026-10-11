@@ -80,20 +80,11 @@ class BrowserManager {
 
         const webview = document.createElement('webview');
         webview.className = 'browser-webview';
-        // Electron 37 创建的 webview 内部 iframe 没有高度样式，会保留
-        // HTML iframe 默认的 150px 高度。必须在首次导航前修正，否则
-        // guest surface 即使外层之后变高，仍只渲染顶部 150px。
-        const shadowFrame = webview.shadowRoot?.querySelector('iframe');
-        if (shadowFrame) {
-            shadowFrame.style.width = '100%';
-            shadowFrame.style.height = '100%';
-        }
         webview.setAttribute('partition', 'persist:oicpp-browser');
         const browserUserAgent = navigator.userAgent
             .replace(/\sElectron\/\S+/i, '')
             .replace(/\soicpp-ide\/\S+/i, '');
         webview.setAttribute('useragent', browserUserAgent);
-        webview.setAttribute('src', initialUrl);
         // 允许 guest 打开新窗口（target="_blank" / window.open），
         // 否则 Electron 会在 webview 层拦截弹窗，setWindowOpenHandler 不会触发，
         // 导致网页内链接无法在新标签页中打开。
@@ -109,7 +100,11 @@ class BrowserManager {
         // 时不会自动获得高度样式，会保留 HTML iframe 默认的 150px 高度。
         // 必须在首次导航前修正，否则 guest surface 即使外层之后变高，
         // 仍只渲染顶部 150px，导致页面显示不全、点击错位、链接无法跳转。
-        // 注意：webview 挂载到 DOM 后 shadowRoot 才会存在，因此在此处才可获取。
+        //
+        // 顺序是重点：shadowRoot 只有挂载到 DOM 之后才存在，而 src 会立刻
+        // 启动 guest 与首次导航。此前这次修正排在 setAttribute('src') 之后，
+        // 与上面这段注释自己的要求正好相反；更早的那次探测发生在 appendChild
+        // 之前，shadowRoot 必定为 null，是一段空操作。
         const fixInternalFrame = (el) => {
             const internalFrame = el?.shadowRoot?.querySelector('iframe');
             if (internalFrame) {
@@ -119,6 +114,11 @@ class BrowserManager {
         };
         fixInternalFrame(webview);
         webview.addEventListener('did-attach', () => fixInternalFrame(webview), { once: true });
+        // dom-ready 覆盖另一种时序：guest 已经接管、shadowRoot 才被填充。
+        webview.addEventListener('dom-ready', () => fixInternalFrame(webview), { once: true });
+
+        // src 最后设置：它会启动 guest 与首次导航。
+        webview.setAttribute('src', initialUrl);
 
         // 保存引用
         const state = {
@@ -297,10 +297,18 @@ class BrowserManager {
             this._updateTabTitle(uniqueKey, title);
         });
         webview.addEventListener('did-fail-load', (event) => {
-            if (event.errorCode === -3) return;
+            if (event.errorCode === -3) return; // aborted, usually by a newer navigation
             state.isLoading = false;
             this._updateReloadButton(uniqueKey, false);
             navBar.classList.remove('loading');
+            // Previously swallowed silently, which left a blank panel with no
+            // way to tell a failed load from an empty page.
+            logWarn('[内置浏览器] 页面加载失败:', event.errorCode, event.errorDescription || '', event.url || '');
+        });
+
+        webview.addEventListener('did-fail-provisional-load', (event) => {
+            if (event.errorCode === -3) return;
+            logWarn('[内置浏览器] 初步加载失败:', event.errorCode, event.errorDescription || '', event.url || '');
         });
 
         this._updateNavButtons(uniqueKey);

@@ -816,7 +816,7 @@ class IntegratedTerminalManager {
     _resolvePosixTTYFromPid(pid) {
         if (process.platform === 'darwin') {
             try {
-                const ps = spawnSync('ps', ['-p', String(pid), '-o', 'tty='], { encoding: 'utf8' });
+                const ps = spawnSync('ps', ['-p', String(pid), '-o', 'tty='], { encoding: 'utf8', timeout: 2500 });
                 if (ps && ps.status === 0) {
                     const tty = String(ps.stdout || '')
                         .split(/\r?\n/)

@@ -500,21 +500,22 @@ class CompilerManager {
             this.setStatus('正在云编译...');
             this.appendOutput('正在将代码发送至 Linux 云编译服务...', 'info');
 
-            let token = '';
             let loginToken = '';
             try {
-                if (window.electronAPI && window.electronAPI.getEncodedToken) {
-                    token = await window.electronAPI.getEncodedToken();
-                }
                 if (window.electronAPI && window.electronAPI.getIdeLoginStatus) {
                     const status = await window.electronAPI.getIdeLoginStatus();
                     loginToken = status?.loginToken || '';
                 }
-            } catch (e) { logWarn('获取编码 token 失败:', e); }
+            } catch (e) { logWarn('获取登录状态失败:', e); }
 
             const payload = {
                 cpp: codeContent,
-                token: token || ''
+                // Kept as an always-empty field for server compatibility. It used
+                // to be filled by getEncodedToken(), but the main process never
+                // registered a handler for the 'get-encoded-token' channel, so
+                // the invoke always rejected inside a try/catch and this was
+                // always ''. Cloud compilation authenticates via login_token.
+                token: ''
             };
 
             if (loginToken) {

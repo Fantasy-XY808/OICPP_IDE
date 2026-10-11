@@ -1,3 +1,17 @@
+/**
+ * Shared judging rules live in js/shared/output-normalize.js so the sample
+ * tester and the code comparer cannot drift apart again.
+ * Behaviour is pinned by test/output-normalize.test.js -- read that file before
+ * changing anything here.
+ */
+function oicppOutputNormalize() {
+    const api = (typeof window !== 'undefined') ? window.OICPPOutputNormalize : null;
+    if (!api) {
+        throw new Error('OICPPOutputNormalize is not loaded; check the script tag order in index.html');
+    }
+    return api;
+}
+
 class SampleTester {
     constructor() {
         this.samples = [];
@@ -2814,17 +2828,7 @@ class SampleTester {
     }
 
     compareOutput(actual, expected) {
-        const normalize = (str) => {
-            return String(str || '').replace(/\r\n?/g, '\n').split('\n')
-                .map(line => line.trimEnd())
-                .join('\n')
-                .replace(/\n+$/, '');
-        };
-
-        const normalizedActual = normalize(actual || '');
-        const normalizedExpected = normalize(expected || '');
-
-        return normalizedActual === normalizedExpected ? 'AC' : 'WA';
+        return oicppOutputNormalize().verdictsMatch(actual, expected) ? 'AC' : 'WA';
     }
 
     truncateOutput(output) {
@@ -2885,56 +2889,12 @@ class SampleTester {
         return displayBase;
     }
 
+    /**
+     * First difference under verdict semantics, so a case the judge accepted
+     * can never be highlighted as "different".
+     */
     getDifferenceInfo(actual, expected) {
-        const actualLines = actual.split('\n');
-        const expectedLines = expected.split('\n');
-
-        const maxCompareLines = Math.max(actualLines.length, expectedLines.length);
-
-        for (let i = 0; i < maxCompareLines; i++) {
-            const actualLine = actualLines[i] || '';
-            const expectedLine = expectedLines[i] || '';
-            if (actualLine.trimEnd() !== expectedLine.trimEnd()) {
-                let diffChar = 0;
-                const minLength = Math.min(actualLine.length, expectedLine.length);
-                while (diffChar < minLength && actualLine[diffChar] === expectedLine[diffChar]) {
-                    diffChar++;
-                }
-                return {
-                    line: i + 1,
-                    char: diffChar + 1
-                };
-            }
-        }
-
-        return null;
-    }
-
-    getDifferenceInfo(actual, expected) {
-        const actualLines = actual.split('\n');
-        const expectedLines = expected.split('\n');
-
-        for (let i = 0; i < Math.max(actualLines.length, expectedLines.length); i++) {
-            const actualLine = actualLines[i] || '';
-            const expectedLine = expectedLines[i] || '';
-
-            if (actualLine !== expectedLine) {
-                for (let j = 0; j < Math.max(actualLine.length, expectedLine.length); j++) {
-                    if (actualLine[j] !== expectedLine[j]) {
-                        return {
-                            line: i + 1,
-                            char: j + 1
-                        };
-                    }
-                }
-                return {
-                    line: i + 1,
-                    char: Math.min(actualLine.length, expectedLine.length) + 1
-                };
-            }
-        }
-
-        return null;
+        return oicppOutputNormalize().findDifference(actual, expected);
     }
 
     escapeHtml(text) {

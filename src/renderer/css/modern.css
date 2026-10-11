@@ -176,6 +176,22 @@ body:has(> .main-container) :is(.titlebar) {
     overflow: visible;
 }
 
+/* 最大化时必须是直角。
+   圆角会在窗口最右上角切掉一块，而那正是大多数人习惯性移过去点关闭的位置；
+   border-radius 同时会裁掉命中区域，于是那一小块既点不到关闭、也不会高亮，
+   必须往下挪一点进入圆角内侧才生效。最大化窗口本就不该有圆角。 */
+body:has(> .main-container) :is(.titlebar).maximized {
+    border-radius: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    box-shadow: none;
+}
+
+body:has(> .main-container) :is(.titlebar).maximized :is(.titlebar-button, .titlebar-button.close-btn) {
+    border-radius: 0;
+}
+
 body .titlebar-left {
     padding-left: 10px;
 }

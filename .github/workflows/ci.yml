@@ -1,0 +1,38 @@
+name: CI
+
+# The release pipeline (build.yml) only fires on v* tags, so a branch push used
+# to produce zero automated feedback. This workflow is the fast gate: it runs the
+# dependency-free unit tests on every pull request so a judgement regression
+# cannot reach main unnoticed.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --include=optional
+
+      - name: Run unit tests
+        run: npm test

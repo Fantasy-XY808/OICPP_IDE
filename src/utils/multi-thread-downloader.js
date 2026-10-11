@@ -167,10 +167,20 @@ class MultiThreadDownloader {
                         writer.end((error) => {
                             if (error) {
                                 reject(error);
-                            } else {
-                                logInfo(`[多线程下载] 分片 ${chunkIndex} 下载完成`);
-                                resolve({ chunkIndex, file: chunkFile, size: downloadedBytes });
+                                return;
                             }
+                            // A CDN or proxy may answer a Range request with 200 and
+                            // the whole body instead of 206. Every worker then writes
+                            // a complete copy and the merge concatenates them. Catch
+                            // it here so the failure names the real cause instead of
+                            // surfacing much later as a 7z/zip error.
+                            const expected = end - start + 1;
+                            if (downloadedBytes !== expected) {
+                                reject(new Error(`分片 ${chunkIndex} 大小不完整(${downloadedBytes}/${expected})，服务器可能忽略了 Range 请求`));
+                                return;
+                            }
+                            logInfo(`[多线程下载] 分片 ${chunkIndex} 下载完成`);
+                            resolve({ chunkIndex, file: chunkFile, size: downloadedBytes });
                         });
                     });
 

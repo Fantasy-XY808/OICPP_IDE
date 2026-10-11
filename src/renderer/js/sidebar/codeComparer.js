@@ -1,6 +1,25 @@
+/**
+ * Shared judging rules live in js/shared/output-normalize.js so the sample
+ * tester and the code comparer cannot drift apart again.
+ * Behaviour is pinned by test/output-normalize.test.js -- read that file before
+ * changing anything here.
+ */
+function oicppOutputNormalize() {
+    const api = (typeof window !== 'undefined') ? window.OICPPOutputNormalize : null;
+    if (!api) {
+        throw new Error('OICPPOutputNormalize is not loaded; check the script tag order in index.html');
+    }
+    return api;
+}
+
 class CodeComparer {
     constructor() {
         this.activeTaskKey = null;
+        // Judges run in parallel workers, so SPJ temp file names need a
+        // per-process counter on top of the timestamp: two workers starting in
+        // the same millisecond used to share input/actual/expected files and
+        // delete each other's mid-run.
+        this.spjTempSequence = 0;
         this.standardCodePath = '';
         this.testCodePath = '';
         this.generatorPath = '';
@@ -88,8 +107,32 @@ class CodeComparer {
                 compiledExecutables: null
             };
             this.tasks.set(normalizedKey, task);
+            // this.tasks had no delete/clear anywhere: the active-file listener
+            // created an entry for every source file ever activated, and Map
+            // preserves insertion order, so the oldest can be dropped safely.
+            // Never evict the active task or one that is still running.
+            this._evictOldTasks(normalizedKey);
         }
         return task;
+    }
+
+    _evictOldTasks(keepKey) {
+        const MAX_RETAINED_TASKS = 32;
+        while (this.tasks.size > MAX_RETAINED_TASKS) {
+            let oldestKey = null;
+            for (const [key, value] of this.tasks) {
+                if (key === keepKey || key === this.activeTaskKey) continue;
+                if (value && value.state && value.state.isRunning) continue;
+                oldestKey = key;
+                break;
+            }
+            if (oldestKey === null) break;
+            const stale = this.tasks.get(oldestKey);
+            if (stale && stale.compiledExecutables) {
+                try { this.cleanupCompiledExecutables({ compiledExecutables: stale.compiledExecutables }); } catch (_) { }
+            }
+            this.tasks.delete(oldestKey);
+        }
     }
 
     getActiveTask() {
@@ -815,7 +858,14 @@ class CodeComparer {
                 }
 
                 try {
-                    const generation = await this.generateTestData(generatorRunTarget || generatorExe, 0);
+                    // Was hardcoded 0 = no timeout and no kill timer, so a generator
+                    // that looped on one case wedged this worker forever and the
+                    // comparer could never be restarted. Generators get a generous
+                    // multiple of the UI limit so large inputs still work.
+                    const generation = await this.generateTestData(
+                        generatorRunTarget || generatorExe,
+                        Math.max(timeLimit * 5, 10000)
+                    );
                     if (!generation || generation.success !== true) {
                         const generatorMessage = generation?.message || (window.i18n ? window.i18n.t('compare.genRunError') : 'Failed to run data generator');
                         const generatedOutput = generation?.result?.output || '';
@@ -846,7 +896,9 @@ class CodeComparer {
                         const stdRunOptions = stdFreopenContext.workingDirectory
                             ? { executablePath: stdExe, workingDirectory: stdFreopenContext.workingDirectory }
                             : stdExe;
-                        stdOutput = await this.runProgram(stdRunOptions, stdFreopenContext.runInput, 0);
+                        // Same budget as the program under test: they are compared on
+                        // identical input. Was 0 (unbounded).
+                        stdOutput = await this.runProgram(stdRunOptions, stdFreopenContext.runInput, timeLimit);
                         stdOutput.output = await this.resolveProgramOutput(stdOutput.output, stdFreopenContext);
                     } finally {
                         await this.cleanupFreopenContext(stdFreopenContext);
@@ -973,8 +1025,17 @@ class CodeComparer {
                     this.updateTaskProgress(task);
 
                 } catch (error) {
+                    // This used to just `continue`, leaving errorOccurred false.
+                    // If every case threw -- freopen prepare rejected, runProgram
+                    // rejected on a bad cwd -- the run still reported "completed N
+                    // tests, no differences found" having run none at all.
                     logError(`第 ${i} 组测试出错:`, error);
-                    continue;
+                    failedGenerations++;
+                    errorOccurred = true;
+                    task.state.warningMessage = `第 ${i} 组测试出错：${(error && error.message) ? error.message : error}`;
+                    task.state.mode = 'error';
+                    this.renderIfActive(task);
+                    return;
                 }
             }
         };
@@ -994,18 +1055,16 @@ class CodeComparer {
             return;
         }
 
-        const successfulTests = task.state.totalTests - failedGenerations;
-        if (failedGenerations === 0) {
-            logInfo(`对拍完成！共执行 ${successfulTests} 组测试，未发现差异`);
-            task.state.mode = 'complete';
-            task.state.warningMessage = null;
-            this.renderIfActive(task);
-        } else {
-            logInfo(`对拍完成，但有 ${failedGenerations} 组数据生成失败。共成功执行 ${successfulTests} 组测试，未在成功组中发现差异`);
-            task.state.mode = 'complete';
-            task.state.warningMessage = `有 ${failedGenerations} 组数据生成失败，请检查数据生成器`;
-            this.renderIfActive(task);
-        }
+        // Reaching here means no case failed: both a generator failure and a
+        // per-case exception set errorOccurred and returned early. The old
+        // failedGenerations branch was unreachable -- the counter was never
+        // assigned anywhere -- and advertised a "N generations failed" warning
+        // that could not occur.
+        const successfulTests = completed;
+        logInfo(`对拍完成！共执行 ${successfulTests} 组测试，未发现差异`);
+        task.state.mode = 'complete';
+        task.state.warningMessage = null;
+        this.renderIfActive(task);
     }
 
     renderIfActive(task) {
@@ -1189,25 +1248,15 @@ class CodeComparer {
     }
 
     compareOutputs(output1, output2) {
-        const normalize = (str) => {
-            return str.split('\n')
-                .map(line => line.trimEnd())
-                .join('\n')
-                .replace(/\n+$/, '');
-        };
-
-        const normalized1 = normalize(output1 || '');
-        const normalized2 = normalize(output2 || '');
-
-        return normalized1 === normalized2;
+        return oicppOutputNormalize().verdictsMatch(output1, output2);
     }
 
     async judgeWithSpj(spjExecutablePath, inputData, actualOutput, expectedOutput, timeLimit) {
         try {
-            const timestamp = Date.now();
-            const inputFile = await window.electronAPI.saveTempFile(`spj_input_${timestamp}.txt`, inputData);
-            const actualFile = await window.electronAPI.saveTempFile(`spj_actual_${timestamp}.txt`, actualOutput);
-            const expectedFile = await window.electronAPI.saveTempFile(`spj_expected_${timestamp}.txt`, expectedOutput);
+            const suffix = `${Date.now()}_${++this.spjTempSequence}`;
+            const inputFile = await window.electronAPI.saveTempFile(`spj_input_${suffix}.txt`, inputData);
+            const actualFile = await window.electronAPI.saveTempFile(`spj_actual_${suffix}.txt`, actualOutput);
+            const expectedFile = await window.electronAPI.saveTempFile(`spj_expected_${suffix}.txt`, expectedOutput);
 
             try {
                 const workingDir = await window.electronAPI.pathDirname(spjExecutablePath);
@@ -1231,9 +1280,17 @@ class CodeComparer {
                     return 'WA';
                 }
             } finally {
-                await window.electronAPI.deleteTempFile(inputFile);
-                await window.electronAPI.deleteTempFile(actualFile);
-                await window.electronAPI.deleteTempFile(expectedFile);
+                // Cleanup must never change the verdict. deleteTempFile rethrows
+                // when unlinkSync fails (EPERM/EBUSY while an AV or the indexer
+                // holds the file), and a throw from finally discards the try's
+                // return -- so a sample judged AC was reported as 'SPJ Error'.
+                const bestEffortDelete = (file) => {
+                    Promise.resolve(window.electronAPI.deleteTempFile(file))
+                        .catch((err) => { try { logWarn('[对拍器] 清理临时文件失败:', file, err); } catch (_) { } });
+                };
+                bestEffortDelete(inputFile);
+                bestEffortDelete(actualFile);
+                bestEffortDelete(expectedFile);
             }
         } catch (error) {
             return 'SPJ Error';
@@ -1920,13 +1977,13 @@ class CodeComparer {
         return null;
     }
 
+    /**
+     * Basis for the side-by-side diff view only. Kept separate from the verdict
+     * basis on purpose: a textual diff is allowed to show trailing whitespace
+     * that the judge deliberately ignores.
+     */
     normalizeForCompare(text) {
-        if (text == null) return '';
-        let s = String(text);
-        s = s.replace(/^\uFEFF/, '');
-        s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        s = s.replace(/\uFEFF/g, '');
-        return s;
+        return oicppOutputNormalize().normalizeForDisplay(text);
     }
 
     escapeHtml(text) {

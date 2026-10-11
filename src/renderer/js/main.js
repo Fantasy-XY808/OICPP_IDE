@@ -244,23 +244,76 @@ class OICPPApp {
             }
         });
 
-        document.addEventListener('mouseover', (e) => {
-            if (e.target.classList.contains('menu-item')) {
-                document.querySelectorAll('.menu-dropdown.active').forEach(menu => {
-                    menu.classList.remove('active');
-                });
-                const dropdown = e.target.querySelector('.menu-dropdown');
-                if (dropdown) {
-                    dropdown.classList.add('active');
-                }
+        // Closing is deferred so the pointer can travel from the menu bar into
+        // an open dropdown.
+        //
+        // The menu used to rest on CSS :hover alone. Visibility transitions with
+        // a 0s duration, so the instant :hover was lost the dropdown was already
+        // un-hittable and the pointer lost its target before it arrived.
+        //
+        // The grace period only works because .active is set on the .menu-item,
+        // which is what the stylesheet actually keys on
+        // (.menu-item.active .menu-dropdown). The previous code added .active to
+        // the .menu-dropdown instead, which no rule matched -- so the menu had no
+        // fallback at all and could only be held open by :hover.
+        const MENU_CLOSE_DELAY_MS = 160;
+        let menuCloseTimer = null;
+
+        const closeAllMenus = () => {
+            document.querySelectorAll('.menu-item.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Clear the old location too, so a stale pin can never survive.
+            document.querySelectorAll('.menu-dropdown.active').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        };
+
+        const cancelScheduledClose = () => {
+            if (menuCloseTimer !== null) {
+                clearTimeout(menuCloseTimer);
+                menuCloseTimer = null;
             }
+        };
+
+        const scheduleMenuClose = () => {
+            cancelScheduledClose();
+            menuCloseTimer = setTimeout(() => {
+                menuCloseTimer = null;
+                closeAllMenus();
+            }, MENU_CLOSE_DELAY_MS);
+        };
+
+        const closestOf = (node, selector) => (node && node.closest ? node.closest(selector) : null);
+
+        document.addEventListener('mouseover', (e) => {
+            // closest() rather than an exact classList check: the label is a
+            // child span, so hovering the text itself used to miss entirely.
+            const item = closestOf(e.target, '.menu-item');
+            if (!item) {
+                return;
+            }
+            // Coming back into the menu bar during the grace window reopens it.
+            cancelScheduledClose();
+            closeAllMenus();
+            item.classList.add('active');
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (!closestOf(e.target, '.menu-bar')) {
+                return;
+            }
+            // Moving between menu items, or into an open dropdown, is not a close.
+            if (closestOf(e.relatedTarget, '.menu-bar')) {
+                return;
+            }
+            scheduleMenuClose();
         });
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.menu-bar')) {
-                document.querySelectorAll('.menu-dropdown.active').forEach(menu => {
-                    menu.classList.remove('active');
-                });
+                cancelScheduledClose();
+                closeAllMenus();
             }
         });
     }
