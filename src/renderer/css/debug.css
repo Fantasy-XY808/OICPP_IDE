@@ -173,7 +173,9 @@ body {
     height: 28px;
     line-height: 20px;
     font-size: 12px;
-    transition: border-color 0.12s, box-shadow 0.12s;
+    transition:
+        border-color 0.12s,
+        box-shadow 0.12s;
 }
 
 .debug-watch-input:focus {
@@ -272,7 +274,9 @@ body {
     padding: 0;
     margin: 0 2px 0 0;
     border-radius: 2px;
-    transition: background-color 0.12s, color 0.12s;
+    transition:
+        background-color 0.12s,
+        color 0.12s;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -608,109 +612,109 @@ body {
     background-color: var(--hover-bg, #2a2d2e);
 }
 
-body[data-theme*="light" i] .debug-mini-wrap,
-body[data-editor-theme*="light" i] .debug-mini-wrap,
+body[data-theme*='light' i] .debug-mini-wrap,
+body[data-editor-theme*='light' i] .debug-mini-wrap,
 body.theme-light .debug-mini-wrap {
     background-color: var(--sidebar-bg, #f9fafc);
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .debug-toolbar,
-body[data-editor-theme*="light" i] .debug-toolbar,
+body[data-theme*='light' i] .debug-toolbar,
+body[data-editor-theme*='light' i] .debug-toolbar,
 body.theme-light .debug-toolbar {
     background-color: var(--sidebar-header-bg, #eef2f7);
     border-bottom-color: var(--border-color, #d1d5da);
 }
 
-body[data-theme*="light" i] .debug-toolbar .icon-btn,
-body[data-editor-theme*="light" i] .debug-toolbar .icon-btn,
+body[data-theme*='light' i] .debug-toolbar .icon-btn,
+body[data-editor-theme*='light' i] .debug-toolbar .icon-btn,
 body.theme-light .debug-toolbar .icon-btn {
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .debug-toolbar .icon-btn:hover,
-body[data-editor-theme*="light" i] .debug-toolbar .icon-btn:hover,
+body[data-theme*='light' i] .debug-toolbar .icon-btn:hover,
+body[data-editor-theme*='light' i] .debug-toolbar .icon-btn:hover,
 body.theme-light .debug-toolbar .icon-btn:hover {
     background-color: var(--hover-bg, #e6ebf2);
 }
 
-body[data-theme*="light" i] .debug-watch-input,
-body[data-editor-theme*="light" i] .debug-watch-input,
+body[data-theme*='light' i] .debug-watch-input,
+body[data-editor-theme*='light' i] .debug-watch-input,
 body.theme-light .debug-watch-input {
     background-color: var(--input-bg, #ffffff);
     border-color: var(--border-color, #d1d5da);
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .debug-watch-input:focus,
-body[data-editor-theme*="light" i] .debug-watch-input:focus,
+body[data-theme*='light' i] .debug-watch-input:focus,
+body[data-editor-theme*='light' i] .debug-watch-input:focus,
 body.theme-light .debug-watch-input:focus {
     border-color: var(--accent-color, #0066cc);
     box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.15);
 }
-body[data-theme*="light" i] .debug-sidebar,
-body[data-editor-theme*="light" i] .debug-sidebar,
+body[data-theme*='light' i] .debug-sidebar,
+body[data-editor-theme*='light' i] .debug-sidebar,
 body.theme-light .debug-sidebar {
     background-color: var(--sidebar-bg, #f8f9fb);
     border-right-color: var(--border-color, #d1d5da);
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .debug-section,
-body[data-editor-theme*="light" i] .debug-section,
+body[data-theme*='light' i] .debug-section,
+body[data-editor-theme*='light' i] .debug-section,
 body.theme-light .debug-section {
     border-bottom-color: var(--border-color, #d1d5da);
 }
 
-body[data-theme*="light" i] .debug-section h4,
-body[data-editor-theme*="light" i] .debug-section h4,
+body[data-theme*='light' i] .debug-section h4,
+body[data-editor-theme*='light' i] .debug-section h4,
 body.theme-light .debug-section h4 {
     background-color: var(--sidebar-header-bg, #eef2f7);
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .variables-panel,
-body[data-editor-theme*="light" i] .variables-panel,
+body[data-theme*='light' i] .variables-panel,
+body[data-editor-theme*='light' i] .variables-panel,
 body.theme-light .variables-panel {
     background-color: transparent;
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .category-header,
-body[data-editor-theme*="light" i] .category-header,
+body[data-theme*='light' i] .category-header,
+body[data-editor-theme*='light' i] .category-header,
 body.theme-light .category-header {
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .variable-item,
-body[data-editor-theme*="light" i] .variable-item,
+body[data-theme*='light' i] .variable-item,
+body[data-editor-theme*='light' i] .variable-item,
 body.theme-light .variable-item {
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .variable-children,
-body[data-editor-theme*="light" i] .variable-children,
+body[data-theme*='light' i] .variable-children,
+body[data-editor-theme*='light' i] .variable-children,
 body.theme-light .variable-children {
     border-left-color: var(--border-color, #d1d5da);
 }
 
-body[data-theme*="light" i] .debug-content,
-body[data-editor-theme*="light" i] .debug-content,
+body[data-theme*='light' i] .debug-content,
+body[data-editor-theme*='light' i] .debug-content,
 body.theme-light .debug-content {
     background-color: var(--sidebar-bg, #f8f9fb);
     color: var(--text-color, #1f2328);
 }
 
-body[data-theme*="light" i] .add-watch-btn,
-body[data-editor-theme*="light" i] .add-watch-btn,
+body[data-theme*='light' i] .add-watch-btn,
+body[data-editor-theme*='light' i] .add-watch-btn,
 body.theme-light .add-watch-btn {
     border-color: var(--border-color, #d1d5da);
     color: var(--text-secondary, #4f5660);
     background-color: #fff;
 }
 
-body[data-theme*="light" i] .add-watch-btn:hover,
-body[data-editor-theme*="light" i] .add-watch-btn:hover,
+body[data-theme*='light' i] .add-watch-btn:hover,
+body[data-editor-theme*='light' i] .add-watch-btn:hover,
 body.theme-light .add-watch-btn:hover {
     background-color: var(--hover-bg, #e6ebf2);
     color: var(--text-color, #111);
@@ -954,11 +958,11 @@ body.theme-light .add-watch-btn:hover {
     .debug-sidebar {
         width: 250px;
     }
-    
+
     .debug-controls {
         flex-wrap: wrap;
     }
-    
+
     .debug-btn {
         font-size: 11px;
         padding: 3px 6px;

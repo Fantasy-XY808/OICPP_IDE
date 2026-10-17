@@ -18,7 +18,7 @@ function formatDateTimeInTimeZone(date, timeZone) {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            hour12: false
+            hour12: false,
         });
 
         const parts = dtf.formatToParts(d);
@@ -31,27 +31,26 @@ function formatDateTimeInTimeZone(date, timeZone) {
         if (map.year && map.month && map.day && map.hour && map.minute && map.second) {
             return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second}`;
         }
-    } catch (_) {
+    } catch (error) {
+        if (!(error instanceof RangeError)) {
+            throw error;
+        }
     }
 
     // Fallback: assume UTC and shift to UTC+8 (Asia/Shanghai)
     const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
     const shanghai = new Date(utcMs + 8 * 60 * 60000);
-    return [
-        shanghai.getFullYear(),
-        pad2(shanghai.getMonth() + 1),
-        pad2(shanghai.getDate())
-    ].join('-') + ' ' + [
-        pad2(shanghai.getHours()),
-        pad2(shanghai.getMinutes()),
-        pad2(shanghai.getSeconds())
-    ].join(':');
+    return (
+        [shanghai.getFullYear(), pad2(shanghai.getMonth() + 1), pad2(shanghai.getDate())].join('-') +
+        ' ' +
+        [pad2(shanghai.getHours()), pad2(shanghai.getMinutes()), pad2(shanghai.getSeconds())].join(':')
+    );
 }
 
 const buildInfo = {
     version: packageJson.version,
     buildTime: formatDateTimeInTimeZone(new Date(), 'Asia/Shanghai'),
-    author: packageJson.author.name
+    author: packageJson.author.name,
 };
 
 const outputPath = path.join(__dirname, '../src/build-info.json');
@@ -59,4 +58,3 @@ fs.writeFileSync(outputPath, JSON.stringify(buildInfo, null, 2), 'utf8');
 
 console.log(`version: ${buildInfo.version}`);
 console.log(`buildTime: ${buildInfo.buildTime}`);
-

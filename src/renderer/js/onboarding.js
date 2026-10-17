@@ -1,7 +1,4 @@
-import {
-    BackgroundRender,
-    MeshGradientRenderer
-} from '@applemusic-like-lyrics/core';
+import { BackgroundRender, MeshGradientRenderer } from '@applemusic-like-lyrics/core';
 
 class OnboardingManager {
     constructor() {
@@ -13,6 +10,7 @@ class OnboardingManager {
         this.bound = false;
         this.previewTimer = null;
         this.background = null;
+        this.backgroundElement = null;
     }
 
     async initialize() {
@@ -34,6 +32,12 @@ class OnboardingManager {
         document.getElementById('onboarding-use-tabs').checked = this.settings.formatterIndentStyle !== 'spaces';
         document.getElementById('onboarding-format-on-save').checked = this.settings.formatOnSave !== false;
         document.getElementById('onboarding-glass-effect').checked = this.settings.glassEffectEnabled !== false;
+        document.getElementById('onboarding-auto-save').checked = this.settings.autoSave !== false;
+        document.getElementById('onboarding-auto-completion').checked = this.settings.enableAutoCompletion !== false;
+        document.getElementById('onboarding-word-wrap').checked = this.settings.wordWrap === true;
+        document.getElementById('onboarding-font-size').value = String(this.settings.fontSize || 14);
+        document.getElementById('onboarding-tab-size').value = String(this.settings.tabSize || 4);
+        this.updateFontSizeLabel();
         const opacityInput = document.getElementById('onboarding-opacity');
         opacityInput.value = String(Math.max(0, Math.min(0.8, 1 - (this.settings.windowOpacity ?? 0.95))));
         this.updateOpacityLabel();
@@ -63,11 +67,14 @@ class OnboardingManager {
             throw new Error('初始化背景容器不存在');
         }
 
-        const colors = Array.from({ length: 5 }, (_, index) => {
-            const hue = (Math.floor(Math.random() * 360) + index * 67) % 360;
-            return `hsl(${hue} 84% ${48 + Math.floor(Math.random() * 18)}%)`;
-        });
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">${colors.map((color, index) => `<stop offset="${index / (colors.length - 1)}" stop-color="${color}"/>`).join('')}</linearGradient></defs><rect width="800" height="600" fill="url(#g)"/></svg>`;
+        const baseHue = Math.floor(Math.random() * 360);
+        const colors = [
+            `hsl(${baseHue} 92% 50%)`,
+            `hsl(${(baseHue + 92) % 360} 92% 52%)`,
+            `hsl(${(baseHue + 188) % 360} 90% 48%)`,
+            `hsl(${(baseHue + 276) % 360} 94% 54%)`,
+        ];
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700"><rect width="100%" height="100%" fill="${colors[0]}"/><path d="M0 0H1000V165C830 245 702 227 550 177C362 114 190 146 0 244Z" fill="${colors[1]}"/><path d="M0 244C190 146 362 114 550 177C702 227 830 245 1000 165V470C822 390 685 412 509 485C310 568 159 548 0 474Z" fill="${colors[2]}"/><path d="M0 474C159 548 310 568 509 485C685 412 822 390 1000 470V700H0Z" fill="${colors[3]}"/></svg>`;
         const album = new Image();
         album.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
         await album.decode();
@@ -78,17 +85,18 @@ class OnboardingManager {
         element.style.height = '100%';
         element.style.display = 'block';
         backgroundRoot.appendChild(element);
+        this.backgroundElement = element;
 
         renderer.setFPS(30);
-        renderer.setRenderScale(0.5);
+        renderer.setRenderScale(0.65);
         renderer.setHasLyric(false);
-        renderer.setFlowSpeed(0.7);
+        renderer.setFlowSpeed(4);
         renderer.setStaticMode(false);
-        renderer.resume();
         this.background = renderer;
 
         try {
             await renderer.setAlbum(album, false);
+            renderer.resume();
         } catch (error) {
             this.disposeBackground();
             throw error;
@@ -99,7 +107,8 @@ class OnboardingManager {
         if (!this.background) return;
         this.background.pause();
         this.background.dispose();
-        this.background.getElement().remove();
+        this.backgroundElement?.remove();
+        this.backgroundElement = null;
         this.background = null;
     }
 
@@ -118,14 +127,28 @@ class OnboardingManager {
         document.querySelectorAll('[data-theme-choice]').forEach((button) => {
             button.addEventListener('click', () => this.selectTheme(button.dataset.themeChoice));
         });
-        ['onboarding-use-tabs', 'onboarding-format-on-save', 'onboarding-glass-effect'].forEach((id) => {
+        [
+            'onboarding-use-tabs',
+            'onboarding-format-on-save',
+            'onboarding-glass-effect',
+            'onboarding-auto-save',
+            'onboarding-auto-completion',
+            'onboarding-word-wrap',
+            'onboarding-font-size',
+            'onboarding-tab-size',
+        ].forEach((id) => {
             document.getElementById(id).addEventListener('change', () => this.schedulePreview());
+        });
+        document.getElementById('onboarding-font-size').addEventListener('input', () => {
+            this.updateFontSizeLabel();
+            this.schedulePreview();
         });
         this.overlay.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') event.preventDefault();
             if (event.key !== 'Tab') return;
-            const focusable = Array.from(this.overlay.querySelectorAll('button:not(:disabled), select, input'))
-                .filter((element) => !element.closest('[hidden]'));
+            const focusable = Array.from(this.overlay.querySelectorAll('button:not(:disabled), select, input')).filter(
+                (element) => !element.closest('[hidden]')
+            );
             if (!focusable.length) return;
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
@@ -151,20 +174,26 @@ class OnboardingManager {
     }
 
     showStep(step) {
-        this.currentStep = Math.max(0, Math.min(2, step));
+        this.currentStep = Math.max(0, Math.min(3, step));
         this.overlay.querySelectorAll('[data-onboarding-step]').forEach((panel) => {
             panel.hidden = Number(panel.dataset.onboardingStep) !== this.currentStep;
         });
         this.overlay.querySelectorAll('.onboarding-progress-segment').forEach((segment, index) => {
             segment.classList.toggle('is-active', index <= this.currentStep);
         });
-        document.getElementById('onboarding-step-count').textContent = `${this.currentStep + 1} / 3`;
+        document.getElementById('onboarding-step-count').textContent = `${this.currentStep + 1} / 4`;
         document.getElementById('onboarding-back').hidden = this.currentStep === 0;
 
         const nextButton = document.getElementById('onboarding-next');
-        const key = this.currentStep === 0 ? 'onboarding.start' : this.currentStep === 2 ? 'onboarding.finish' : 'onboarding.next';
+        const key =
+            this.currentStep === 0
+                ? 'onboarding.start'
+                : this.currentStep === 3
+                  ? 'onboarding.finish'
+                  : 'onboarding.next';
         nextButton.dataset.i18n = key;
-        nextButton.textContent = window.i18n?.t(key) || (this.currentStep === 2 ? '开始使用' : this.currentStep === 0 ? '开始设置' : '继续');
+        nextButton.textContent =
+            window.i18n?.t(key) || (this.currentStep === 3 ? '开始使用' : this.currentStep === 0 ? '开始设置' : '继续');
         document.getElementById('onboarding-error').hidden = true;
         this.overlay.querySelector(`[data-onboarding-step="${this.currentStep}"]`)?.classList.remove('is-entering');
         requestAnimationFrame(() => {
@@ -172,11 +201,12 @@ class OnboardingManager {
         });
         if (this.currentStep === 1) document.getElementById('onboarding-language').focus();
         if (this.currentStep === 2) document.getElementById('onboarding-use-tabs').focus();
+        if (this.currentStep === 3) document.getElementById('onboarding-font-size').focus();
     }
 
     next() {
         if (this.isSaving) return;
-        if (this.currentStep < 2) {
+        if (this.currentStep < 3) {
             this.showStep(this.currentStep + 1);
             return;
         }
@@ -188,6 +218,11 @@ class OnboardingManager {
         document.getElementById('onboarding-opacity-value').textContent = `${Math.round(value * 100)}%`;
     }
 
+    updateFontSizeLabel() {
+        document.getElementById('onboarding-font-size-value').textContent =
+            `${document.getElementById('onboarding-font-size').value}px`;
+    }
+
     readPreferences() {
         const useTabs = document.getElementById('onboarding-use-tabs').checked;
         return {
@@ -196,12 +231,19 @@ class OnboardingManager {
             formatterIndentStyle: useTabs ? 'tabs' : 'spaces',
             clangFormatStyle: {
                 ...(this.settings.clangFormatStyle || {}),
-                UseTab: useTabs ? 'Always' : 'Never'
+                UseTab: useTabs ? 'Always' : 'Never',
+                TabWidth: Number(document.getElementById('onboarding-tab-size').value),
+                IndentWidth: Number(document.getElementById('onboarding-tab-size').value),
             },
             clangFormatRaw: '',
             formatOnSave: document.getElementById('onboarding-format-on-save').checked,
             glassEffectEnabled: document.getElementById('onboarding-glass-effect').checked,
-            windowOpacity: 1 - Number(document.getElementById('onboarding-opacity').value)
+            autoSave: document.getElementById('onboarding-auto-save').checked,
+            enableAutoCompletion: document.getElementById('onboarding-auto-completion').checked,
+            wordWrap: document.getElementById('onboarding-word-wrap').checked,
+            fontSize: Number(document.getElementById('onboarding-font-size').value),
+            tabSize: Number(document.getElementById('onboarding-tab-size').value),
+            windowOpacity: 1 - Number(document.getElementById('onboarding-opacity').value),
         };
     }
 
@@ -236,7 +278,7 @@ class OnboardingManager {
             const preferences = this.readPreferences();
             const result = await window.electronAPI.updateSettings({
                 ...preferences,
-                onboardingCompleted: true
+                onboardingCompleted: true,
             });
             if (!result || result.success !== true) {
                 throw new Error(result?.error || 'Settings could not be saved');
@@ -246,13 +288,24 @@ class OnboardingManager {
             window.oicppApp?.applySettings?.(null, this.settings);
             document.dispatchEvent(new CustomEvent('settings-applied', { detail: this.settings }));
             this.overlay.classList.add('is-closing');
-            window.setTimeout(() => {
+            let closeTimer;
+            const finishClosing = () => {
+                if (!this.overlay || this.overlay.hidden) return;
+                clearTimeout(closeTimer);
+                this.overlay.removeEventListener('transitionend', handleTransitionEnd);
                 this.disposeBackground();
                 this.overlay.hidden = true;
                 this.overlay.setAttribute('aria-hidden', 'true');
                 this.overlay.classList.remove('is-closing');
                 document.body.classList.remove('onboarding-active');
-            }, 260);
+            };
+            const handleTransitionEnd = (event) => {
+                if (event.target === this.overlay && event.propertyName === 'opacity') {
+                    finishClosing();
+                }
+            };
+            this.overlay.addEventListener('transitionend', handleTransitionEnd);
+            closeTimer = window.setTimeout(finishClosing, 900);
         } catch (error) {
             this.showError(error);
             this.isSaving = false;

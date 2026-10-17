@@ -1,53 +1,53 @@
 name: Build .deb to test
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  build-deb-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    build-deb-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+            - name: Install dependencies
+              run: npm install
 
-      - name: Verify node-pty linux binary
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const pkg = path.dirname(require.resolve('node-pty/package.json'));
-          const candidates = [
-            path.join(pkg, 'prebuilds', `linux-${process.arch}`, 'pty.node'),
-            path.join(pkg, 'build', 'Release', 'pty.node'),
-            path.join(pkg, 'build', 'Debug', 'pty.node')
-          ];
-          console.log('node-pty path:', pkg);
-          console.log('check candidates:', candidates);
-          if (!candidates.some((file) => fs.existsSync(file))) {
-            throw new Error('node-pty linux native binary missing; terminal will be unavailable in Linux package.');
-          }
-          NODE
+            - name: Verify node-pty linux binary
+              run: |
+                  node - <<'NODE'
+                  const fs = require('fs');
+                  const path = require('path');
+                  const pkg = path.dirname(require.resolve('node-pty/package.json'));
+                  const candidates = [
+                    path.join(pkg, 'prebuilds', `linux-${process.arch}`, 'pty.node'),
+                    path.join(pkg, 'build', 'Release', 'pty.node'),
+                    path.join(pkg, 'build', 'Debug', 'pty.node')
+                  ];
+                  console.log('node-pty path:', pkg);
+                  console.log('check candidates:', candidates);
+                  if (!candidates.some((file) => fs.existsSync(file))) {
+                    throw new Error('node-pty linux native binary missing; terminal will be unavailable in Linux package.');
+                  }
+                  NODE
 
-      - name: Build Linux packages
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build -- --linux deb
+            - name: Build Linux packages
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: npm run build -- --linux deb
 
-      - name: Upload .deb artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deb-test-artifacts
-          path: dist/*.deb
-          if-no-files-found: error
+            - name: Upload .deb artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deb-test-artifacts
+                  path: dist/*.deb
+                  if-no-files-found: error

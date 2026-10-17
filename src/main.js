@@ -102,11 +102,15 @@ function getWindowsAnsiEncodingName() {
     }
 
     try {
-        const result = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-Command', '[System.Text.Encoding]::Default.CodePage'], {
-            encoding: 'utf8',
-            timeout: 2000,
-            windowsHide: true
-        });
+        const result = spawnSync(
+            'powershell.exe',
+            ['-NoLogo', '-NoProfile', '-Command', '[System.Text.Encoding]::Default.CodePage'],
+            {
+                encoding: 'utf8',
+                timeout: 2000,
+                windowsHide: true,
+            }
+        );
         const codePage = parseInt(String(result.stdout || '').trim(), 10);
         cachedWindowsAnsiCodePage = Number.isFinite(codePage) ? codePage : null;
     } catch (_) {
@@ -275,7 +279,7 @@ function collectStdCxxIncludeDirs(compilerPath) {
         );
     }
 
-    const result = []; 
+    const result = [];
     const seen = new Set();
 
     const pushIfValid = (dir) => {
@@ -316,7 +320,7 @@ function collectStdCxxIncludeDirs(compilerPath) {
                 }
                 queue.push({
                     dir: path.join(current.dir, entry.name),
-                    depth: current.depth + 1
+                    depth: current.depth + 1,
                 });
             }
         }
@@ -348,11 +352,13 @@ function queryCompilerHeaderIncludeDir(compilerPath, headerName = 'bits/stdc++.h
 
         const proc = spawn(compilerPath, args, {
             stdio: ['ignore', 'pipe', 'pipe'],
-            windowsHide: true
+            windowsHide: true,
         });
 
         const timer = setTimeout(() => {
-            try { proc.kill(); } catch (_) {}
+            try {
+                proc.kill();
+            } catch (_) {}
         }, 8000);
 
         proc.stdout.on('data', (data) => {
@@ -404,7 +410,9 @@ function searchCompilerTreeForStdCxxIncludeDir(compilerPath, headerName = 'bits/
 
     const compilerDir = path.dirname(compilerPath);
     const compilerRoot = path.dirname(compilerDir);
-    const searchRoots = [compilerRoot, compilerDir].filter((root, index, array) => root && array.indexOf(root) === index);
+    const searchRoots = [compilerRoot, compilerDir].filter(
+        (root, index, array) => root && array.indexOf(root) === index
+    );
 
     const pushIfValid = (dir) => {
         if (!dir) return;
@@ -447,7 +455,7 @@ function searchCompilerTreeForStdCxxIncludeDir(compilerPath, headerName = 'bits/
                 }
                 queue.push({
                     dir: path.join(current.dir, entry.name),
-                    depth: current.depth + 1
+                    depth: current.depth + 1,
                 });
             }
         }
@@ -514,7 +522,7 @@ function queryCompilerInfo(compilerPath, extraArgs = []) {
 
         const runtimeBinPaths = getCompilerRuntimeBinPaths(compilerPath);
         const compilerEnv = {
-            ...process.env
+            ...process.env,
         };
         if (runtimeBinPaths.length > 0) {
             compilerEnv.PATH = [...runtimeBinPaths, process.env.PATH || ''].join(path.delimiter);
@@ -527,12 +535,14 @@ function queryCompilerInfo(compilerPath, extraArgs = []) {
         const proc = spawn(compilerPath, args, {
             stdio: ['pipe', 'pipe', 'pipe'],
             env: compilerEnv,
-            windowsHide: true
+            windowsHide: true,
         });
 
         const timer = setTimeout(() => {
             timedOut = true;
-            try { proc.kill(); } catch (_) {}
+            try {
+                proc.kill();
+            } catch (_) {}
         }, 10000);
 
         proc.stderr.on('data', (data) => {
@@ -642,7 +652,7 @@ class ClangdLspManager {
             '--background-index',
             '--completion-style=detailed',
             '--header-insertion=iwyu',
-            '--pch-storage=memory'
+            '--pch-storage=memory',
         ];
         const compilerPath = options.compilerPath || '';
         if (compilerPath && typeof compilerPath === 'string' && fs.existsSync(compilerPath)) {
@@ -670,7 +680,7 @@ class ClangdLspManager {
                 }
 
                 if (compilerInfo.target && compilerInfo.target !== 'x86_64-pc-windows-msvc') {
-                    const hasTarget = fallbackFlags.some(f => f.startsWith('--target='));
+                    const hasTarget = fallbackFlags.some((f) => f.startsWith('--target='));
                     if (!hasTarget) {
                         fallbackFlags.unshift('--target=' + compilerInfo.target);
                         logInfo('[LSP] 设置 target triple:', compilerInfo.target);
@@ -689,13 +699,14 @@ class ClangdLspManager {
                 if (!compilerIncludes) {
                     const probedStdCxxIncludeDir = await queryCompilerHeaderIncludeDir(compilerPath, 'bits/stdc++.h');
                     const stdCxxIncludeDirs = collectStdCxxIncludeDirs(compilerPath);
-                    const searchedStdCxxIncludeDirs = stdCxxIncludeDirs.length > 0
-                        ? []
-                        : searchCompilerTreeForStdCxxIncludeDir(compilerPath, 'bits/stdc++.h');
+                    const searchedStdCxxIncludeDirs =
+                        stdCxxIncludeDirs.length > 0
+                            ? []
+                            : searchCompilerTreeForStdCxxIncludeDir(compilerPath, 'bits/stdc++.h');
                     compilerIncludes = {
                         probedStdCxxIncludeDir,
                         stdCxxIncludeDirs,
-                        searchedStdCxxIncludeDirs
+                        searchedStdCxxIncludeDirs,
                     };
                     compilerIncludeCache.set(compilerCacheKey, compilerIncludes);
                 }
@@ -720,7 +731,10 @@ class ClangdLspManager {
                         for (const includeDir of searchedStdCxxIncludeDirs) {
                             addStdCxxIncludeBundle(fallbackFlags, includeDir);
                         }
-                        logInfo('[LSP] 已从编译器目录递归搜索到标准 C++ 头文件路径:', searchedStdCxxIncludeDirs.join('; '));
+                        logInfo(
+                            '[LSP] 已从编译器目录递归搜索到标准 C++ 头文件路径:',
+                            searchedStdCxxIncludeDirs.join('; ')
+                        );
                     }
                 }
             } catch (err) {
@@ -742,11 +756,17 @@ class ClangdLspManager {
         this.proc = proc;
         proc.stdout.on('data', (data) => this._handleData(data));
         proc.stderr.on('data', (data) => {
-            try { logWarn('[clangd]', data.toString('utf8').trim()); } catch (_) {}
+            try {
+                logWarn('[clangd]', data.toString('utf8').trim());
+            } catch (_) {}
         });
         proc.on('exit', (code, signal) => {
             if (generation !== this.procGeneration) {
-                logInfo('[LSP] clangd 进程已退出, 但已被新的进程替换, code=' + (code ?? 'null') + (signal ? ', signal=' + signal : ''));
+                logInfo(
+                    '[LSP] clangd 进程已退出, 但已被新的进程替换, code=' +
+                        (code ?? 'null') +
+                        (signal ? ', signal=' + signal : '')
+                );
                 return;
             }
             logInfo('[LSP] clangd 进程已退出, code=' + (code ?? 'null') + (signal ? ', signal=' + signal : ''));
@@ -754,7 +774,9 @@ class ClangdLspManager {
             this.buffer = Buffer.alloc(0);
             const err = new Error(`clangd exited (${code || '0'})${signal ? ` signal=${signal}` : ''}`);
             this.pending.forEach((entry) => {
-                try { entry.reject(err); } catch (_) {}
+                try {
+                    entry.reject(err);
+                } catch (_) {}
             });
             this.pending.clear();
         });
@@ -775,7 +797,9 @@ class ClangdLspManager {
         this.proc = null;
         this.buffer = Buffer.alloc(0);
         this.pending.forEach((entry) => {
-            try { entry.reject(new Error('clangd stopped')); } catch (_) {}
+            try {
+                entry.reject(new Error('clangd stopped'));
+            } catch (_) {}
         });
         this.pending.clear();
 
@@ -855,7 +879,11 @@ class ClangdLspManager {
             const body = this.buffer.slice(messageStart, messageEnd).toString('utf8');
             this.buffer = this.buffer.slice(messageEnd);
             let payload = null;
-            try { payload = JSON.parse(body); } catch (_) { continue; }
+            try {
+                payload = JSON.parse(body);
+            } catch (_) {
+                continue;
+            }
             this._dispatchMessage(payload);
         }
     }
@@ -867,7 +895,10 @@ class ClangdLspManager {
             if (!entry) return;
             this.pending.delete(message.id);
             if (message.error) {
-                logWarn('[LSP] 请求失败, id=' + message.id + ', 方法=' + (entry.method || '?'), message.error?.message || JSON.stringify(message.error));
+                logWarn(
+                    '[LSP] 请求失败, id=' + message.id + ', 方法=' + (entry.method || '?'),
+                    message.error?.message || JSON.stringify(message.error)
+                );
                 entry.reject(new Error(message.error.message || 'clangd error'));
             } else {
                 entry.resolve(message.result);
@@ -878,14 +909,17 @@ class ClangdLspManager {
             if (message.method === 'textDocument/publishDiagnostics') {
                 const diagCount = message.params?.diagnostics?.length || 0;
                 if (diagCount > 0) {
-                    const uri = (message.params?.uri || '').replace(/^file:\/\//, '').split('/').pop();
+                    const uri = (message.params?.uri || '')
+                        .replace(/^file:\/\//, '')
+                        .split('/')
+                        .pop();
                     logInfo('[LSP] 收到诊断: ' + diagCount + ' 条, 文件: ' + uri);
                 }
             }
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('lsp-notification', {
                     method: message.method,
-                    params: message.params || null
+                    params: message.params || null,
                 });
             }
         }
@@ -904,8 +938,8 @@ const terminalManager = new IntegratedTerminalManager({
         }
         try {
             mainWindow.webContents.send(channel, payload);
-        } catch (_) { }
-    }
+        } catch (_) {}
+    },
 });
 
 const LUOGU_BASE = 'https://www.luogu.com.cn';
@@ -919,7 +953,9 @@ let closeRequestInProgressTimer = null;
 function armAllowMainWindowClose(timeoutMs = 15000) {
     allowMainWindowClose = true;
     if (allowMainWindowCloseTimer) {
-        try { clearTimeout(allowMainWindowCloseTimer); } catch (_) { }
+        try {
+            clearTimeout(allowMainWindowCloseTimer);
+        } catch (_) {}
     }
     allowMainWindowCloseTimer = setTimeout(() => {
         allowMainWindowClose = false;
@@ -931,11 +967,15 @@ function resetCloseGuards() {
     allowMainWindowClose = false;
     closeRequestInProgress = false;
     if (allowMainWindowCloseTimer) {
-        try { clearTimeout(allowMainWindowCloseTimer); } catch (_) { }
+        try {
+            clearTimeout(allowMainWindowCloseTimer);
+        } catch (_) {}
         allowMainWindowCloseTimer = null;
     }
     if (closeRequestInProgressTimer) {
-        try { clearTimeout(closeRequestInProgressTimer); } catch (_) { }
+        try {
+            clearTimeout(closeRequestInProgressTimer);
+        } catch (_) {}
         closeRequestInProgressTimer = null;
     }
 }
@@ -945,7 +985,9 @@ function requestRendererCloseConfirmation(context = '关闭窗口') {
     if (closeRequestInProgress) return;
     closeRequestInProgress = true;
     if (closeRequestInProgressTimer) {
-        try { clearTimeout(closeRequestInProgressTimer); } catch (_) { }
+        try {
+            clearTimeout(closeRequestInProgressTimer);
+        } catch (_) {}
     }
     closeRequestInProgressTimer = setTimeout(() => {
         closeRequestInProgress = false;
@@ -955,20 +997,26 @@ function requestRendererCloseConfirmation(context = '关闭窗口') {
     try {
         mainWindow.webContents.send('app-close-requested', { context });
     } catch (e) {
-        try { logWarn(`[${context}] 无法通知渲染进程弹出关闭确认:`, e?.message || String(e)); } catch (_) { }
+        try {
+            logWarn(`[${context}] 无法通知渲染进程弹出关闭确认:`, e?.message || String(e));
+        } catch (_) {}
         closeRequestInProgress = false;
     }
 }
 
 function broadcastIdeLoginState(payload) {
     if (mainWindow && !mainWindow.isDestroyed()) {
-        try { mainWindow.webContents.send('ide-login-updated', payload); } catch (_) { }
+        try {
+            mainWindow.webContents.send('ide-login-updated', payload);
+        } catch (_) {}
     }
 }
 
 function broadcastIdeLoginError(message) {
     if (mainWindow && !mainWindow.isDestroyed()) {
-        try { mainWindow.webContents.send('ide-login-error', { message }); } catch (_) { }
+        try {
+            mainWindow.webContents.send('ide-login-error', { message });
+        } catch (_) {}
     }
 }
 
@@ -984,8 +1032,8 @@ function startIdeLoginFlow() {
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                partition: 'persist:luogu_login'
-            }
+                partition: 'persist:luogu_login',
+            },
         });
 
         loginWindow.loadURL('https://www.luogu.com.cn/auth/login');
@@ -1001,9 +1049,9 @@ function startIdeLoginFlow() {
 
             try {
                 const cookies = await session.fromPartition('persist:luogu_login').cookies.get({
-                    domain: 'luogu.com.cn'
+                    domain: 'luogu.com.cn',
                 });
-                logInfo('[洛谷登录] Cookie 数量:', cookies.length, '名称:', cookies.map(c => c.name).join(', '));
+                logInfo('[洛谷登录] Cookie 数量:', cookies.length, '名称:', cookies.map((c) => c.name).join(', '));
 
                 let csrfToken = null;
                 try {
@@ -1014,15 +1062,15 @@ function startIdeLoginFlow() {
                     // enough to be a usable credential fragment, and this lands
                     // in ~/.oicpp/logs/ unredacted.
                     if (csrfToken) logInfo('[洛谷登录] 已获取 CSRF Token，长度:', String(csrfToken).length);
-                } catch (_) { }
+                } catch (_) {}
 
-                const cookieStr = cookies.map(c => c.name + '=' + c.value).join('; ');
+                const cookieStr = cookies.map((c) => c.name + '=' + c.value).join('; ');
 
                 settings.account = {
                     user: user,
                     loginToken: cookieStr,
                     csrfToken: csrfToken || '',
-                    loggedInAt: Date.now()
+                    loggedInAt: Date.now(),
                 };
                 saveSettings();
 
@@ -1031,12 +1079,18 @@ function startIdeLoginFlow() {
                 broadcastIdeLoginState({ loggedIn: true, user: user, message: '登录成功' });
                 resolve({ ok: true });
 
-                setTimeout(() => { try { win.close(); } catch (_) { } }, 800);
+                setTimeout(() => {
+                    try {
+                        win.close();
+                    } catch (_) {}
+                }, 800);
             } catch (err) {
                 logError('[洛谷登录] finishLogin 异常:', err?.message || err);
                 broadcastIdeLoginError('登录流程异常');
                 resolve({ ok: false, message: '登录流程异常' });
-                try { win.close(); } catch (_) { }
+                try {
+                    win.close();
+                } catch (_) {}
             }
         };
 
@@ -1044,7 +1098,9 @@ function startIdeLoginFlow() {
             if (!resolved) {
                 resolved = true;
                 logWarn('[洛谷登录] 超时 (5分钟)');
-                try { loginWindow.close(); } catch (_) { }
+                try {
+                    loginWindow.close();
+                } catch (_) {}
                 broadcastIdeLoginError('登录超时，请重试');
                 resolve({ ok: false, message: '登录超时' });
             }
@@ -1066,7 +1122,12 @@ function startIdeLoginFlow() {
                 `);
 
                 if (lcJson?.user?.uid) {
-                    logInfo('[洛谷登录] 从 lentille-context 提取到用户: uid=' + lcJson.user.uid + ' name=' + (lcJson.user.name || '?'));
+                    logInfo(
+                        '[洛谷登录] 从 lentille-context 提取到用户: uid=' +
+                            lcJson.user.uid +
+                            ' name=' +
+                            (lcJson.user.name || '?')
+                    );
                     await finishLogin(win, lcJson.user);
                     return;
                 }
@@ -1079,9 +1140,7 @@ function startIdeLoginFlow() {
                 }
 
                 // 方法3：_feInjection 旧版兜底
-                const feStr = await win.webContents.executeJavaScript(
-                    'JSON.stringify(window._feInjection || null)'
-                );
+                const feStr = await win.webContents.executeJavaScript('JSON.stringify(window._feInjection || null)');
                 if (feStr && feStr !== 'null' && feStr.length > 50) {
                     const fe = JSON.parse(feStr);
                     const user = fe?.currentData?.user || fe?.currentData?.currentUser || fe?.currentUser || fe?.user;
@@ -1093,7 +1152,9 @@ function startIdeLoginFlow() {
                 }
 
                 if (verbose) {
-                    logInfo('[洛谷登录] 第 ' + autoCheckCount + ' 次: lentille=' + (!!lcJson) + ' user=' + (!!lcJson?.user?.uid));
+                    logInfo(
+                        '[洛谷登录] 第 ' + autoCheckCount + ' 次: lentille=' + !!lcJson + ' user=' + !!lcJson?.user?.uid
+                    );
                 }
             } catch (err) {
                 if (verbose) logWarn('[洛谷登录] 提取异常:', err?.message || err);
@@ -1102,9 +1163,7 @@ function startIdeLoginFlow() {
 
         loginWindow.webContents.on('did-navigate', async (event, url) => {
             logInfo('[洛谷登录] 导航事件 →', url);
-            if (url.includes('luogu.com.cn') &&
-                !url.includes('/auth/login') &&
-                !url.includes('/auth/register')) {
+            if (url.includes('luogu.com.cn') && !url.includes('/auth/login') && !url.includes('/auth/register')) {
                 setTimeout(() => tryExtractUser(loginWindow), 1500);
             }
         });
@@ -1112,16 +1171,17 @@ function startIdeLoginFlow() {
         loginWindow.webContents.on('did-finish-load', async () => {
             const url = loginWindow.webContents.getURL();
             logInfo('[洛谷登录] 页面加载完成:', url);
-            if (url.includes('luogu.com.cn') &&
-                !url.includes('/auth/login') &&
-                !url.includes('/auth/register')) {
+            if (url.includes('luogu.com.cn') && !url.includes('/auth/login') && !url.includes('/auth/register')) {
                 setTimeout(() => tryExtractUser(loginWindow), 1500);
             }
         });
 
         // 轮询兜底：每 2 秒检查一次 _feInjection（应对 AJAX 登录不触发导航的情况）
         const pollInterval = setInterval(() => {
-            if (resolved) { clearInterval(pollInterval); return; }
+            if (resolved) {
+                clearInterval(pollInterval);
+                return;
+            }
             tryExtractUser(loginWindow);
         }, 2000);
 
@@ -1142,15 +1202,31 @@ logger.init();
 logger.logInfo('OICPP IDE 启动');
 
 process.on('uncaughtException', (err) => {
-    try { logger.logerror('[uncaughtException]', err); } catch (_) { }
+    try {
+        logger.logerror('[uncaughtException]', err);
+    } catch (_) {}
 });
 process.on('unhandledRejection', (reason, p) => {
-    try { logger.logerror('[unhandledRejection]', { reason, promise: String(p) }); } catch (_) { }
+    try {
+        logger.logerror('[unhandledRejection]', { reason, promise: String(p) });
+    } catch (_) {}
 });
 
-global.logInfo = (...args) => { try { logger.logInfo(...args); } catch (_) { } };
-global.logwarn = (...args) => { try { logger.logwarn(...args); } catch (_) { } };
-global.logerror = (...args) => { try { logger.logerror(...args); } catch (_) { } };
+global.logInfo = (...args) => {
+    try {
+        logger.logInfo(...args);
+    } catch (_) {}
+};
+global.logwarn = (...args) => {
+    try {
+        logger.logwarn(...args);
+    } catch (_) {}
+};
+global.logerror = (...args) => {
+    try {
+        logger.logerror(...args);
+    } catch (_) {}
+};
 global.logWarn = global.logwarn;
 global.logError = global.logerror;
 
@@ -1165,13 +1241,12 @@ function validateFileName(name) {
     }
     const illegalCharsWin = /[<>:"/\\|?*]/;
     const illegalCharsUnix = /\//;
-    
+
     const illegalChars = process.platform === 'win32' ? illegalCharsWin : illegalCharsUnix;
-    
+
     if (illegalChars.test(trimmedName)) {
-        const platformMsg = process.platform === 'win32' 
-            ? '文件名不能包含以下字符: < > : " / \\ | ? *'
-            : '文件名不能包含字符: /';
+        const platformMsg =
+            process.platform === 'win32' ? '文件名不能包含以下字符: < > : " / \\ | ? *' : '文件名不能包含字符: /';
         return { valid: false, error: platformMsg };
     }
 
@@ -1205,7 +1280,9 @@ function normalizeWatchKey(filePath) {
         const key = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
         return { key, resolved };
     } catch (error) {
-        try { logger.logwarn('[FileWatch] 规范化路径失败', { filePath, error: error?.message || String(error) }); } catch (_) { }
+        try {
+            logger.logwarn('[FileWatch] 规范化路径失败', { filePath, error: error?.message || String(error) });
+        } catch (_) {}
         return null;
     }
 }
@@ -1239,7 +1316,7 @@ function writeUtf8FileIfChanged(filePath, content) {
         return {
             changed: false,
             fingerprint: nextFingerprint,
-            mtimeMs: null
+            mtimeMs: null,
         };
     }
 
@@ -1247,12 +1324,12 @@ function writeUtf8FileIfChanged(filePath, content) {
     let mtimeMs = null;
     try {
         mtimeMs = fs.statSync(filePath).mtimeMs;
-    } catch (_) { }
+    } catch (_) {}
 
     return {
         changed: true,
         fingerprint: nextFingerprint,
-        mtimeMs
+        mtimeMs,
     };
 }
 
@@ -1270,10 +1347,14 @@ function getSubscriberCount(entry) {
 function disposeWatcher(entry, key) {
     if (!entry) return;
     if (entry.eventTimer) {
-        try { clearTimeout(entry.eventTimer); } catch (_) { }
+        try {
+            clearTimeout(entry.eventTimer);
+        } catch (_) {}
         entry.eventTimer = null;
     }
-    try { entry.watcher?.close(); } catch (_) { }
+    try {
+        entry.watcher?.close();
+    } catch (_) {}
     if (key) {
         fileWatchRegistry.delete(key);
     }
@@ -1291,7 +1372,9 @@ function broadcastExternalChange(entry, payload) {
                 entry.subscribers.delete(contentsId);
             }
         } catch (error) {
-            try { logger.logwarn('[FileWatch] 推送变更失败', { contentsId, error: error?.message || String(error) }); } catch (_) { }
+            try {
+                logger.logwarn('[FileWatch] 推送变更失败', { contentsId, error: error?.message || String(error) });
+            } catch (_) {}
         }
     }
 }
@@ -1357,7 +1440,7 @@ async function handleWatcherEvent(key, eventType) {
         eventType,
         exists,
         mtimeMs,
-        timestamp: now
+        timestamp: now,
     };
 
     broadcastExternalChange(entry, payload);
@@ -1396,7 +1479,7 @@ function markLocalDeletion(filePath) {
         try {
             const relative = path.relative(normalized.resolved, entry.resolvedPath);
             isDeletedTarget = relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
-        } catch (_) { }
+        } catch (_) {}
 
         if (!isDeletedTarget) continue;
         previousStates.push({
@@ -1405,7 +1488,7 @@ function markLocalDeletion(filePath) {
             lastEventSignature: entry.lastEventSignature,
             lastKnownExists: entry.lastKnownExists,
             lastKnownFingerprint: entry.lastKnownFingerprint,
-            lastObservedMtime: entry.lastObservedMtime
+            lastObservedMtime: entry.lastObservedMtime,
         });
         entry.lastLocalSave = now;
         entry.lastEventSignature = null;
@@ -1433,7 +1516,7 @@ function scheduleWatcherEvent(key, eventType) {
 
     // A rename is more informative than a change event on Windows. Coalesce the
     // complete burst into one asynchronous filesystem read.
-    entry.pendingEventType = eventType === 'rename' ? 'rename' : (entry.pendingEventType || eventType);
+    entry.pendingEventType = eventType === 'rename' ? 'rename' : entry.pendingEventType || eventType;
     if (entry.eventTimer) return;
     entry.eventTimer = setTimeout(() => {
         const current = fileWatchRegistry.get(key);
@@ -1442,7 +1525,12 @@ function scheduleWatcherEvent(key, eventType) {
         current.pendingEventType = null;
         current.eventTimer = null;
         handleWatcherEvent(key, pendingEventType).catch((error) => {
-            try { logger.logwarn('[FileWatch] 异步事件处理失败', { filePath: current.resolvedPath, error: error?.message || String(error) }); } catch (_) { }
+            try {
+                logger.logwarn('[FileWatch] 异步事件处理失败', {
+                    filePath: current.resolvedPath,
+                    error: error?.message || String(error),
+                });
+            } catch (_) {}
         });
     }, FILE_WATCH_EVENT_DEBOUNCE_MS);
 }
@@ -1483,6 +1571,7 @@ function getDefaultSettings() {
 
     return {
         compilerPath: '',
+        wordWrap: false,
         pythonInterpreterPath: '',
         compilerArgs,
         runMode: normalizeRunModeForPlatform('integrated-terminal'),
@@ -1504,7 +1593,7 @@ function getDefaultSettings() {
             type: '#4ec9b0',
             function: '#dcdcaa',
             class: '#4ec9b0',
-            comment: '#6a9955'
+            comment: '#6a9955',
         },
         tabSize: 4,
         formatterIndentStyle: 'tabs',
@@ -1558,8 +1647,8 @@ function getDefaultSettings() {
             debugStepOut: 'Shift+F8',
             cloudCompile: 'F12',
             openTerminal: 'Ctrl+`',
-            runAllSamples: process.platform === 'darwin' ? 'Ctrl+Shift+F11' : 'Ctrl+F11'
-        }
+            runAllSamples: process.platform === 'darwin' ? 'Ctrl+Shift+F11' : 'Ctrl+F11',
+        },
     };
 }
 
@@ -1578,7 +1667,7 @@ function getDefaultClangFormatStyle() {
         SpaceBeforeParens: 'ControlStatements',
         SortIncludes: true,
         AlignConsecutiveAssignments: false,
-        AlignConsecutiveDeclarations: false
+        AlignConsecutiveDeclarations: false,
     };
 }
 
@@ -1609,23 +1698,58 @@ function normalizeClangFormatStyle(raw = null) {
         return matched || fallback;
     };
 
-    normalized.BasedOnStyle = toEnum(raw.BasedOnStyle, ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'], defaults.BasedOnStyle);
+    normalized.BasedOnStyle = toEnum(
+        raw.BasedOnStyle,
+        ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'],
+        defaults.BasedOnStyle
+    );
     normalized.IndentWidth = toInt(raw.IndentWidth, defaults.IndentWidth);
     normalized.TabWidth = toInt(raw.TabWidth, normalized.IndentWidth);
-    normalized.UseTab = toEnum(raw.UseTab, ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'], defaults.UseTab);
+    normalized.UseTab = toEnum(
+        raw.UseTab,
+        ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'],
+        defaults.UseTab
+    );
     normalized.ColumnLimit = toInt(raw.ColumnLimit, defaults.ColumnLimit);
-    normalized.BreakBeforeBraces = toEnum(raw.BreakBeforeBraces, ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'], defaults.BreakBeforeBraces);
-    normalized.AllowShortIfStatementsOnASingleLine = toEnum(raw.AllowShortIfStatementsOnASingleLine, ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'], defaults.AllowShortIfStatementsOnASingleLine);
-    normalized.AllowShortFunctionsOnASingleLine = toEnum(raw.AllowShortFunctionsOnASingleLine, ['None', 'Empty', 'Inline', 'All'], defaults.AllowShortFunctionsOnASingleLine);
+    normalized.BreakBeforeBraces = toEnum(
+        raw.BreakBeforeBraces,
+        ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'],
+        defaults.BreakBeforeBraces
+    );
+    normalized.AllowShortIfStatementsOnASingleLine = toEnum(
+        raw.AllowShortIfStatementsOnASingleLine,
+        ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'],
+        defaults.AllowShortIfStatementsOnASingleLine
+    );
+    normalized.AllowShortFunctionsOnASingleLine = toEnum(
+        raw.AllowShortFunctionsOnASingleLine,
+        ['None', 'Empty', 'Inline', 'All'],
+        defaults.AllowShortFunctionsOnASingleLine
+    );
     normalized.IndentCaseLabels = toBool(raw.IndentCaseLabels, defaults.IndentCaseLabels);
     normalized.PointerAlignment = toEnum(raw.PointerAlignment, ['Left', 'Right', 'Middle'], defaults.PointerAlignment);
-    normalized.SpaceBeforeParens = toEnum(raw.SpaceBeforeParens, ['Never', 'ControlStatements', 'Always', 'Custom'], defaults.SpaceBeforeParens);
+    normalized.SpaceBeforeParens = toEnum(
+        raw.SpaceBeforeParens,
+        ['Never', 'ControlStatements', 'Always', 'Custom'],
+        defaults.SpaceBeforeParens
+    );
     normalized.SortIncludes = toBool(raw.SortIncludes, defaults.SortIncludes);
-    normalized.AlignConsecutiveAssignments = toBool(raw.AlignConsecutiveAssignments, defaults.AlignConsecutiveAssignments);
-    normalized.AlignConsecutiveDeclarations = toBool(raw.AlignConsecutiveDeclarations, defaults.AlignConsecutiveDeclarations);
+    normalized.AlignConsecutiveAssignments = toBool(
+        raw.AlignConsecutiveAssignments,
+        defaults.AlignConsecutiveAssignments
+    );
+    normalized.AlignConsecutiveDeclarations = toBool(
+        raw.AlignConsecutiveDeclarations,
+        defaults.AlignConsecutiveDeclarations
+    );
 
-    if (Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') && !Object.prototype.hasOwnProperty.call(raw, 'UseTab')) {
-        const legacyStyle = String(raw.formatterIndentStyle || '').trim().toLowerCase();
+    if (
+        Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') &&
+        !Object.prototype.hasOwnProperty.call(raw, 'UseTab')
+    ) {
+        const legacyStyle = String(raw.formatterIndentStyle || '')
+            .trim()
+            .toLowerCase();
         if (legacyStyle === 'tabs') {
             normalized.UseTab = 'Always';
         } else if (legacyStyle === 'spaces') {
@@ -1657,7 +1781,7 @@ function normalizeSettingsRuntimeShape(nextSettings) {
             `SpaceBeforeParens: ${style.SpaceBeforeParens}`,
             `SortIncludes: ${style.SortIncludes ? 'true' : 'false'}`,
             `AlignConsecutiveAssignments: ${style.AlignConsecutiveAssignments ? 'true' : 'false'}`,
-            `AlignConsecutiveDeclarations: ${style.AlignConsecutiveDeclarations ? 'true' : 'false'}`
+            `AlignConsecutiveDeclarations: ${style.AlignConsecutiveDeclarations ? 'true' : 'false'}`,
         ].join('\n');
     }
     if (!nextSettings.formatterIndentStyle) {
@@ -1668,11 +1792,6 @@ function normalizeSettingsRuntimeShape(nextSettings) {
 
 let settings = getDefaultSettings();
 
-
-
-
-
-
 function notifyUser(title, body, level = 'info') {
     const safeTitle = String(title || 'OICPP IDE');
     const safeBody = String(body || '');
@@ -1680,46 +1799,28 @@ function notifyUser(title, body, level = 'info') {
         try {
             mainWindow.webContents.send('app-toast', {
                 type: level,
-                message: safeBody ? `${safeTitle}: ${safeBody}` : safeTitle
+                message: safeBody ? `${safeTitle}: ${safeBody}` : safeTitle,
             });
-        } catch (_) { }
+        } catch (_) {}
     }
 }
-
-
-function buildUpdateMenuLabel(state = getUpdateDownloadState()) {
-    if (state.pendingInstall) {
-        return '等待安装更新';
-    }
-    if (state.autoChecking) {
-        return '自动检查更新中...';
-    }
-    if (!state.downloading) {
-        return '检查更新';
-    }
-    const progressText = Number.isFinite(state.progress) ? `${Math.max(0, Math.min(100, Math.round(state.progress)))}%` : '0%';
-    return `下载更新中 ${progressText}`;
-}
-
-
-
-
 
 function normalizeCompilerArgsForPlatform(inputArgs, platform = process.platform) {
     const raw = typeof inputArgs === 'string' ? inputArgs : String(inputArgs || '');
     if (platform !== 'darwin') {
         return raw;
     }
-    return raw.replace(/\s-static\b/g, ' ').replace(/\s+/g, ' ').trim();
+    return raw
+        .replace(/\s-static\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function normalizeRunModeForPlatform(inputRunMode, platform = process.platform) {
     if (platform === 'darwin' || platform === 'linux') {
         return 'integrated-terminal';
     }
-    return String(inputRunMode || '').toLowerCase() === 'integrated-terminal'
-        ? 'integrated-terminal'
-        : 'popup';
+    return String(inputRunMode || '').toLowerCase() === 'integrated-terminal' ? 'integrated-terminal' : 'popup';
 }
 
 function resolveLinuxConsoleTerminalTemplate() {
@@ -1728,11 +1829,7 @@ function resolveLinuxConsoleTerminalTemplate() {
         return envTemplate;
     }
 
-    const settingsTemplate = String(
-        settings?.consoleTerminalTemplate
-        || settings?.debugConsoleTerminal
-        || ''
-    ).trim();
+    const settingsTemplate = String(settings?.consoleTerminalTemplate || settings?.debugConsoleTerminal || '').trim();
     if (settingsTemplate) {
         return settingsTemplate;
     }
@@ -1760,10 +1857,9 @@ if (!singleInstanceLock) {
 } else {
     app.on('second-instance', (_event, commandLine, workingDirectory) => {
         try {
-            const targets = extractOpenTargetsFromArgs(
-                Array.isArray(commandLine) ? commandLine.slice(1) : [],
-                { workingDirectory }
-            );
+            const targets = extractOpenTargetsFromArgs(Array.isArray(commandLine) ? commandLine.slice(1) : [], {
+                workingDirectory,
+            });
             if (targets.folders.length > 0) {
                 targets.folders.forEach(queueExternalFolderOpen);
             }
@@ -1794,16 +1890,22 @@ function broadcastCurrentVariablesSnapshot(targetEvent = null) {
         const payload = {
             local: snapshot.local || {},
             global: snapshot.global || {},
-            watches: snapshot.watches || {}
+            watches: snapshot.watches || {},
         };
         if (targetEvent && typeof targetEvent.reply === 'function') {
-            try { targetEvent.reply('debug-variables-updated', payload); } catch (_) { }
+            try {
+                targetEvent.reply('debug-variables-updated', payload);
+            } catch (_) {}
         }
         if (mainWindow && !mainWindow.isDestroyed()) {
-            try { mainWindow.webContents.send('debug-variables-updated', payload); } catch (_) { }
+            try {
+                mainWindow.webContents.send('debug-variables-updated', payload);
+            } catch (_) {}
         }
     } catch (err) {
-        try { logWarn('[主进程] 广播变量快照失败:', err?.message || err); } catch (_) { }
+        try {
+            logWarn('[主进程] 广播变量快照失败:', err?.message || err);
+        } catch (_) {}
     }
 }
 
@@ -1811,7 +1913,9 @@ function normalizePathLowerCase(p) {
     try {
         return path.resolve(p).replace(/\\/g, '/').toLowerCase();
     } catch (_) {
-        return String(p || '').replace(/\\/g, '/').toLowerCase();
+        return String(p || '')
+            .replace(/\\/g, '/')
+            .toLowerCase();
     }
 }
 
@@ -1856,8 +1960,8 @@ function getCompilerRuntimeBinPaths(compilerPath) {
         compilerDir,
         path.join(compilerRoot, 'bin'),
         path.join(compilerRoot, 'mingw64', 'bin'),
-        path.join(compilerRoot, 'mingw32', 'bin')
-    ].filter(p => fs.existsSync(p));
+        path.join(compilerRoot, 'mingw32', 'bin'),
+    ].filter((p) => fs.existsSync(p));
 }
 
 async function ensureConsolePauserExecutable(compilerPath) {
@@ -1881,20 +1985,6 @@ async function ensureConsolePauserExecutable(compilerPath) {
 
     const { spawn } = require('child_process');
 
-    const decodeBufferAuto = (buffer) => {
-        if (!buffer || buffer.length === 0) return '';
-        try {
-            const encoding = detectEncoding(buffer);
-            if (encoding === 'utf8') return buffer.toString('utf8');
-        } catch (_) { }
-        try {
-            const iconv = require('iconv-lite');
-            return iconv.decode(buffer, 'gbk');
-        } catch (_) {
-            return buffer.toString('utf8');
-        }
-    };
-
     const writeSource = (mode) => {
         if (mode === 'gbk') {
             const iconv = require('iconv-lite');
@@ -1910,7 +2000,7 @@ async function ensureConsolePauserExecutable(compilerPath) {
         const args = [...extraArgs, ...baseArgs];
         const env = {
             ...process.env,
-            PATH: [...getCompilerRuntimeBinPaths(compilerPath), process.env.PATH || ''].join(path.delimiter)
+            PATH: [...getCompilerRuntimeBinPaths(compilerPath), process.env.PATH || ''].join(path.delimiter),
         };
 
         return new Promise((resolve) => {
@@ -1918,7 +2008,7 @@ async function ensureConsolePauserExecutable(compilerPath) {
                 cwd: oicppDir,
                 stdio: ['ignore', 'pipe', 'pipe'],
                 env,
-                shell: false
+                shell: false,
             });
 
             const stdoutChunks = [];
@@ -1936,7 +2026,7 @@ async function ensureConsolePauserExecutable(compilerPath) {
                 resolve({
                     code,
                     stdout: decodeBufferAuto(Buffer.concat(stdoutChunks)),
-                    stderr: decodeBufferAuto(Buffer.concat(stderrChunks))
+                    stderr: decodeBufferAuto(Buffer.concat(stderrChunks)),
                 });
             });
 
@@ -1944,7 +2034,7 @@ async function ensureConsolePauserExecutable(compilerPath) {
                 resolve({
                     code: -1,
                     stdout: '',
-                    stderr: String(error?.message || error || '')
+                    stderr: String(error?.message || error || ''),
                 });
             });
         });
@@ -1960,7 +2050,7 @@ async function ensureConsolePauserExecutable(compilerPath) {
     const strategies = [
         { name: 'utf8', sourceMode: 'utf8', args: [] },
         { name: 'gbk-finput-charset', sourceMode: 'gbk', args: ['-finput-charset=gbk'] },
-        { name: 'gbk-default', sourceMode: 'gbk', args: [] }
+        { name: 'gbk-default', sourceMode: 'gbk', args: [] },
     ];
 
     const failures = [];
@@ -1990,7 +2080,7 @@ function findCompilerExecutable(baseDir) {
         'mingw64/bin/g++.exe',
         'mingw32/bin/g++.exe',
         'x86_64-w64-mingw32/bin/g++.exe',
-        'i686-w64-mingw32/bin/g++.exe'
+        'i686-w64-mingw32/bin/g++.exe',
     ];
 
     logInfo('[查找编译器] 检查常见路径...');
@@ -2009,9 +2099,7 @@ function findCompilerExecutable(baseDir) {
         const files = walkDir(baseDir);
         logInfo('[查找编译器] 搜索到的所有文件数量:', files.length);
 
-        const gppFiles = files.filter(file =>
-            file.endsWith('g++.exe') || file.endsWith('gcc.exe')
-        );
+        const gppFiles = files.filter((file) => file.endsWith('g++.exe') || file.endsWith('gcc.exe'));
 
         logInfo('[查找编译器] 找到的编译器文件:', gppFiles);
 
@@ -2077,16 +2165,18 @@ function requestSaveAllAndClose(context = '关闭窗口') {
     if (!mainWindow || mainWindow.isDestroyed()) {
         return;
     }
-    
+
     try {
         mainWindow.webContents.send('request-save-all');
         const timeout = setTimeout(() => {
-            try { logWarn(`[${context}] 保存超时，强制关闭窗口`); } catch (_) { }
+            try {
+                logWarn(`[${context}] 保存超时，强制关闭窗口`);
+            } catch (_) {}
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.close();
             }
         }, SAVE_ALL_TIMEOUT);
-        
+
         ipcMain.once('save-all-complete', () => {
             clearTimeout(timeout);
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -2094,7 +2184,9 @@ function requestSaveAllAndClose(context = '关闭窗口') {
             }
         });
     } catch (e) {
-        try { logWarn(`[${context}] 发送保存请求失败，直接关闭:`, e?.message || String(e)); } catch (_) { }
+        try {
+            logWarn(`[${context}] 发送保存请求失败，直接关闭:`, e?.message || String(e));
+        } catch (_) {}
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.close();
         }
@@ -2109,7 +2201,9 @@ function requestCloseWithoutSave(context = '关闭窗口') {
         armAllowMainWindowClose();
         mainWindow.close();
     } catch (e) {
-        try { logWarn(`[${context}] 丢弃保存关闭失败:`, e?.message || String(e)); } catch (_) { }
+        try {
+            logWarn(`[${context}] 丢弃保存关闭失败:`, e?.message || String(e));
+        } catch (_) {}
     }
 }
 
@@ -2118,11 +2212,12 @@ function applyMacWindowButtonPosition(targetWindow) {
         return;
     }
 
-    const setButtonPosition = typeof targetWindow.setWindowButtonPosition === 'function'
-        ? targetWindow.setWindowButtonPosition.bind(targetWindow)
-        : (typeof targetWindow.setTrafficLightPosition === 'function'
-            ? targetWindow.setTrafficLightPosition.bind(targetWindow)
-            : null);
+    const setButtonPosition =
+        typeof targetWindow.setWindowButtonPosition === 'function'
+            ? targetWindow.setWindowButtonPosition.bind(targetWindow)
+            : typeof targetWindow.setTrafficLightPosition === 'function'
+              ? targetWindow.setTrafficLightPosition.bind(targetWindow)
+              : null;
 
     if (!setButtonPosition) {
         return;
@@ -2134,8 +2229,7 @@ function applyMacWindowButtonPosition(targetWindow) {
         const rightInset = 12;
         const x = Math.max(0, contentWidth - clusterWidth - rightInset);
         setButtonPosition({ x, y: 8 });
-    } catch (_) {
-    }
+    } catch (_) {}
 }
 
 function createWindow() {
@@ -2158,14 +2252,14 @@ function createWindow() {
             sandbox: false,
             webSecurity: false,
             webviewTag: true,
-            devTools: process.argv.includes('--dev')
+            devTools: process.argv.includes('--dev'),
         },
         icon: getUserIconPath(),
         frame: false,
         titleBarStyle: 'hidden',
         trafficLightPosition: isMacPlatform ? { x: 1124, y: 8 } : undefined,
         opacity: settings.windowOpacity || 1.0,
-        show: false
+        show: false,
     });
 
     if (isMacPlatform) {
@@ -2184,7 +2278,7 @@ function createWindow() {
         // 移除 CSP 中禁止被嵌入的指令（保留其他安全策略）
         if (headers['content-security-policy'] || headers['Content-Security-Policy']) {
             const cspKey = headers['content-security-policy'] ? 'content-security-policy' : 'Content-Security-Policy';
-            const csp = Array.isArray(headers[cspKey]) ? headers[cspKey].join(',') : (headers[cspKey] || '');
+            const csp = Array.isArray(headers[cspKey]) ? headers[cspKey].join(',') : headers[cspKey] || '';
             // 移除 frame-ancestors 指令，允许 iframe 嵌入
             const cleaned = csp.replace(/;\s*frame-ancestors\s+[^;]*/gi, '');
             headers[cspKey] = [cleaned];
@@ -2232,7 +2326,10 @@ function createWindow() {
             } else if (Array.isArray(settings.recentFiles) && settings.recentFiles.length > 0) {
                 for (const rf of settings.recentFiles) {
                     const p = typeof rf === 'string' ? rf : rf.path;
-                    if (p && fs.existsSync(p)) { target = p; break; }
+                    if (p && fs.existsSync(p)) {
+                        target = p;
+                        break;
+                    }
                 }
             }
             if (target) {
@@ -2242,7 +2339,10 @@ function createWindow() {
             }
         })();
 
-        try { restoreSettingsBackupLinux(); ensureUserIconForLinux(); } catch (_) { }
+        try {
+            restoreSettingsBackupLinux();
+            ensureUserIconForLinux();
+        } catch (_) {}
     });
 
     mainWindow.on('close', (e) => {
@@ -2253,8 +2353,12 @@ function createWindow() {
             e.preventDefault();
             requestRendererCloseConfirmation('关闭窗口');
         } catch (err) {
-            try { logWarn('[关闭窗口] close 事件拦截失败，已阻止关闭:', err?.message || String(err)); } catch (_) { }
-            try { e.preventDefault(); } catch (_) { }
+            try {
+                logWarn('[关闭窗口] close 事件拦截失败，已阻止关闭:', err?.message || String(err));
+            } catch (_) {}
+            try {
+                e.preventDefault();
+            } catch (_) {}
         }
     });
 
@@ -2269,7 +2373,6 @@ function createWindow() {
 
     setupIPC();
 
-
     ipcMain.handle('open-external', async (_event, url) => {
         try {
             if (!url || typeof url !== 'string') {
@@ -2281,10 +2384,6 @@ function createWindow() {
             logError('open-external 失败:', err?.message || err);
             throw err;
         }
-    });
-
-    ipcMain.handle('get-update-download-status', () => {
-        return getUpdateDownloadState();
     });
 
     // === Browser (内置浏览器) IPC ===
@@ -2301,15 +2400,16 @@ function createWindow() {
                     const candidate = new URL('https://' + trimmed);
                     const hostname = candidate.hostname.replace(/^\[|\]$/g, '');
                     const ipv4Parts = hostname.split('.');
-                    const isIpv4 = ipv4Parts.length === 4
-                        && ipv4Parts.every(part => /^\d{1,3}$/.test(part) && Number(part) <= 255);
+                    const isIpv4 =
+                        ipv4Parts.length === 4 &&
+                        ipv4Parts.every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255);
                     const isIpv6 = hostname.includes(':');
                     const isLocalhost = hostname.toLowerCase() === 'localhost';
                     const isDomain = /^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/.test(hostname);
                     if (isIpv4 || isIpv6 || isLocalhost || isDomain) {
                         return candidate.href;
                     }
-                } catch (_) { }
+                } catch (_) {}
             }
             // 否则作为搜索词
             return 'https://www.google.com/search?q=' + encodeURIComponent(trimmed);
@@ -2320,11 +2420,17 @@ function createWindow() {
 
     ipcMain.handle('browser-get-page-title', async (_event, url) => {
         return new Promise((resolve) => {
-            if (!url || typeof url !== 'string') { resolve(''); return; }
+            if (!url || typeof url !== 'string') {
+                resolve('');
+                return;
+            }
             try {
                 const parsedUrl = new URL(url);
                 const hostname = parsedUrl.hostname || '';
-                if (!hostname) { resolve(''); return; }
+                if (!hostname) {
+                    resolve('');
+                    return;
+                }
                 // 去掉 www. 前缀作为默认标题
                 const title = hostname.replace(/^www\./i, '');
                 resolve(title || '');
@@ -2337,12 +2443,10 @@ function createWindow() {
     startSampleTesterServer();
 }
 
-
 function createMenuBar() {
     const defaultKeybindings = getDefaultSettings().keybindings || {};
-    const activeKeybindings = (settings && settings.keybindings && typeof settings.keybindings === 'object')
-        ? settings.keybindings
-        : {};
+    const activeKeybindings =
+        settings && settings.keybindings && typeof settings.keybindings === 'object' ? settings.keybindings : {};
     const resolveRunMenuAccelerator = (key, fallback) => {
         const candidate = activeKeybindings[key];
         if (typeof candidate === 'string' && candidate.trim()) {
@@ -2358,9 +2462,7 @@ function createMenuBar() {
         if (!source) {
             return fallback;
         }
-        return source
-            .replace(/^Ctrl\+/i, 'CmdOrCtrl+')
-            .replace(/^Control\+/i, 'CmdOrCtrl+');
+        return source.replace(/^Ctrl\+/i, 'CmdOrCtrl+').replace(/^Control\+/i, 'CmdOrCtrl+');
     };
 
     // 检测是否有另一个快捷键使用 Ctrl/Cmd/Alt+裸 Fn 键（如 runAllSamples 用 Ctrl+F11
@@ -2385,11 +2487,16 @@ function createMenuBar() {
     const compileAccelerator = resolveRunMenuAccelerator('compileCode', 'F9');
     const runAccelerator = resolveRunMenuAccelerator('runCode', 'F10');
     const compileRunAccelerator = resolveRunMenuAccelerator('compileAndRun', defaultKeybindings.compileAndRun || 'F11');
-    const openTerminalAccelerator = normalizeAcceleratorForMenu(resolveRunMenuAccelerator('openTerminal', 'Ctrl+`'), 'CmdOrCtrl+`');
+    const openTerminalAccelerator = normalizeAcceleratorForMenu(
+        resolveRunMenuAccelerator('openTerminal', 'Ctrl+`'),
+        'CmdOrCtrl+`'
+    );
 
     // 移除与带修饰符快捷键冲突的裸 Fn 菜单加速器，
     // 避免 Electron 同时触发两个动作（如 Ctrl+F11 触发 F11）
-    const compileRunAcceleratorFinal = hasConflictingModifiedKey(compileRunAccelerator) ? undefined : compileRunAccelerator;
+    const compileRunAcceleratorFinal = hasConflictingModifiedKey(compileRunAccelerator)
+        ? undefined
+        : compileRunAccelerator;
     const menuTemplate = [
         {
             label: '文件',
@@ -2399,28 +2506,28 @@ function createMenuBar() {
                     accelerator: 'CmdOrCtrl+N',
                     click: () => {
                         mainWindow.webContents.send('menu-new-cpp-file');
-                    }
+                    },
                 },
                 {
                     label: '新建临时文件',
                     accelerator: 'CmdOrCtrl+Shift+N',
                     click: () => {
                         mainWindow.webContents.send('menu-new-temp-file');
-                    }
+                    },
                 },
                 {
                     label: '打开文件',
                     accelerator: 'CmdOrCtrl+O',
                     click: () => {
                         openFile();
-                    }
+                    },
                 },
                 {
                     label: '打开文件夹',
                     accelerator: 'CmdOrCtrl+K',
                     click: () => {
                         openFolder();
-                    }
+                    },
                 },
                 { type: 'separator' },
                 {
@@ -2428,21 +2535,21 @@ function createMenuBar() {
                     accelerator: 'CmdOrCtrl+S',
                     click: () => {
                         mainWindow.webContents.send('menu-save-file');
-                    }
+                    },
                 },
                 {
                     label: '另存为',
                     accelerator: 'CmdOrCtrl+Shift+S',
                     click: () => {
                         saveAsFile();
-                    }
+                    },
                 },
                 { type: 'separator' },
                 {
                     label: '历史...',
                     click: () => {
                         mainWindow.webContents.send('menu-open-file-history');
-                    }
+                    },
                 },
                 { type: 'separator' },
                 {
@@ -2450,16 +2557,16 @@ function createMenuBar() {
                     accelerator: 'CmdOrCtrl+,',
                     click: () => {
                         mainWindow.webContents.send('menu-open-settings');
-                    }
+                    },
                 },
                 {
                     label: '模板设置',
                     accelerator: 'CmdOrCtrl+T',
                     click: () => {
                         openCodeTemplates();
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         },
         {
             label: '编辑',
@@ -2471,8 +2578,8 @@ function createMenuBar() {
                 { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
                 { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
                 { type: 'separator' },
-                { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
-            ]
+                { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' },
+            ],
         },
         {
             label: '运行',
@@ -2484,30 +2591,30 @@ function createMenuBar() {
                         if (mainWindow && !mainWindow.isDestroyed()) {
                             mainWindow.webContents.send('menu-debug');
                         }
-                    }
+                    },
                 },
                 {
                     label: '编译',
                     accelerator: compileAccelerator,
                     click: () => {
                         mainWindow.webContents.send('menu-compile');
-                    }
+                    },
                 },
                 {
                     label: '运行',
                     accelerator: runAccelerator,
                     click: () => {
                         mainWindow.webContents.send('menu-run');
-                    }
+                    },
                 },
                 {
                     label: '编译运行',
                     accelerator: compileRunAcceleratorFinal,
                     click: () => {
                         mainWindow.webContents.send('menu-compile-run');
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         },
         {
             label: '工具',
@@ -2519,7 +2626,7 @@ function createMenuBar() {
                         if (mainWindow && !mainWindow.isDestroyed()) {
                             mainWindow.webContents.send('menu-open-terminal');
                         }
-                    }
+                    },
                 },
                 {
                     label: '打开内置浏览器',
@@ -2528,7 +2635,7 @@ function createMenuBar() {
                         if (mainWindow && !mainWindow.isDestroyed()) {
                             mainWindow.webContents.send('menu-open-browser');
                         }
-                    }
+                    },
                 },
                 {
                     label: '新建浏览器标签页',
@@ -2537,14 +2644,14 @@ function createMenuBar() {
                         if (mainWindow && !mainWindow.isDestroyed()) {
                             mainWindow.webContents.send('menu-new-browser-tab');
                         }
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         },
         {
             label: '帮助',
-            submenu: []
-        }
+            submenu: [],
+        },
     ];
 
     const menu = Menu.buildFromTemplate(menuTemplate);
@@ -2556,7 +2663,7 @@ function writeJson(res, statusCode, payload) {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
     });
     res.end(JSON.stringify(payload));
 }
@@ -2576,7 +2683,7 @@ function getRequestPath(req) {
 
 function readJsonBody(req, res, callback) {
     let body = '';
-    req.on('data', chunk => {
+    req.on('data', (chunk) => {
         body += chunk;
         if (body.length > 2 * 1024 * 1024) {
             req.destroy();
@@ -2584,7 +2691,9 @@ function readJsonBody(req, res, callback) {
     }); // 2MB 限制
     req.on('end', () => {
         let data = null;
-        try { data = JSON.parse(body || '{}'); } catch (_) { }
+        try {
+            data = JSON.parse(body || '{}');
+        } catch (_) {}
         if (!data || typeof data !== 'object') {
             return writeJson(res, 400, { code: 400, message: 'Invalid JSON body' });
         }
@@ -2597,11 +2706,12 @@ function normalizeCompetitiveCompanionPayload(data) {
         return { ok: false, message: 'body must be JSON object', invalidField: 'body' };
     }
 
-    const titleRaw = (typeof data.title === 'string' && data.title.trim())
-        ? data.title.trim()
-        : (typeof data.name === 'string' && data.name.trim())
-            ? data.name.trim()
-            : (typeof data.problemName === 'string' && data.problemName.trim())
+    const titleRaw =
+        typeof data.title === 'string' && data.title.trim()
+            ? data.title.trim()
+            : typeof data.name === 'string' && data.name.trim()
+              ? data.name.trim()
+              : typeof data.problemName === 'string' && data.problemName.trim()
                 ? data.problemName.trim()
                 : '';
 
@@ -2622,7 +2732,7 @@ function normalizeCompetitiveCompanionPayload(data) {
         try {
             const host = new URL(data.url.trim()).hostname;
             if (host) ojName = host;
-        } catch (_) { }
+        } catch (_) {}
     }
 
     let timeLimitMs;
@@ -2634,13 +2744,13 @@ function normalizeCompetitiveCompanionPayload(data) {
         id: idx + 1,
         input: typeof t?.input === 'string' ? t.input : '',
         output: typeof t?.output === 'string' ? t.output : '',
-        timeLimit: timeLimitMs
+        timeLimit: timeLimitMs,
     }));
 
     const payload = {
         OJ: ojName,
         problemName: titleRaw,
-        samples
+        samples,
     };
 
     return { ok: true, payload };
@@ -2658,22 +2768,37 @@ function createCompetitiveCompanionServer(port, tagLabel) {
             readJsonBody(req, res, (data) => {
                 const normalized = normalizeCompetitiveCompanionPayload(data);
                 if (!normalized.ok) {
-                    const resp = { code: 400, message: 'Invalid parameters: ' + normalized.message, invalidField: normalized.invalidField };
+                    const resp = {
+                        code: 400,
+                        message: 'Invalid parameters: ' + normalized.message,
+                        invalidField: normalized.invalidField,
+                    };
                     return writeJson(res, 400, resp);
                 }
 
                 const result = validateSampleTesterPayload(normalized.payload);
                 if (!result.valid) {
-                    const resp = { code: 400, message: 'Invalid parameters: ' + result.message, invalidField: result.invalidField };
+                    const resp = {
+                        code: 400,
+                        message: 'Invalid parameters: ' + result.message,
+                        invalidField: result.invalidField,
+                    };
                     return writeJson(res, 400, resp);
                 }
 
                 try {
-                    logger.logInfo(`[${label}] 收到题目:`, normalized.payload.problemName, '样例数:', normalized.payload.samples?.length || 0);
+                    logger.logInfo(
+                        `[${label}] 收到题目:`,
+                        normalized.payload.problemName,
+                        '样例数:',
+                        normalized.payload.samples?.length || 0
+                    );
                     if (mainWindow && !mainWindow.isDestroyed()) {
                         mainWindow.webContents.send('sample-tester-create-problem', normalized.payload);
                     }
-                } catch (e) { logger.logerror(`发送 ${label} 样例创建事件失败`, e); }
+                } catch (e) {
+                    logger.logerror(`发送 ${label} 样例创建事件失败`, e);
+                }
 
                 return writeJson(res, 200, { code: 200, message: 'Problem created successfully' });
             });
@@ -2686,15 +2811,21 @@ function createCompetitiveCompanionServer(port, tagLabel) {
         try {
             const requestPath = getRequestPath(req);
             logger.logInfo(`[${label}] 请求:`, req.method, requestPath, '来自', req.socket?.remoteAddress || 'unknown');
-        } catch (_) { }
+        } catch (_) {}
     });
 
     server.on('error', (err) => {
         if (err && err.code === 'EADDRINUSE') {
-            try { logWarn(`[${label}] 端口 ${port} 被占用，可能被其他工具占用（如 cph）。可在 Competitive Companion 中添加 http://127.0.0.1:${port}/ 作为自定义端口。`); } catch (_) { }
+            try {
+                logWarn(
+                    `[${label}] 端口 ${port} 被占用，可能被其他工具占用（如 cph）。可在 Competitive Companion 中添加 http://127.0.0.1:${port}/ 作为自定义端口。`
+                );
+            } catch (_) {}
             return;
         }
-        try { logger.logerror(`[${label}] 服务出错`, err); } catch (_) { }
+        try {
+            logger.logerror(`[${label}] 服务出错`, err);
+        } catch (_) {}
     });
 
     server.listen(port, '127.0.0.1', () => {
@@ -2717,15 +2848,26 @@ function startSampleTesterServer() {
                 readJsonBody(req, res, (data) => {
                     const result = validateSampleTesterPayload(data);
                     if (!result.valid) {
-                        const resp = { code: 400, message: 'Invalid parameters: ' + result.message, invalidField: result.invalidField };
+                        const resp = {
+                            code: 400,
+                            message: 'Invalid parameters: ' + result.message,
+                            invalidField: result.invalidField,
+                        };
                         return writeJson(res, 400, resp);
                     }
                     try {
-                        logger.logInfo('[SampleTesterAPI] 收到题目:', data.problemName, '样例数:', data.samples?.length || 0);
+                        logger.logInfo(
+                            '[SampleTesterAPI] 收到题目:',
+                            data.problemName,
+                            '样例数:',
+                            data.samples?.length || 0
+                        );
                         if (mainWindow && !mainWindow.isDestroyed()) {
                             mainWindow.webContents.send('sample-tester-create-problem', data);
                         }
-                    } catch (e) { logger.logerror('发送样例创建事件失败', e); }
+                    } catch (e) {
+                        logger.logerror('发送样例创建事件失败', e);
+                    }
                     return writeJson(res, 200, { code: 200, message: 'Problem created successfully' });
                 });
                 return;
@@ -2735,14 +2877,22 @@ function startSampleTesterServer() {
         sampleTesterServer.on('request', (req) => {
             try {
                 const requestPath = getRequestPath(req);
-                logger.logInfo('[SampleTesterAPI] 请求:', req.method, requestPath, '来自', req.socket?.remoteAddress || 'unknown');
-            } catch (_) { }
+                logger.logInfo(
+                    '[SampleTesterAPI] 请求:',
+                    req.method,
+                    requestPath,
+                    '来自',
+                    req.socket?.remoteAddress || 'unknown'
+                );
+            } catch (_) {}
         });
         sampleTesterServer.listen(PORT, '127.0.0.1', () => {
             logger.logInfo(`[SampleTesterAPI] 服务已启动 http://127.0.0.1:${PORT}`);
         });
     } catch (err) {
-        try { logger.logerror('[SampleTesterAPI] 启动失败', err); } catch (_) { }
+        try {
+            logger.logerror('[SampleTesterAPI] 启动失败', err);
+        } catch (_) {}
     }
 
     startCompetitiveCompanionServer();
@@ -2753,31 +2903,53 @@ function startCompetitiveCompanionServer() {
         if (competitiveCompanionServer) return; // 已启动
         competitiveCompanionServer = createCompetitiveCompanionServer(10043, 'CompetitiveCompanion');
     } catch (err) {
-        try { logger.logerror('[CompetitiveCompanion] 启动失败', err); } catch (_) { }
+        try {
+            logger.logerror('[CompetitiveCompanion] 启动失败', err);
+        } catch (_) {}
     }
 }
 
 function validateSampleTesterPayload(data) {
-    if (!data || typeof data !== 'object') return { valid: false, message: 'body must be JSON object', invalidField: 'body' };
-    if (!data.problemName || typeof data.problemName !== 'string') return { valid: false, message: 'problemName missing.', invalidField: 'problemName' };
-    if (!Array.isArray(data.samples) || data.samples.length === 0) return { valid: false, message: 'samples must not be empty.', invalidField: 'samples' };
+    if (!data || typeof data !== 'object')
+        return { valid: false, message: 'body must be JSON object', invalidField: 'body' };
+    if (!data.problemName || typeof data.problemName !== 'string')
+        return { valid: false, message: 'problemName missing.', invalidField: 'problemName' };
+    if (!Array.isArray(data.samples) || data.samples.length === 0)
+        return { valid: false, message: 'samples must not be empty.', invalidField: 'samples' };
     const ids = new Set();
     for (const s of data.samples) {
-        if (!s || typeof s !== 'object') return { valid: false, message: 'sample must be object', invalidField: 'samples' };
-        if (!Number.isInteger(s.id) || s.id <= 0) return { valid: false, message: 'sample id invalid', invalidField: 'id' };
+        if (!s || typeof s !== 'object')
+            return { valid: false, message: 'sample must be object', invalidField: 'samples' };
+        if (!Number.isInteger(s.id) || s.id <= 0)
+            return { valid: false, message: 'sample id invalid', invalidField: 'id' };
         if (ids.has(s.id)) return { valid: false, message: 'duplicate sample id', invalidField: 'id' };
         ids.add(s.id);
-        if (typeof s.input !== 'string') return { valid: false, message: 'input must be string', invalidField: 'input' };
-        if (typeof s.output !== 'string') return { valid: false, message: 'output must be string', invalidField: 'output' };
-        if (s.timeLimit !== undefined && (!Number.isInteger(s.timeLimit) || s.timeLimit <= 0)) return { valid: false, message: 'timeLimit must be positive integer', invalidField: 'timeLimit' };
+        if (typeof s.input !== 'string')
+            return { valid: false, message: 'input must be string', invalidField: 'input' };
+        if (typeof s.output !== 'string')
+            return { valid: false, message: 'output must be string', invalidField: 'output' };
+        if (s.timeLimit !== undefined && (!Number.isInteger(s.timeLimit) || s.timeLimit <= 0))
+            return { valid: false, message: 'timeLimit must be positive integer', invalidField: 'timeLimit' };
     }
     return { valid: true };
 }
 
 app.on('before-quit', (event) => {
-    try { if (sampleTesterServer) { sampleTesterServer.close(); sampleTesterServer = null; } } catch (_) { }
-    try { if (competitiveCompanionServer) { competitiveCompanionServer.close(); competitiveCompanionServer = null; } } catch (_) { }
-    try { terminalManager.disposeAll(); } catch (_) { }
+    try {
+        if (sampleTesterServer) {
+            sampleTesterServer.close();
+            sampleTesterServer = null;
+        }
+    } catch (_) {}
+    try {
+        if (competitiveCompanionServer) {
+            competitiveCompanionServer.close();
+            competitiveCompanionServer = null;
+        }
+    } catch (_) {}
+    try {
+        terminalManager.disposeAll();
+    } catch (_) {}
 });
 
 function setupWindowControls() {
@@ -2819,7 +2991,9 @@ function setupWindowControls() {
     ipcMain.on('app-close-confirmed', () => {
         closeRequestInProgress = false;
         if (closeRequestInProgressTimer) {
-            try { clearTimeout(closeRequestInProgressTimer); } catch (_) { }
+            try {
+                clearTimeout(closeRequestInProgressTimer);
+            } catch (_) {}
             closeRequestInProgressTimer = null;
         }
         armAllowMainWindowClose();
@@ -2829,7 +3003,9 @@ function setupWindowControls() {
     ipcMain.on('app-close-discard', () => {
         closeRequestInProgress = false;
         if (closeRequestInProgressTimer) {
-            try { clearTimeout(closeRequestInProgressTimer); } catch (_) { }
+            try {
+                clearTimeout(closeRequestInProgressTimer);
+            } catch (_) {}
             closeRequestInProgressTimer = null;
         }
         armAllowMainWindowClose();
@@ -2839,7 +3015,9 @@ function setupWindowControls() {
     ipcMain.on('app-close-cancelled', () => {
         closeRequestInProgress = false;
         if (closeRequestInProgressTimer) {
-            try { clearTimeout(closeRequestInProgressTimer); } catch (_) { }
+            try {
+                clearTimeout(closeRequestInProgressTimer);
+            } catch (_) {}
             closeRequestInProgressTimer = null;
         }
     });
@@ -2899,9 +3077,7 @@ function setupIPC() {
     // It is the source of truth for clearing / updating the workspace (e.g. when
     // the user closes the workspace or restores it from startup).
     ipcMain.on('workspace-path-report', (_event, folderPath) => {
-        currentExternalWorkspacePath = (typeof folderPath === 'string' && folderPath.trim())
-            ? folderPath
-            : null;
+        currentExternalWorkspacePath = typeof folderPath === 'string' && folderPath.trim() ? folderPath : null;
     });
 
     ipcMain.on('logger-log', (event, payload) => {
@@ -2918,8 +3094,7 @@ function setupIPC() {
                 else if (level === 'warn') logger.logwarn(...args);
                 else logger.logInfo(...args);
             }
-        } catch (e) {
-        }
+        } catch (e) {}
     });
 
     ipcMain.handle('update-settings', async (event, newSettings) => {
@@ -2934,7 +3109,7 @@ function setupIPC() {
             }
 
             settings = { ...settings, ...incomingSettings };
-            
+
             if (mainWindow && !mainWindow.isDestroyed()) {
                 if (typeof incomingSettings.windowOpacity === 'number') {
                     mainWindow.setOpacity(incomingSettings.windowOpacity);
@@ -2956,13 +3131,9 @@ function setupIPC() {
         }
     });
 
-
-
     ipcMain.handle('get-settings', (event, settingsType) => {
         return settings;
     });
-
-
 
     ipcMain.handle('get-all-settings', () => {
         // Hand out a copy without the account block. settings.account holds the
@@ -3007,7 +3178,7 @@ function setupIPC() {
                             languages.push({
                                 code: content.meta.code,
                                 name: content.meta.name,
-                                nameEn: content.meta.nameEn
+                                nameEn: content.meta.nameEn,
                             });
                         }
                     } catch (_) {}
@@ -3029,13 +3200,13 @@ function setupIPC() {
             const terminal = terminalManager.createSession(options || {});
             return {
                 ok: true,
-                ...terminal
+                ...terminal,
             };
         } catch (error) {
             logWarn('[终端] 创建失败:', error?.message || error);
             return {
                 ok: false,
-                error: error?.message || String(error)
+                error: error?.message || String(error),
             };
         }
     });
@@ -3064,14 +3235,14 @@ function setupIPC() {
             const tty = terminalManager.getSessionTTY(terminalId);
             return {
                 ok: !!tty,
-                tty: tty || null
+                tty: tty || null,
             };
         } catch (error) {
             logWarn('[终端] 获取 TTY 失败:', error?.message || error);
             return {
                 ok: false,
                 tty: null,
-                error: error?.message || String(error)
+                error: error?.message || String(error),
             };
         }
     });
@@ -3118,7 +3289,13 @@ function setupIPC() {
                 logInfo('[LSP] 初始化完成, 服务器:', result?.serverInfo?.name || 'clangd', '版本:', version);
                 if (caps?.semanticTokensProvider) {
                     const legend = caps.semanticTokensProvider.legend;
-                    logInfo('[LSP] 语义令牌支持: ' + (legend?.tokenTypes?.length || 0) + ' 种类型, ' + (legend?.tokenModifiers?.length || 0) + ' 种修饰符');
+                    logInfo(
+                        '[LSP] 语义令牌支持: ' +
+                            (legend?.tokenTypes?.length || 0) +
+                            ' 种类型, ' +
+                            (legend?.tokenModifiers?.length || 0) +
+                            ' 种修饰符'
+                    );
                 }
             }
             return result;
@@ -3153,15 +3330,13 @@ function setupIPC() {
         const { session } = require('electron');
         try {
             const cookies = await session.fromPartition('persist:luogu_login').cookies.get({
-                domain: 'luogu.com.cn'
+                domain: 'luogu.com.cn',
             });
             logInfo('[账户] 清除 Cookie:', cookies.length, '个');
             for (const cookie of cookies) {
-                await session.fromPartition('persist:luogu_login').cookies.remove(
-                    'https://luogu.com.cn', cookie.name
-                );
+                await session.fromPartition('persist:luogu_login').cookies.remove('https://luogu.com.cn', cookie.name);
             }
-        } catch (_) { }
+        } catch (_) {}
         settings.account = null;
         saveSettings();
         broadcastIdeLoginState({ loggedIn: false, user: null, message: '已退出登录' });
@@ -3191,7 +3366,7 @@ function setupIPC() {
             nodeVersion: process.version,
             homedir: os.homedir(),
             tmpdir: os.tmpdir(),
-            osRelease: os.release()
+            osRelease: os.release(),
         };
         let systemVersion = '';
         let distro = '';
@@ -3199,19 +3374,28 @@ function setupIPC() {
             const { execSync } = require('child_process');
             if (process.platform === 'win32') {
                 try {
-                    const prodNameRaw = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v ProductName', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 });
+                    const prodNameRaw = execSync(
+                        'reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v ProductName',
+                        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }
+                    );
                     const matchName = prodNameRaw.match(/ProductName\s+REG_[A-Z_]+\s+(.+)/i);
                     if (matchName) distro = matchName[1].trim();
-                } catch (_) { }
+                } catch (_) {}
                 try {
-                    const buildRaw = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentBuild', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 });
+                    const buildRaw = execSync(
+                        'reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentBuild',
+                        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }
+                    );
                     const matchBuild = buildRaw.match(/CurrentBuild\s+REG_[A-Z_]+\s+(\d+)/i);
-                    const ubrRaw = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v UBR', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 });
+                    const ubrRaw = execSync(
+                        'reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" /v UBR',
+                        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }
+                    );
                     const matchUbr = ubrRaw.match(/UBR\s+REG_[A-Z_]+\s+(\d+)/i);
                     const build = matchBuild ? matchBuild[1] : '';
                     const ubr = matchUbr ? matchUbr[1] : '';
                     if (build) systemVersion = `Build ${build}${ubr ? '.' + ubr : ''}`;
-                } catch (_) { }
+                } catch (_) {}
                 if (!distro) distro = 'Windows';
             } else if (process.platform === 'linux') {
                 try {
@@ -3226,15 +3410,14 @@ function setupIPC() {
                     if (!systemVersion && (nameM || verM)) {
                         systemVersion = [nameM ? nameM[1] : '', verM ? verM[1] : ''].filter(Boolean).join(' ');
                     }
-                } catch (_) { }
+                } catch (_) {}
                 if (!distro) distro = 'Linux';
                 if (!systemVersion) systemVersion = `Kernel ${base.osRelease}`;
             } else {
                 if (!distro) distro = 'Unknown';
                 if (!systemVersion) systemVersion = base.osRelease || '';
             }
-        } catch (e) {
-        }
+        } catch (e) {}
         return { ...base, systemVersion, distro };
     });
 
@@ -3302,150 +3485,173 @@ function setupIPC() {
         }
     });
 
-    ipcMain.on('compile-code', (event, code, options) => {
-        compileCode(code, options).then(result => {
-            event.reply('compile-result', result);
-        }).catch(error => {
-            event.reply('compile-error', error.message);
-        });
-    });
-
     ipcMain.on('start-debug', (event, filePath, options) => {
-        startDebugSession(filePath, options).then(result => {
-            event.reply('debug-started', result);
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        startDebugSession(filePath, options)
+            .then((result) => {
+                event.reply('debug-started', result);
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('stop-debug', (event) => {
-        stopDebugSession().then(result => {
-            event.reply('debug-stopped', result);
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        stopDebugSession()
+            .then((result) => {
+                event.reply('debug-stopped', result);
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-step-over', (event) => {
-        sendDebugCommand('step').then(result => {
-            event.reply('debug-output', { message: '步过执行', type: 'debug' });
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        sendDebugCommand('step')
+            .then((result) => {
+                event.reply('debug-output', { message: '步过执行', type: 'debug' });
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-step-into', (event) => {
-        sendDebugCommand('stepi').then(result => {
-            event.reply('debug-output', { message: '步入执行', type: 'debug' });
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        sendDebugCommand('stepi')
+            .then((result) => {
+                event.reply('debug-output', { message: '步入执行', type: 'debug' });
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-step-out', (event) => {
-        sendDebugCommand('finish').then(result => {
-            event.reply('debug-output', { message: '步出执行', type: 'debug' });
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        sendDebugCommand('finish')
+            .then((result) => {
+                event.reply('debug-output', { message: '步出执行', type: 'debug' });
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-continue', (event) => {
         logInfo('[主进程] 收到继续执行命令');
-        sendDebugCommand('continue').then(result => {
-            logInfo('[主进程] 继续执行命令发送成功');
-            event.reply('debug-output', { message: '继续执行', type: 'debug' });
-        }).catch(error => {
-            logError('[主进程] 继续执行命令失败:', error);
-            event.reply('debug-error', error.message);
-        });
+        sendDebugCommand('continue')
+            .then((result) => {
+                logInfo('[主进程] 继续执行命令发送成功');
+                event.reply('debug-output', { message: '继续执行', type: 'debug' });
+            })
+            .catch((error) => {
+                logError('[主进程] 继续执行命令失败:', error);
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-run', (event) => {
         logInfo('[主进程] 收到手动启动程序命令');
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.run().then(() => {
-                logInfo('[主进程] 程序手动启动成功');
-                event.reply('debug-output', { message: '程序已启动', type: 'debug' });
+            gdbDebugger
+                .run()
+                .then(() => {
+                    logInfo('[主进程] 程序手动启动成功');
+                    event.reply('debug-output', { message: '程序已启动', type: 'debug' });
 
-                if (mainWindow) {
-                    mainWindow.webContents.send('debug-running');
-                }
-            }).catch(error => {
-                logError('[主进程] 手动启动程序失败:', error);
-                event.reply('debug-error', error.message);
-            });
+                    if (mainWindow) {
+                        mainWindow.webContents.send('debug-running');
+                    }
+                })
+                .catch((error) => {
+                    logError('[主进程] 手动启动程序失败:', error);
+                    event.reply('debug-error', error.message);
+                });
         } else {
             event.reply('debug-error', '调试器未运行');
         }
     });
 
     ipcMain.on('debug-send-input', (event, input) => {
-        sendDebugInput(input).then(result => {
-            void result;
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        sendDebugInput(input)
+            .then((result) => {
+                void result;
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-add-breakpoint', (event, breakpoint) => {
         logInfo('[主进程] 收到添加断点请求:', breakpoint);
-        addBreakpoint(breakpoint).then(result => {
-            logInfo('[主进程] 断点添加成功:', result);
-            event.reply('debug-output', { message: `断点已设置: ${breakpoint.file}:${breakpoint.line}`, type: 'info' });
-            event.reply('debug-breakpoint-set', {
-                file: breakpoint.file,
-                line: breakpoint.line,
-                success: true
+        addBreakpoint(breakpoint)
+            .then((result) => {
+                logInfo('[主进程] 断点添加成功:', result);
+                event.reply('debug-output', {
+                    message: `断点已设置: ${breakpoint.file}:${breakpoint.line}`,
+                    type: 'info',
+                });
+                event.reply('debug-breakpoint-set', {
+                    file: breakpoint.file,
+                    line: breakpoint.line,
+                    success: true,
+                });
+            })
+            .catch((error) => {
+                logError('[主进程] 断点添加失败:', error);
+                event.reply('debug-error', error.message);
+                event.reply('debug-breakpoint-set', {
+                    file: breakpoint.file,
+                    line: breakpoint.line,
+                    success: false,
+                    error: error.message,
+                });
             });
-        }).catch(error => {
-            logError('[主进程] 断点添加失败:', error);
-            event.reply('debug-error', error.message);
-            event.reply('debug-breakpoint-set', {
-                file: breakpoint.file,
-                line: breakpoint.line,
-                success: false,
-                error: error.message
-            });
-        });
     });
 
     ipcMain.on('debug-remove-breakpoint', (event, breakpoint) => {
         logInfo('[主进程] 收到移除断点请求:', breakpoint);
-        removeBreakpoint(breakpoint).then(result => {
-            logInfo('[主进程] 断点移除成功:', result);
-            event.reply('debug-output', { message: `断点已移除: ${breakpoint.file}:${breakpoint.line}`, type: 'info' });
-            event.reply('debug-breakpoint-removed', {
-                file: breakpoint.file,
-                line: breakpoint.line,
-                success: true
+        removeBreakpoint(breakpoint)
+            .then((result) => {
+                logInfo('[主进程] 断点移除成功:', result);
+                event.reply('debug-output', {
+                    message: `断点已移除: ${breakpoint.file}:${breakpoint.line}`,
+                    type: 'info',
+                });
+                event.reply('debug-breakpoint-removed', {
+                    file: breakpoint.file,
+                    line: breakpoint.line,
+                    success: true,
+                });
+            })
+            .catch((error) => {
+                logError('[主进程] 断点移除失败:', error);
+                event.reply('debug-error', error.message);
+                event.reply('debug-breakpoint-removed', {
+                    file: breakpoint.file,
+                    line: breakpoint.line,
+                    success: false,
+                    error: error.message,
+                });
             });
-        }).catch(error => {
-            logError('[主进程] 断点移除失败:', error);
-            event.reply('debug-error', error.message);
-            event.reply('debug-breakpoint-removed', {
-                file: breakpoint.file,
-                line: breakpoint.line,
-                success: false,
-                error: error.message
-            });
-        });
     });
 
     ipcMain.on('debug-request-variables', (event) => {
-        getDebugVariables().then(variables => {
-            event.reply('debug-variables-updated', variables);
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        getDebugVariables()
+            .then((variables) => {
+                event.reply('debug-variables-updated', variables);
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-request-callstack', (event) => {
-        getDebugCallStack().then(callStack => {
-            event.reply('debug-callstack-updated', callStack);
-        }).catch(error => {
-            event.reply('debug-error', error.message);
-        });
+        getDebugCallStack()
+            .then((callStack) => {
+                event.reply('debug-callstack-updated', callStack);
+            })
+            .catch((error) => {
+                event.reply('debug-error', error.message);
+            });
     });
 
     ipcMain.on('debug-goto-frame', (event, frame) => {
@@ -3461,39 +3667,49 @@ function setupIPC() {
             return;
         }
 
-        try { pendingWatchExprs.add(expr); } catch (_) { }
+        try {
+            pendingWatchExprs.add(expr);
+        } catch (_) {}
 
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.addWatchVariable(expr).then(() => {
-                event.reply('debug-output', { message: `已添加监视变量: ${expr}`, type: 'info' });
-                try {
-                    const isInferiorRunning = !!gdbDebugger._inferiorRunning;
-                    if (isInferiorRunning) {
-                        broadcastPendingWatchSnapshot(event, '(运行中，等待暂停)');
-                        return;
-                    }
-
-                    gdbDebugger.updateVariables().then(() => {
-                        const vars = gdbDebugger.getVariables();
-                        if (mainWindow && !mainWindow.isDestroyed()) {
-                            mainWindow.webContents.send('debug-variables-updated', {
-                                local: vars.local || {},
-                                global: vars.global || {},
-                                watches: vars.watches || {}
-                            });
-                        } else {
-                            event.reply('debug-variables-updated', {
-                                local: vars.local || {},
-                                global: vars.global || {},
-                                watches: vars.watches || {}
-                            });
+            gdbDebugger
+                .addWatchVariable(expr)
+                .then(() => {
+                    event.reply('debug-output', { message: `已添加监视变量: ${expr}`, type: 'info' });
+                    try {
+                        const isInferiorRunning = !!gdbDebugger._inferiorRunning;
+                        if (isInferiorRunning) {
+                            broadcastPendingWatchSnapshot(event, '(运行中，等待暂停)');
+                            return;
                         }
-                    }).catch(() => { });
-                } catch (_) { }
-            }).catch(error => {
-                try { pendingWatchExprs.delete(expr); } catch (_) { }
-                event.reply('debug-error', error.message);
-            });
+
+                        gdbDebugger
+                            .updateVariables()
+                            .then(() => {
+                                const vars = gdbDebugger.getVariables();
+                                if (mainWindow && !mainWindow.isDestroyed()) {
+                                    mainWindow.webContents.send('debug-variables-updated', {
+                                        local: vars.local || {},
+                                        global: vars.global || {},
+                                        watches: vars.watches || {},
+                                    });
+                                } else {
+                                    event.reply('debug-variables-updated', {
+                                        local: vars.local || {},
+                                        global: vars.global || {},
+                                        watches: vars.watches || {},
+                                    });
+                                }
+                            })
+                            .catch(() => {});
+                    } catch (_) {}
+                })
+                .catch((error) => {
+                    try {
+                        pendingWatchExprs.delete(expr);
+                    } catch (_) {}
+                    event.reply('debug-error', error.message);
+                });
         } else {
             broadcastPendingWatchSnapshot(event);
             event.reply('debug-output', { message: `已添加监视待处理: ${expr}`, type: 'info' });
@@ -3504,33 +3720,43 @@ function setupIPC() {
         const expr = String(variableName || '').trim();
         if (!expr) return;
 
-        const removeFromCache = () => { try { pendingWatchExprs.delete(expr); } catch (_) { } };
+        const removeFromCache = () => {
+            try {
+                pendingWatchExprs.delete(expr);
+            } catch (_) {}
+        };
 
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.removeWatchVariable(expr).then(() => {
-                removeFromCache();
-                event.reply('debug-output', { message: `已移除监视变量: ${expr}`, type: 'info' });
-                try {
-                    gdbDebugger.updateVariables().then(() => {
-                        const vars = gdbDebugger.getVariables();
-                        if (mainWindow && !mainWindow.isDestroyed()) {
-                            mainWindow.webContents.send('debug-variables-updated', {
-                                local: vars.local || {},
-                                global: vars.global || {},
-                                watches: vars.watches || {}
-                            });
-                        } else {
-                            event.reply('debug-variables-updated', {
-                                local: vars.local || {},
-                                global: vars.global || {},
-                                watches: vars.watches || {}
-                            });
-                        }
-                    }).catch(() => { });
-                } catch (_) { }
-            }).catch(error => {
-                event.reply('debug-error', error.message);
-            });
+            gdbDebugger
+                .removeWatchVariable(expr)
+                .then(() => {
+                    removeFromCache();
+                    event.reply('debug-output', { message: `已移除监视变量: ${expr}`, type: 'info' });
+                    try {
+                        gdbDebugger
+                            .updateVariables()
+                            .then(() => {
+                                const vars = gdbDebugger.getVariables();
+                                if (mainWindow && !mainWindow.isDestroyed()) {
+                                    mainWindow.webContents.send('debug-variables-updated', {
+                                        local: vars.local || {},
+                                        global: vars.global || {},
+                                        watches: vars.watches || {},
+                                    });
+                                } else {
+                                    event.reply('debug-variables-updated', {
+                                        local: vars.local || {},
+                                        global: vars.global || {},
+                                        watches: vars.watches || {},
+                                    });
+                                }
+                            })
+                            .catch(() => {});
+                    } catch (_) {}
+                })
+                .catch((error) => {
+                    event.reply('debug-error', error.message);
+                });
         } else {
             removeFromCache();
             broadcastPendingWatchSnapshot(event);
@@ -3540,20 +3766,23 @@ function setupIPC() {
 
     ipcMain.on('debug-refresh-variables', (event) => {
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.updateVariables().then(result => {
-                const variables = gdbDebugger.getVariables();
-                const payload = {
-                    local: variables.local || {},
-                    global: variables.global || {},
-                    watches: variables.watches || {}
-                };
-                event.reply('debug-variables-updated', payload);
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.webContents.send('debug-variables-updated', payload);
-                }
-            }).catch(error => {
-                event.reply('debug-error', error.message);
-            });
+            gdbDebugger
+                .updateVariables()
+                .then((result) => {
+                    const variables = gdbDebugger.getVariables();
+                    const payload = {
+                        local: variables.local || {},
+                        global: variables.global || {},
+                        watches: variables.watches || {},
+                    };
+                    event.reply('debug-variables-updated', payload);
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        mainWindow.webContents.send('debug-variables-updated', payload);
+                    }
+                })
+                .catch((error) => {
+                    event.reply('debug-error', error.message);
+                });
         } else {
             event.reply('debug-error', '调试器未运行');
         }
@@ -3561,24 +3790,36 @@ function setupIPC() {
 
     ipcMain.on('debug-expand-variable', (event, variableName, options = {}) => {
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.expandVariable(variableName, options).then((result) => {
-                event.reply('debug-output', { message: `已展开变量: ${variableName}`, type: 'info' });
-                broadcastCurrentVariablesSnapshot(event);
-                const payload = {
-                    name: variableName,
-                    scope: result?.scope || (gdbDebugger.getVariables()?.watches?.[variableName] ? 'watch' : 'local'),
-                    path: Array.isArray(result?.path) ? result.path : (Array.isArray(options.path) ? options.path : []),
-                    cacheKey: result?.cacheKey || options.cacheKey || null,
-                    options,
-                    data: result?.data || null
-                };
-                try { event.reply('debug-variable-expanded', payload); } catch (_) { }
-                if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents !== event.sender) {
-                    try { mainWindow.webContents.send('debug-variable-expanded', payload); } catch (_) { }
-                }
-            }).catch(error => {
-                event.reply('debug-error', error.message);
-            });
+            gdbDebugger
+                .expandVariable(variableName, options)
+                .then((result) => {
+                    event.reply('debug-output', { message: `已展开变量: ${variableName}`, type: 'info' });
+                    broadcastCurrentVariablesSnapshot(event);
+                    const payload = {
+                        name: variableName,
+                        scope:
+                            result?.scope || (gdbDebugger.getVariables()?.watches?.[variableName] ? 'watch' : 'local'),
+                        path: Array.isArray(result?.path)
+                            ? result.path
+                            : Array.isArray(options.path)
+                              ? options.path
+                              : [],
+                        cacheKey: result?.cacheKey || options.cacheKey || null,
+                        options,
+                        data: result?.data || null,
+                    };
+                    try {
+                        event.reply('debug-variable-expanded', payload);
+                    } catch (_) {}
+                    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents !== event.sender) {
+                        try {
+                            mainWindow.webContents.send('debug-variable-expanded', payload);
+                        } catch (_) {}
+                    }
+                })
+                .catch((error) => {
+                    event.reply('debug-error', error.message);
+                });
         } else {
             event.reply('debug-error', '调试器未运行');
         }
@@ -3587,25 +3828,37 @@ function setupIPC() {
     ipcMain.on('debug-load-more-variable', (event, variableName, options = {}) => {
         if (gdbDebugger && gdbDebugger.isRunning) {
             const nextOptions = { ...options, append: true };
-            gdbDebugger.expandVariable(variableName, nextOptions).then((result) => {
-                event.reply('debug-output', { message: `已加载更多: ${variableName}`, type: 'info' });
-                broadcastCurrentVariablesSnapshot(event);
-                const payload = {
-                    name: variableName,
-                    scope: result?.scope || (gdbDebugger.getVariables()?.watches?.[variableName] ? 'watch' : 'local'),
-                    path: Array.isArray(result?.path) ? result.path : (Array.isArray(nextOptions.path) ? nextOptions.path : []),
-                    cacheKey: result?.cacheKey || nextOptions.cacheKey || null,
-                    options: nextOptions,
-                    append: true,
-                    data: result?.data || null
-                };
-                try { event.reply('debug-variable-expanded', payload); } catch (_) { }
-                if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents !== event.sender) {
-                    try { mainWindow.webContents.send('debug-variable-expanded', payload); } catch (_) { }
-                }
-            }).catch(error => {
-                event.reply('debug-error', error.message);
-            });
+            gdbDebugger
+                .expandVariable(variableName, nextOptions)
+                .then((result) => {
+                    event.reply('debug-output', { message: `已加载更多: ${variableName}`, type: 'info' });
+                    broadcastCurrentVariablesSnapshot(event);
+                    const payload = {
+                        name: variableName,
+                        scope:
+                            result?.scope || (gdbDebugger.getVariables()?.watches?.[variableName] ? 'watch' : 'local'),
+                        path: Array.isArray(result?.path)
+                            ? result.path
+                            : Array.isArray(nextOptions.path)
+                              ? nextOptions.path
+                              : [],
+                        cacheKey: result?.cacheKey || nextOptions.cacheKey || null,
+                        options: nextOptions,
+                        append: true,
+                        data: result?.data || null,
+                    };
+                    try {
+                        event.reply('debug-variable-expanded', payload);
+                    } catch (_) {}
+                    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents !== event.sender) {
+                        try {
+                            mainWindow.webContents.send('debug-variable-expanded', payload);
+                        } catch (_) {}
+                    }
+                })
+                .catch((error) => {
+                    event.reply('debug-error', error.message);
+                });
         } else {
             event.reply('debug-error', '调试器未运行');
         }
@@ -3613,12 +3866,15 @@ function setupIPC() {
 
     ipcMain.on('debug-collapse-variable', (event, variableName, options = {}) => {
         if (gdbDebugger && gdbDebugger.isRunning) {
-            gdbDebugger.collapseVariable(variableName, options).then(result => {
-                event.reply('debug-output', { message: `已折叠变量: ${variableName}`, type: 'info' });
-                broadcastCurrentVariablesSnapshot(event);
-            }).catch(error => {
-                event.reply('debug-error', error.message);
-            });
+            gdbDebugger
+                .collapseVariable(variableName, options)
+                .then((result) => {
+                    event.reply('debug-output', { message: `已折叠变量: ${variableName}`, type: 'info' });
+                    broadcastCurrentVariablesSnapshot(event);
+                })
+                .catch((error) => {
+                    event.reply('debug-error', error.message);
+                });
         } else {
             event.reply('debug-error', '调试器未运行');
         }
@@ -3650,16 +3906,26 @@ function setupIPC() {
             }
             const writeResult = writeUtf8FileIfChanged(filePath, content);
             if (writeResult.changed) {
-                markLocalSave(filePath, { exists: true, fingerprint: writeResult.fingerprint, mtimeMs: writeResult.mtimeMs });
+                markLocalSave(filePath, {
+                    exists: true,
+                    fingerprint: writeResult.fingerprint,
+                    mtimeMs: writeResult.mtimeMs,
+                });
                 logInfo('文件保存成功(事件):', filePath);
             } else {
                 logInfo('文件内容未变化，跳过写入(事件):', filePath);
             }
-            try { event.reply('file-saved', filePath, null); } catch (_) { }
-            try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-saved', filePath); } catch (_) { }
+            try {
+                event.reply('file-saved', filePath, null);
+            } catch (_) {}
+            try {
+                if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-saved', filePath);
+            } catch (_) {}
         } catch (error) {
             logError('保存文件失败(事件):', error);
-            try { event.reply('file-saved', filePath || '', error?.message || String(error)); } catch (_) { }
+            try {
+                event.reply('file-saved', filePath || '', error?.message || String(error));
+            } catch (_) {}
         }
     });
 
@@ -3762,12 +4028,18 @@ function setupIPC() {
             }
             const writeResult = writeUtf8FileIfChanged(filePath, content);
             if (writeResult.changed) {
-                markLocalSave(filePath, { exists: true, fingerprint: writeResult.fingerprint, mtimeMs: writeResult.mtimeMs });
+                markLocalSave(filePath, {
+                    exists: true,
+                    fingerprint: writeResult.fingerprint,
+                    mtimeMs: writeResult.mtimeMs,
+                });
                 logInfo('文件保存成功:', filePath);
             } else {
                 logInfo('文件内容未变化，跳过写入:', filePath);
             }
-            try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-saved', filePath); } catch (_) { }
+            try {
+                if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-saved', filePath);
+            } catch (_) {}
             return true;
         } catch (error) {
             logError('保存文件失败:', error);
@@ -3784,19 +4056,26 @@ function setupIPC() {
                     { name: 'C++ Files', extensions: ['cpp', 'cc', 'cxx', 'c++'] },
                     { name: 'C Files', extensions: ['c'] },
                     { name: 'Header Files', extensions: ['h', 'hpp', 'hxx'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
+                    { name: 'All Files', extensions: ['*'] },
+                ],
             });
 
             if (!result.canceled && result.filePath) {
                 const writeResult = writeUtf8FileIfChanged(result.filePath, content);
                 if (writeResult.changed) {
-                    markLocalSave(result.filePath, { exists: true, fingerprint: writeResult.fingerprint, mtimeMs: writeResult.mtimeMs });
+                    markLocalSave(result.filePath, {
+                        exists: true,
+                        fingerprint: writeResult.fingerprint,
+                        mtimeMs: writeResult.mtimeMs,
+                    });
                     logInfo('文件另存为成功:', result.filePath);
                 } else {
                     logInfo('文件内容未变化，另存为目标无需重写:', result.filePath);
                 }
-                try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-saved', result.filePath); } catch (_) { }
+                try {
+                    if (mainWindow && !mainWindow.isDestroyed())
+                        mainWindow.webContents.send('file-saved', result.filePath);
+                } catch (_) {}
                 return result.filePath;
             }
             return null;
@@ -3893,7 +4172,9 @@ function setupIPC() {
                 files.push({
                     path: normalizedEntryName,
                     content,
-                    sizeBytes: Number.isFinite(entry?.size) ? Math.max(0, Number(entry.size)) : Buffer.byteLength(content || '', 'utf8')
+                    sizeBytes: Number.isFinite(entry?.size)
+                        ? Math.max(0, Number(entry.size))
+                        : Buffer.byteLength(content || '', 'utf8'),
                 });
             }
 
@@ -3903,7 +4184,9 @@ function setupIPC() {
             return { success: false, error: error.message || '读取压缩包失败' };
         } finally {
             if (zip) {
-                try { await zip.close(); } catch (_) { }
+                try {
+                    await zip.close();
+                } catch (_) {}
             }
         }
     });
@@ -3924,7 +4207,12 @@ function setupIPC() {
                 // External-change prompts are optional. Keeping the main process
                 // responsive is more important than opening an unbounded number
                 // of native handles when a workspace contains hundreds of tabs.
-                try { logger.logwarn('[FileWatch] 已达到监听上限，跳过额外文件监听', { limit: MAX_ACTIVE_FILE_WATCHERS, filePath: normalized.resolved }); } catch (_) { }
+                try {
+                    logger.logwarn('[FileWatch] 已达到监听上限，跳过额外文件监听', {
+                        limit: MAX_ACTIVE_FILE_WATCHERS,
+                        filePath: normalized.resolved,
+                    });
+                } catch (_) {}
                 return { success: true, reason: 'limit-reached' };
             }
             try {
@@ -3932,17 +4220,27 @@ function setupIPC() {
                     try {
                         scheduleWatcherEvent(normalized.key, eventType);
                     } catch (error) {
-                        try { logger.logwarn('[FileWatch] 事件处理失败', { filePath: normalized.resolved, error: error?.message || String(error) }); } catch (_) { }
+                        try {
+                            logger.logwarn('[FileWatch] 事件处理失败', {
+                                filePath: normalized.resolved,
+                                error: error?.message || String(error),
+                            });
+                        } catch (_) {}
                     }
                 });
                 watcher.on('error', (error) => {
-                    try { logger.logwarn('[FileWatch] 监听出错', { filePath: normalized.resolved, error: error?.message || String(error) }); } catch (_) { }
+                    try {
+                        logger.logwarn('[FileWatch] 监听出错', {
+                            filePath: normalized.resolved,
+                            error: error?.message || String(error),
+                        });
+                    } catch (_) {}
                 });
                 let initialFingerprint = null;
                 try {
                     const initialContent = await fs.promises.readFile(normalized.resolved, 'utf8');
                     initialFingerprint = buildContentFingerprint(initialContent);
-                } catch (_) { }
+                } catch (_) {}
                 entry = {
                     key: normalized.key,
                     resolvedPath: normalized.resolved,
@@ -3952,11 +4250,16 @@ function setupIPC() {
                     lastEventSignature: null,
                     lastObservedMtime: null,
                     lastKnownExists: true,
-                    lastKnownFingerprint: initialFingerprint
+                    lastKnownFingerprint: initialFingerprint,
                 };
                 fileWatchRegistry.set(normalized.key, entry);
             } catch (error) {
-                try { logger.logwarn('[FileWatch] 创建监听失败', { filePath: normalized.resolved, error: error?.message || String(error) }); } catch (_) { }
+                try {
+                    logger.logwarn('[FileWatch] 创建监听失败', {
+                        filePath: normalized.resolved,
+                        error: error?.message || String(error),
+                    });
+                } catch (_) {}
                 return { success: false, error: error?.message || String(error) };
             }
         } else {
@@ -4019,9 +4322,23 @@ function setupIPC() {
 
     ipcMain.handle('walk-directory', async (event, dirPath, options = {}) => {
         const {
-            includeExts = ['.cpp', '.c', '.h', '.hpp', '.cc', '.cxx', '.txt', '.md', '.json', '.in', '.out', '.ans', '.py'],
+            includeExts = [
+                '.cpp',
+                '.c',
+                '.h',
+                '.hpp',
+                '.cc',
+                '.cxx',
+                '.txt',
+                '.md',
+                '.json',
+                '.in',
+                '.out',
+                '.ans',
+                '.py',
+            ],
             excludeGlobs = ['node_modules', '.git', '.oicpp', '.vscode', '.dsym'],
-            maxFiles = 5000
+            maxFiles = 5000,
         } = options || {};
 
         const results = [];
@@ -4029,12 +4346,16 @@ function setupIPC() {
             const shouldExclude = (name) => {
                 const lower = name.toLowerCase();
                 if (lower.endsWith('.dsym')) return true; // 强制忽略 *.dSYM 目录
-                return excludeGlobs.some(g => lower.includes(g.toLowerCase()));
+                return excludeGlobs.some((g) => lower.includes(g.toLowerCase()));
             };
             const walk = (p) => {
                 if (results.length >= maxFiles) return;
                 let entries = [];
-                try { entries = fs.readdirSync(p, { withFileTypes: true }); } catch { return; }
+                try {
+                    entries = fs.readdirSync(p, { withFileTypes: true });
+                } catch {
+                    return;
+                }
                 for (const entry of entries) {
                     if (results.length >= maxFiles) break;
                     const full = path.join(p, entry.name);
@@ -4048,13 +4369,15 @@ function setupIPC() {
                                 results.push({ name: entry.name, path: full, ext });
                             }
                         }
-                    } catch (_) { }
+                    } catch (_) {}
                 }
             };
             walk(dirPath);
             return { success: true, files: results };
         } catch (error) {
-            try { logError('[walk-directory] 失败:', error); } catch (_) { }
+            try {
+                logError('[walk-directory] 失败:', error);
+            } catch (_) {}
             return { success: false, error: error.message };
         }
     });
@@ -4137,7 +4460,7 @@ function setupIPC() {
     ipcMain.handle('create-file', async (_event, filePath, content = '') => {
         try {
             if (!filePath || typeof filePath !== 'string') throw new Error('无效文件路径');
-            
+
             // Validate the file name
             const fileName = path.basename(filePath);
             const validation = validateFileName(fileName);
@@ -4154,7 +4477,10 @@ function setupIPC() {
             }
             markLocalSave(finalPath);
             fs.writeFileSync(finalPath, content, 'utf8');
-            try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('file-created', finalPath, null); } catch (_) { }
+            try {
+                if (mainWindow && !mainWindow.isDestroyed())
+                    mainWindow.webContents.send('file-created', finalPath, null);
+            } catch (_) {}
             logInfo('文件创建成功(invoke):', finalPath);
             return { success: true, filePath: finalPath };
         } catch (error) {
@@ -4217,7 +4543,6 @@ function setupIPC() {
         }
     });
 
-
     ipcMain.on('move-file', async (event, sourcePath, targetPath) => {
         try {
             if (!fs.existsSync(sourcePath)) {
@@ -4239,7 +4564,6 @@ function setupIPC() {
         }
     });
 
-
     ipcMain.handle('export-settings', async () => {
         try {
             const result = await dialog.showSaveDialog(mainWindow, {
@@ -4247,8 +4571,8 @@ function setupIPC() {
                 defaultPath: 'oicpp-settings.json',
                 filters: [
                     { name: 'JSON文件', extensions: ['json'] },
-                    { name: '所有文件', extensions: ['*'] }
-                ]
+                    { name: '所有文件', extensions: ['*'] },
+                ],
             });
 
             if (!result.canceled && result.filePath) {
@@ -4269,9 +4593,9 @@ function setupIPC() {
                 title: '导入设置',
                 filters: [
                     { name: 'JSON文件', extensions: ['json'] },
-                    { name: '所有文件', extensions: ['*'] }
+                    { name: '所有文件', extensions: ['*'] },
                 ],
-                properties: ['openFile']
+                properties: ['openFile'],
             });
 
             if (!result.canceled && result.filePaths.length > 0) {
@@ -4332,9 +4656,15 @@ function setupIPC() {
     ipcMain.handle('run-program', async (event, executablePathOrOptions, input, timeLimit, memoryLimit) => {
         const { spawn } = require('child_process');
 
-        let executablePath, args = [], workingDirectory = null;
+        let executablePath,
+            args = [],
+            workingDirectory = null;
         let skipPreKill = false;
-        if (typeof executablePathOrOptions === 'object' && executablePathOrOptions && executablePathOrOptions.executablePath) {
+        if (
+            typeof executablePathOrOptions === 'object' &&
+            executablePathOrOptions &&
+            executablePathOrOptions.executablePath
+        ) {
             executablePath = executablePathOrOptions.executablePath;
             args = executablePathOrOptions.args || [];
             workingDirectory = executablePathOrOptions.workingDirectory;
@@ -4364,29 +4694,15 @@ function setupIPC() {
                 compilerDir,
                 path.join(compilerRoot, 'bin'),
                 path.join(compilerRoot, 'mingw64', 'bin'),
-                path.join(compilerRoot, 'mingw32', 'bin')
+                path.join(compilerRoot, 'mingw32', 'bin'),
             ];
 
-            mingwBinPaths = mingwBinPaths.filter(p => fs.existsSync(p));
+            mingwBinPaths = mingwBinPaths.filter((p) => fs.existsSync(p));
 
             if (mingwBinPaths.length > 0) {
                 const envPath = [...mingwBinPaths, process.env.PATH].join(path.delimiter);
                 runtimeEnv.PATH = envPath;
                 logInfo('[运行时环境] 已添加编译器路径到PATH，路径数量:', mingwBinPaths.length);
-            }
-        }
-
-        function decodeBufferAuto(buffer) {
-            if (!buffer || buffer.length === 0) return '';
-            try {
-                const encoding = detectEncoding(buffer);
-                if (encoding === 'utf8') return buffer.toString('utf8');
-            } catch (_) { }
-            try {
-                const iconv = require('iconv-lite');
-                return iconv.decode(buffer, 'gbk');
-            } catch (_) {
-                return buffer.toString('utf8');
             }
         }
 
@@ -4398,7 +4714,7 @@ function setupIPC() {
                     await killConsolePauserForTargetWindows(require('path').resolve(target));
                 }
             }
-        } catch (_) { }
+        } catch (_) {}
 
         try {
             logInfo('[运行程序][准备]', {
@@ -4407,9 +4723,9 @@ function setupIPC() {
                 cwd: workingDirectory || null,
                 timeLimitMs: Number(timeLimit) || 0,
                 memoryLimitMb: Number(memoryLimit) || 0,
-                inputBytes: input ? Buffer.byteLength(input, 'utf8') : 0
+                inputBytes: input ? Buffer.byteLength(input, 'utf8') : 0,
             });
-        } catch (_) { }
+        } catch (_) {}
 
         return new Promise((resolve) => {
             let childProcess;
@@ -4420,21 +4736,21 @@ function setupIPC() {
                     stdio: ['pipe', 'pipe', 'pipe'],
                     env: runtimeEnv,
                     shell: true,
-                    cwd: workingDirectory
+                    cwd: workingDirectory,
                 });
             } else if (Array.isArray(args) && args.length > 0) {
                 childProcess = spawn(executablePath, args, {
                     stdio: ['pipe', 'pipe', 'pipe'],
                     env: runtimeEnv,
                     shell: false, // SPJ不需要shell
-                    cwd: workingDirectory
+                    cwd: workingDirectory,
                 });
             } else {
                 const absoluteExePath = path.resolve(executablePath);
                 childProcess = spawn(absoluteExePath, [], {
                     stdio: ['pipe', 'pipe', 'pipe'],
                     env: runtimeEnv,
-                    cwd: workingDirectory
+                    cwd: workingDirectory,
                 });
             }
 
@@ -4442,7 +4758,7 @@ function setupIPC() {
             try {
                 activeRunChildren.add(childProcess);
                 childProcess.once('close', () => activeRunChildren.delete(childProcess));
-            } catch (_) { }
+            } catch (_) {}
 
             const stdoutChunks = [];
             const stderrChunks = [];
@@ -4461,41 +4777,45 @@ function setupIPC() {
             let startTime = null;
 
             const parsedMemoryLimit = Number(memoryLimit);
-            const effectiveMemoryLimitMb = Number.isFinite(parsedMemoryLimit) && parsedMemoryLimit > 0
-                ? parsedMemoryLimit
-                : 0;
-            const memoryLimitBytes = effectiveMemoryLimitMb > 0
-                ? effectiveMemoryLimitMb * 1024 * 1024
-                : 0;
+            const effectiveMemoryLimitMb =
+                Number.isFinite(parsedMemoryLimit) && parsedMemoryLimit > 0 ? parsedMemoryLimit : 0;
+            const memoryLimitBytes = effectiveMemoryLimitMb > 0 ? effectiveMemoryLimitMb * 1024 * 1024 : 0;
 
-            const readMemoryBytes = () => new Promise((resolve) => {
-                const pid = childProcess?.pid;
-                if (!pid) return resolve(0);
-                if (process.platform === 'linux') {
-                    fs.readFile(`/proc/${pid}/status`, 'utf8', (error, content) => {
-                        if (error) return resolve(0);
-                        const match = content.match(/^VmRSS:\s+(\d+)\s+kB$/m);
-                        resolve(match ? Number(match[1]) * 1024 : 0);
-                    });
-                    return;
-                }
-                if (process.platform === 'win32') {
-                    const tasklist = spawn('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { windowsHide: true });
+            const readMemoryBytes = () =>
+                new Promise((resolve) => {
+                    const pid = childProcess?.pid;
+                    if (!pid) return resolve(0);
+                    if (process.platform === 'linux') {
+                        fs.readFile(`/proc/${pid}/status`, 'utf8', (error, content) => {
+                            if (error) return resolve(0);
+                            const match = content.match(/^VmRSS:\s+(\d+)\s+kB$/m);
+                            resolve(match ? Number(match[1]) * 1024 : 0);
+                        });
+                        return;
+                    }
+                    if (process.platform === 'win32') {
+                        const tasklist = spawn('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], {
+                            windowsHide: true,
+                        });
+                        let output = '';
+                        tasklist.stdout.on('data', (chunk) => {
+                            output += chunk.toString();
+                        });
+                        tasklist.on('close', () => {
+                            const match = output.match(/"([\d,.]+)\s*K"/i);
+                            resolve(match ? Number(match[1].replace(/[^\d]/g, '')) * 1024 : 0);
+                        });
+                        tasklist.on('error', () => resolve(0));
+                        return;
+                    }
+                    const ps = spawn('ps', ['-o', 'rss=', '-p', String(pid)]);
                     let output = '';
-                    tasklist.stdout.on('data', chunk => { output += chunk.toString(); });
-                    tasklist.on('close', () => {
-                        const match = output.match(/"([\d,.]+)\s*K"/i);
-                        resolve(match ? Number(match[1].replace(/[^\d]/g, '')) * 1024 : 0);
+                    ps.stdout.on('data', (chunk) => {
+                        output += chunk.toString();
                     });
-                    tasklist.on('error', () => resolve(0));
-                    return;
-                }
-                const ps = spawn('ps', ['-o', 'rss=', '-p', String(pid)]);
-                let output = '';
-                ps.stdout.on('data', chunk => { output += chunk.toString(); });
-                ps.on('close', () => resolve((Number(output.trim()) || 0) * 1024));
-                ps.on('error', () => resolve(0));
-            });
+                    ps.on('close', () => resolve((Number(output.trim()) || 0) * 1024));
+                    ps.on('error', () => resolve(0));
+                });
 
             const sampleMemory = () => {
                 if (memorySamplePromise) {
@@ -4516,9 +4836,9 @@ function setupIPC() {
                             try {
                                 logWarn('[运行程序][MLE触发]', {
                                     limitBytes: memoryLimitBytes,
-                                    observedBytes: bytes
+                                    observedBytes: bytes,
                                 });
-                            } catch (_) { }
+                            } catch (_) {}
                             try {
                                 if (childProcess && !childProcess.killed) {
                                     childProcess.kill('SIGKILL');
@@ -4540,20 +4860,29 @@ function setupIPC() {
                 effectiveTimeLimit = 0;
             }
 
-            const tleTimer = useTimeouts ? setTimeout(() => {
-                timeout = true;
-                try { logWarn('[运行程序][超时触发]', { limitMs: effectiveTimeLimit }); } catch (_) { }
-            }, effectiveTimeLimit) : null;
+            const tleTimer = useTimeouts
+                ? setTimeout(() => {
+                      timeout = true;
+                      try {
+                          logWarn('[运行程序][超时触发]', { limitMs: effectiveTimeLimit });
+                      } catch (_) {}
+                  }, effectiveTimeLimit)
+                : null;
 
-            const killTimer = useTimeouts ? setTimeout(() => {
-                try {
-                    if (childProcess && !childProcess.killed) {
-                        childProcess.kill('SIGKILL');
-                    }
-                } catch (e) {
-                    logError('[主进程-程序调试] 尝试终止进程时出错:', e.message);
-                }
-            }, Math.floor(effectiveTimeLimit * 1.1)) : null; // 110%时杀进程
+            const killTimer = useTimeouts
+                ? setTimeout(
+                      () => {
+                          try {
+                              if (childProcess && !childProcess.killed) {
+                                  childProcess.kill('SIGKILL');
+                              }
+                          } catch (e) {
+                              logError('[主进程-程序调试] 尝试终止进程时出错:', e.message);
+                          }
+                      },
+                      Math.floor(effectiveTimeLimit * 1.1)
+                  )
+                : null; // 110%时杀进程
 
             const handleOutputLimit = (streamName) => {
                 if (outputLimitTriggered || memoryLimitExceeded) {
@@ -4569,7 +4898,7 @@ function setupIPC() {
                 }
                 try {
                     logWarn('[运行程序][OLE触发]', { limitBytes: OUTPUT_LIMIT_BYTES, stream: streamName });
-                } catch (_) { }
+                } catch (_) {}
                 try {
                     if (childProcess && !childProcess.killed) {
                         childProcess.kill('SIGKILL');
@@ -4611,7 +4940,9 @@ function setupIPC() {
                 startTime = performance.now();
                 sampleMemory();
                 memoryTimer = setInterval(sampleMemory, 200);
-                try { logInfo('[运行程序][启动] 子进程已启动'); } catch (_) { }
+                try {
+                    logInfo('[运行程序][启动] 子进程已启动');
+                } catch (_) {}
             });
 
             childProcess.stdout.on('data', (data) => {
@@ -4627,7 +4958,9 @@ function setupIPC() {
                 if (killTimer) clearTimeout(killTimer);
                 if (memoryTimer) clearInterval(memoryTimer);
                 if (memorySamplePromise) {
-                    try { await memorySamplePromise; } catch (_) { }
+                    try {
+                        await memorySamplePromise;
+                    } catch (_) {}
                 }
                 const endTime = performance.now();
 
@@ -4654,7 +4987,9 @@ function setupIPC() {
                 if (outputLimitExceeded) {
                     const notice = `输出超过限制 (${limitLabel})，程序已被终止。`;
                     if (finalOutput) {
-                        finalOutput = finalOutput.endsWith('\n') ? `${finalOutput}${notice}` : `${finalOutput}\n${notice}`;
+                        finalOutput = finalOutput.endsWith('\n')
+                            ? `${finalOutput}${notice}`
+                            : `${finalOutput}\n${notice}`;
                     } else {
                         finalOutput = notice;
                     }
@@ -4669,8 +5004,10 @@ function setupIPC() {
                 }
 
                 const effectiveExitCode = outputLimitExceeded ? (code ?? -3) : code;
-                const measuredTime = useTimeouts ? Math.max(0, Math.min(executionTime, effectiveTimeLimit + 100)) : Math.max(0, executionTime);
-                const timedOut = outputLimitExceeded ? false : (useTimeouts ? timeout : false);
+                const measuredTime = useTimeouts
+                    ? Math.max(0, Math.min(executionTime, effectiveTimeLimit + 100))
+                    : Math.max(0, executionTime);
+                const timedOut = outputLimitExceeded ? false : useTimeouts ? timeout : false;
 
                 const result = {
                     output: finalOutput,
@@ -4685,7 +5022,7 @@ function setupIPC() {
                     memoryBytes: peakMemoryBytes,
                     outputLimitBytes: OUTPUT_LIMIT_BYTES,
                     capturedOutputBytes: combinedOutputBytes,
-                    observedOutputBytes
+                    observedOutputBytes,
                 };
 
                 try {
@@ -4693,18 +5030,32 @@ function setupIPC() {
                         stdoutBytes: Buffer.byteLength(output || '', 'utf8'),
                         stderrBytes: Buffer.byteLength(errorOutput || '', 'utf8'),
                         capturedBytes: combinedOutputBytes,
-                        observedBytes: observedOutputBytes
+                        observedBytes: observedOutputBytes,
                     };
                     if (outputLimitExceeded) {
-                        logWarn('[运行程序][结束][OLE]', { durationMs: result.time, limitBytes: OUTPUT_LIMIT_BYTES, exitCode: effectiveExitCode, ...sizes });
+                        logWarn('[运行程序][结束][OLE]', {
+                            durationMs: result.time,
+                            limitBytes: OUTPUT_LIMIT_BYTES,
+                            exitCode: effectiveExitCode,
+                            ...sizes,
+                        });
                     } else if (result.timeout) {
-                        logWarn('[运行程序][结束][TLE]', { durationMs: result.time, limitMs: effectiveTimeLimit, exitCode: effectiveExitCode, ...sizes });
+                        logWarn('[运行程序][结束][TLE]', {
+                            durationMs: result.time,
+                            limitMs: effectiveTimeLimit,
+                            exitCode: effectiveExitCode,
+                            ...sizes,
+                        });
                     } else if (effectiveExitCode !== 0) {
-                        logWarn('[运行程序][结束][RE]', { durationMs: result.time, exitCode: effectiveExitCode, ...sizes });
+                        logWarn('[运行程序][结束][RE]', {
+                            durationMs: result.time,
+                            exitCode: effectiveExitCode,
+                            ...sizes,
+                        });
                     } else {
                         logInfo('[运行程序][结束][OK]', { durationMs: result.time, ...sizes });
                     }
-                } catch (_) { }
+                } catch (_) {}
 
                 resolve(result);
             });
@@ -4725,9 +5076,11 @@ function setupIPC() {
                     memoryLimitBytes,
                     outputLimitBytes: OUTPUT_LIMIT_BYTES,
                     capturedOutputBytes: combinedOutputBytes,
-                    observedOutputBytes
+                    observedOutputBytes,
                 };
-                try { logError('[运行程序][异常]', error?.message || String(error)); } catch (_) { }
+                try {
+                    logError('[运行程序][异常]', error?.message || String(error));
+                } catch (_) {}
 
                 resolve(errorResult);
             });
@@ -4759,26 +5112,23 @@ function setupIPC() {
                 compilerDir,
                 path.join(compilerRoot, 'bin'),
                 path.join(compilerRoot, 'mingw64', 'bin'),
-                path.join(compilerRoot, 'mingw32', 'bin')
-            ].filter(p => fs.existsSync(p));
+                path.join(compilerRoot, 'mingw32', 'bin'),
+            ].filter((p) => fs.existsSync(p));
             if (compilerPaths.length > 0) {
                 runtimeEnv.PATH = [...compilerPaths, process.env.PATH].join(path.delimiter);
             }
         }
 
-        const spawnChild = (target, args, cwd) => spawn(
-            path.resolve(target),
-            Array.isArray(args) ? args : [],
-            {
+        const spawnChild = (target, args, cwd) =>
+            spawn(path.resolve(target), Array.isArray(args) ? args : [], {
                 stdio: ['pipe', 'pipe', 'pipe'],
                 env: {
                     ...runtimeEnv,
                     OICPP_INTERACTIVE_INPUT: inputFilePath,
-                    OICPP_CONTESTANT_EXECUTABLE: contestantPath
+                    OICPP_CONTESTANT_EXECUTABLE: contestantPath,
                 },
-                cwd: cwd || undefined
-            }
-        );
+                cwd: cwd || undefined,
+            });
 
         return new Promise((resolve) => {
             let contestant;
@@ -4806,7 +5156,7 @@ function setupIPC() {
                     stderr: error?.message || String(error),
                     outputLimitExceeded: false,
                     memoryLimitExceeded: false,
-                    memoryBytes: 0
+                    memoryBytes: 0,
                 });
                 return;
             }
@@ -4834,15 +5184,15 @@ function setupIPC() {
             let processError = '';
             const startTime = performance.now();
 
-            const closeInput = stream => {
+            const closeInput = (stream) => {
                 try {
                     if (stream && !stream.destroyed && !stream.writableEnded) stream.end();
-                } catch (_) { }
+                } catch (_) {}
             };
-            const kill = child => {
+            const kill = (child) => {
                 try {
                     if (child && !child.killed && child.exitCode === null) child.kill('SIGKILL');
-                } catch (_) { }
+                } catch (_) {}
             };
             const terminate = () => {
                 closeInput(contestant?.stdin);
@@ -4859,51 +5209,58 @@ function setupIPC() {
                 killTimer = null;
             };
 
-            const readMemory = () => new Promise((done) => {
-                const pid = contestant?.pid;
-                if (!pid) return done(0);
-                if (process.platform === 'linux') {
-                    fs.readFile('/proc/' + pid + '/status', 'utf8', (error, content) => {
-                        if (error) return done(0);
-                        const match = content.match(/^VmRSS:\s+(\d+)\s+kB$/m);
-                        done(match ? Number(match[1]) * 1024 : 0);
-                    });
-                    return;
-                }
-                if (process.platform === 'win32') {
-                    const tasklist = spawn('tasklist', ['/FI', 'PID eq ' + pid, '/FO', 'CSV', '/NH'], { windowsHide: true });
+            const readMemory = () =>
+                new Promise((done) => {
+                    const pid = contestant?.pid;
+                    if (!pid) return done(0);
+                    if (process.platform === 'linux') {
+                        fs.readFile('/proc/' + pid + '/status', 'utf8', (error, content) => {
+                            if (error) return done(0);
+                            const match = content.match(/^VmRSS:\s+(\d+)\s+kB$/m);
+                            done(match ? Number(match[1]) * 1024 : 0);
+                        });
+                        return;
+                    }
+                    if (process.platform === 'win32') {
+                        const tasklist = spawn('tasklist', ['/FI', 'PID eq ' + pid, '/FO', 'CSV', '/NH'], {
+                            windowsHide: true,
+                        });
+                        let output = '';
+                        tasklist.stdout.on('data', (chunk) => {
+                            output += chunk.toString();
+                        });
+                        tasklist.on('close', () => {
+                            const match = output.match(/([\d,.]+)\s*K/i);
+                            done(match ? Number(match[1].replace(/[^\d]/g, '')) * 1024 : 0);
+                        });
+                        tasklist.on('error', () => done(0));
+                        return;
+                    }
+                    const ps = spawn('ps', ['-o', 'rss=', '-p', String(pid)]);
                     let output = '';
-                    tasklist.stdout.on('data', chunk => { output += chunk.toString(); });
-                    tasklist.on('close', () => {
-                        const match = output.match(/([\d,.]+)\s*K/i);
-                        done(match ? Number(match[1].replace(/[^\d]/g, '')) * 1024 : 0);
+                    ps.stdout.on('data', (chunk) => {
+                        output += chunk.toString();
                     });
-                    tasklist.on('error', () => done(0));
-                    return;
-                }
-                const ps = spawn('ps', ['-o', 'rss=', '-p', String(pid)]);
-                let output = '';
-                ps.stdout.on('data', chunk => { output += chunk.toString(); });
-                ps.on('close', () => done((Number(output.trim()) || 0) * 1024));
-                ps.on('error', () => done(0));
-            });
+                    ps.on('close', () => done((Number(output.trim()) || 0) * 1024));
+                    ps.on('error', () => done(0));
+                });
 
-            const memoryLimitBytes = Number.isFinite(memoryLimit) && memoryLimit > 0
-                ? memoryLimit * 1024 * 1024
-                : 0;
+            const memoryLimitBytes = Number.isFinite(memoryLimit) && memoryLimit > 0 ? memoryLimit * 1024 * 1024 : 0;
             const sampleMemory = () => {
                 if (memoryPromise) return memoryPromise;
-                memoryPromise = readMemory().then((bytes) => {
-                    peakMemoryBytes = Math.max(peakMemoryBytes, bytes);
-                    if (memoryLimitBytes > 0 && bytes > memoryLimitBytes && !memoryLimitExceeded) {
-                        memoryLimitExceeded = true;
-                        if (timeoutTimer) clearTimeout(timeoutTimer);
-                        if (killTimer) clearTimeout(killTimer);
-                        terminate();
-                    }
-                }).finally(() => {
-                    memoryPromise = null;
-                });
+                memoryPromise = readMemory()
+                    .then((bytes) => {
+                        peakMemoryBytes = Math.max(peakMemoryBytes, bytes);
+                        if (memoryLimitBytes > 0 && bytes > memoryLimitBytes && !memoryLimitExceeded) {
+                            memoryLimitExceeded = true;
+                            if (timeoutTimer) clearTimeout(timeoutTimer);
+                            if (killTimer) clearTimeout(killTimer);
+                            terminate();
+                        }
+                    })
+                    .finally(() => {
+                        memoryPromise = null;
+                    });
                 return memoryPromise;
             };
 
@@ -4931,16 +5288,18 @@ function setupIPC() {
                     if (targetProcess?.stdin && !targetProcess.stdin.destroyed && !targetProcess.stdin.writableEnded) {
                         targetProcess.stdin.write(data);
                     }
-                } catch (_) { }
+                } catch (_) {}
             };
-            const decode = chunks => decodeBufferAuto(Buffer.concat(chunks));
+            const decode = (chunks) => decodeBufferAuto(Buffer.concat(chunks));
 
             const finish = async () => {
                 if (settled || !contestantClosed || !graderClosed) return;
                 settled = true;
                 clearTimers();
                 if (memoryPromise) {
-                    try { await memoryPromise; } catch (_) { }
+                    try {
+                        await memoryPromise;
+                    } catch (_) {}
                 }
                 const contestantStdout = decode(contestantOut);
                 const contestantStderr = decode(contestantErr);
@@ -4970,36 +5329,38 @@ function setupIPC() {
                     observedOutputBytes: observedBytes,
                     memoryLimitExceeded,
                     memoryLimitBytes,
-                    memoryBytes: peakMemoryBytes
+                    memoryBytes: peakMemoryBytes,
                 });
             };
 
             if (Number.isFinite(timeLimit) && timeLimit > 0) {
-                timeoutTimer = setTimeout(() => { timeout = true; }, timeLimit);
+                timeoutTimer = setTimeout(() => {
+                    timeout = true;
+                }, timeLimit);
                 killTimer = setTimeout(terminate, Math.floor(timeLimit * 1.1));
             }
 
-            contestant.stdout.on('data', data => forward(data, grader, contestantOut));
-            contestant.stderr.on('data', data => append(data, contestantErr));
-            grader.stdout.on('data', data => forward(data, contestant, graderOut));
-            grader.stderr.on('data', data => append(data, graderErr));
-            contestant.stdin.on('error', () => { });
-            grader.stdin.on('error', () => { });
-            contestant.on('error', error => {
+            contestant.stdout.on('data', (data) => forward(data, grader, contestantOut));
+            contestant.stderr.on('data', (data) => append(data, contestantErr));
+            grader.stdout.on('data', (data) => forward(data, contestant, graderOut));
+            grader.stderr.on('data', (data) => append(data, graderErr));
+            contestant.stdin.on('error', () => {});
+            grader.stdin.on('error', () => {});
+            contestant.on('error', (error) => {
                 processError = error?.message || String(error);
                 terminate();
             });
-            grader.on('error', error => {
+            grader.on('error', (error) => {
                 processError = error?.message || String(error);
                 terminate();
             });
-            contestant.on('close', code => {
+            contestant.on('close', (code) => {
                 contestantClosed = true;
                 contestantExitCode = code;
                 closeInput(grader.stdin);
                 finish();
             });
-            grader.on('close', code => {
+            grader.on('close', (code) => {
                 graderClosed = true;
                 graderExitCode = code;
                 closeInput(contestant.stdin);
@@ -5054,7 +5415,11 @@ function setupIPC() {
         try {
             const writeResult = writeUtf8FileIfChanged(filePath, content);
             if (writeResult.changed) {
-                markLocalSave(filePath, { exists: true, fingerprint: writeResult.fingerprint, mtimeMs: writeResult.mtimeMs });
+                markLocalSave(filePath, {
+                    exists: true,
+                    fingerprint: writeResult.fingerprint,
+                    mtimeMs: writeResult.mtimeMs,
+                });
             }
             return { success: true };
         } catch (error) {
@@ -5116,7 +5481,7 @@ function setupIPC() {
                 dirname: path.dirname(filePath),
                 basename: path.basename(filePath),
                 extname: path.extname(filePath),
-                basenameWithoutExt: path.basename(filePath, path.extname(filePath))
+                basenameWithoutExt: path.basename(filePath, path.extname(filePath)),
             };
         } catch (error) {
             throw error;
@@ -5174,7 +5539,7 @@ function setupIPC() {
                 return [];
             }
 
-            const versions = fs.readdirSync(compilersDir).filter(item => {
+            const versions = fs.readdirSync(compilersDir).filter((item) => {
                 const itemPath = path.join(compilersDir, item);
                 return fs.statSync(itemPath).isDirectory();
             });
@@ -5187,9 +5552,43 @@ function setupIPC() {
         }
     });
 
+    function updateDownloadProgress(progressWindow, backgroundDownload, message, percent = null, speed = null) {
+        try {
+            if (backgroundDownload || !progressWindow || progressWindow.isDestroyed()) return;
+
+            const script = `
+            (function() {
+                const statusElement = document.getElementById('status');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                const speedElement = document.getElementById('speed');
+
+                if (statusElement) statusElement.textContent = ${JSON.stringify(message)};
+                if (progressBar && progressText && ${percent !== null}) {
+                    const progressValue = Math.max(0, Math.min(100, Math.round(${percent})));
+                    progressBar.style.width = progressValue + '%';
+                    progressText.textContent = progressValue + '%';
+                }
+                if (speedElement && ${speed !== null}) {
+                    speedElement.textContent = ${JSON.stringify(speed)};
+                }
+            })()
+        `;
+
+            progressWindow.webContents.executeJavaScript(script).catch((error) => {
+                logWarn('[下载进度] 更新进度窗口失败:', error?.message || error);
+            });
+        } catch (error) {
+            logWarn('[下载进度] 更新进度窗口失败:', error?.message || error);
+        }
+    }
+
     ipcMain.handle('download-compiler', async (event, { url, version, name }) => {
         if (process.platform !== 'win32') {
-            return { success: false, error: '非 Windows 平台已禁用内置编译器下载，请访问官网获取: https://oicpp.mywwzh.top/' };
+            return {
+                success: false,
+                error: '非 Windows 平台已禁用内置编译器下载，请访问官网获取: https://oicpp.mywwzh.top/',
+            };
         }
         logInfo('[编译器下载] 开始下载请求:', { version, name });
 
@@ -5198,39 +5597,42 @@ function setupIPC() {
             return { success: false, error: '缺少必要的下载参数' };
         }
 
-        return new Promise(async (resolve) => {
-            const userHome = os.homedir();
-            const compilersDir = path.join(userHome, '.oicpp', 'Compilers');
-            const versionDir = path.join(compilersDir, version);
+        return new Promise((resolve) => {
+            const download = async () => {
+                const userHome = os.homedir();
+                const compilersDir = path.join(userHome, '.oicpp', 'Compilers');
+                const versionDir = path.join(compilersDir, version);
 
-            logInfo('[编译器下载] 目录路径:', { compilersDir, versionDir });
+                logInfo('[编译器下载] 目录路径:', { compilersDir, versionDir });
 
-            if (!fs.existsSync(compilersDir)) {
-                fs.mkdirSync(compilersDir, { recursive: true });
-                logInfo('[编译器下载] 创建编译器目录:', compilersDir);
-            }
-
-            if (fs.existsSync(versionDir)) {
-                logInfo('[编译器下载] 版本目录已存在:', versionDir);
-                resolve({ success: false, error: '该版本已存在' });
-                return;
-            }
-
-            let backgroundDownload = false;
-            let downloadCompleted = false;
-            let progressWindow = null;
-            let downloader = null;
-
-            try {
-                logInfo('[编译器下载] 创建进度窗口...');
-
-                const tmpDir = path.join(os.tmpdir(), 'oicpp-compiler-download');
-                if (!fs.existsSync(tmpDir)) {
-                    fs.mkdirSync(tmpDir, { recursive: true });
+                if (!fs.existsSync(compilersDir)) {
+                    fs.mkdirSync(compilersDir, { recursive: true });
+                    logInfo('[编译器下载] 创建编译器目录:', compilersDir);
                 }
 
-                const htmlFile = path.join(tmpDir, 'compiler-progress.html');
-                const htmlContent = `
+                if (fs.existsSync(versionDir)) {
+                    logInfo('[编译器下载] 版本目录已存在:', versionDir);
+                    resolve({ success: false, error: '该版本已存在' });
+                    return;
+                }
+
+                let backgroundDownload = false;
+                let downloadCompleted = false;
+                let progressWindow = null;
+                let downloader = null;
+                const updateProgress = (message, percent = null, speed = null) =>
+                    updateDownloadProgress(progressWindow, backgroundDownload, message, percent, speed);
+
+                try {
+                    logInfo('[编译器下载] 创建进度窗口...');
+
+                    const tmpDir = path.join(os.tmpdir(), 'oicpp-compiler-download');
+                    if (!fs.existsSync(tmpDir)) {
+                        fs.mkdirSync(tmpDir, { recursive: true });
+                    }
+
+                    const htmlFile = path.join(tmpDir, 'compiler-progress.html');
+                    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -5303,243 +5705,222 @@ function setupIPC() {
 </body>
 </html>`;
 
-                fs.writeFileSync(htmlFile, htmlContent, 'utf8');
-                logInfo('[编译器下载] HTML文件已创建:', htmlFile);
+                    fs.writeFileSync(htmlFile, htmlContent, 'utf8');
+                    logInfo('[编译器下载] HTML文件已创建:', htmlFile);
 
-                progressWindow = new BrowserWindow({
-                    width: 500,
-                    height: 400,
-                    show: false,
-                    resizable: false,
-                    autoHideMenuBar: true,
-                    parent: BrowserWindow.getFocusedWindow(),
-                    modal: false,
-                    webPreferences: {
-                        nodeIntegration: false,
-                        contextIsolation: true
-                    }
-                });
-
-                logInfo('[编译器下载] 进度窗口已创建');
-
-                progressWindow.setMenuBarVisibility(false);
-                progressWindow.setMenu(null);
-
-                progressWindow.on('close', (event) => {
-                    logInfo('[编译器下载] 进度窗口关闭事件, downloadCompleted:', downloadCompleted);
-
-                    if (!backgroundDownload && !downloadCompleted) {
-                        event.preventDefault();
-
-                        const choice = dialog.showMessageBoxSync(progressWindow, {
-                            type: 'question',
-                            title: '后台下载',
-                            message: '是否在后台继续下载编译器？',
-                            detail: '关闭此窗口后，下载将在后台继续进行。',
-                            buttons: ['后台下载', '取消下载'],
-                            defaultId: 0
-                        });
-
-                        if (choice === 0) {
-                            backgroundDownload = true;
-                            logInfo('[编译器下载] 用户选择后台下载编译器');
-                            progressWindow.destroy();
-                            bringMainWindowToFront();
-                        } else {
-                            logInfo('[编译器下载] 用户取消编译器下载');
-                            if (downloader) {
-                                downloader.cancel();
-                            }
-                            resolve({ success: false, error: '用户取消下载' });
-                            progressWindow.destroy();
-                            return;
-                        }
-                    } else {
-                        try {
-                            if (fs.existsSync(htmlFile)) {
-                                fs.unlinkSync(htmlFile);
-                                logInfo('[编译器下载] 临时HTML文件已清理');
-                            }
-                        } catch (error) {
-                            logInfo('[编译器下载] 清理临时文件失败:', error.message);
-                        }
-                    }
-                });
-
-                progressWindow.loadFile(htmlFile);
-
-                progressWindow.webContents.once('did-finish-load', () => {
-                    progressWindow.show();
-                    updateProgress('开始下载编译器...');
-                });
-
-                progressWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-                    logError('[编译器下载] 页面加载失败:', errorCode, errorDescription);
-                });
-
-                function updateProgress(message, percent = null, speed = null) {
-                    try {
-                        if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.webContents.executeJavaScript(`
-                (function() {
-                  try {
-                    const statusElement = document.getElementById('status');
-                    const progressBar = document.getElementById('progress-bar');
-                    const progressText = document.getElementById('progress-text');
-                    const speedElement = document.getElementById('speed');
-                    
-                    if (statusElement) {
-                      statusElement.textContent = ${JSON.stringify(message)};
-                    }
-                    
-                    if (progressBar && progressText && ${percent !== null}) {
-                      const percentValue = Math.max(0, Math.min(100, Math.round(${percent})));
-                      progressBar.style.width = percentValue + '%';
-                      progressText.textContent = percentValue + '%';
-                    }
-                    
-                    if (speedElement && ${speed !== null}) {
-                      speedElement.textContent = ${JSON.stringify(speed)};
-                    }
-                    
-                    return true;
-                  } catch (error) {
-                    return false;
-                  }
-                })()
-              `).catch(() => {
-                            });
-                        }
-                    } catch (error) {
-                    }
-                }
-
-                updateProgress(`开始下载编译器: ${name} ${version}`);
-
-                if (typeof url !== 'string' || !url.includes('.')) {
-                    throw new Error('无效的下载URL格式');
-                }
-
-                let fileExtension = '';
-                try {
-                    const u = new URL(url);
-                    const ext = path.extname(u.pathname).toLowerCase();
-                    fileExtension = ext ? ext.slice(1) : '';
-                } catch (_) {
-                    const urlParts = url.split('.');
-                    fileExtension = urlParts[urlParts.length - 1].toLowerCase();
-                }
-                if (!fileExtension) throw new Error('无法识别下载文件类型');
-                const tempFile = path.join(compilersDir, `${version}.${fileExtension}`);
-
-                downloader = new MultiThreadDownloader({
-                    maxConcurrency: 16,
-                    chunkSize: 1024 * 1024 * 2,
-                    timeout: 45000,
-                    retryCount: 8,
-                    minMultiThreadSize: 1024 * 1024 * 2,
-                    progressCallback: (progress) => {
-                        let percent = null;
-                        let speedText = null;
-                        let receivedMB = null;
-                        let totalMB = null;
-                        if (progress.type === 'single' || progress.type === 'multi') {
-                            percent = progress.progress;
-                            speedText = progress.speed > 1024 * 1024
-                                ? `${(progress.speed / 1024 / 1024).toFixed(1)} MB/s`
-                                : `${(progress.speed / 1024).toFixed(0)} KB/s`;
-                            receivedMB = (progress.downloadedBytes / 1024 / 1024).toFixed(1);
-                            totalMB = progress.totalBytes > 0 ? (progress.totalBytes / 1024 / 1024).toFixed(1) : '未知';
-                            const prefix = progress.type === 'multi' ? `多线程下载中` : '下载中';
-                            const threadInfo = progress.type === 'multi' ? ` (${progress.activeChunks}线程)` : '';
-                            updateProgress(`${prefix}${threadInfo}: ${receivedMB}MB / ${totalMB}MB`, percent, speedText);
-                        }
-                    }
-                });
-
-                await downloader.download(url, tempFile);
-
-                updateProgress('下载完成，开始解压...', 100);
-                logInfo('[编译器下载] 开始解压缩:', { archive: tempFile, targetDir: versionDir });
-
-                if (!fs.existsSync(versionDir)) {
-                    fs.mkdirSync(versionDir, { recursive: true });
-                }
-
-                if (fileExtension === 'zip') {
-                    await extractZip(tempFile, { dir: versionDir });
-                } else if (fileExtension === '7z') {
-                    if (!sevenBinPath || !fs.existsSync(sevenBinPath)) {
-                        throw new Error('7z 解压工具不可用，请联网安装依赖或改用zip包');
-                    }
-                    await new Promise((resolve, reject) => {
-                        const { spawn } = require('child_process');
-                        const args = ['x', '-y', `-o${versionDir}`, tempFile];
-                        const proc = spawn(sevenBinPath, args, { windowsHide: true });
-                        let stderr = '';
-                        proc.stderr.on('data', (d) => { stderr += d.toString(); });
-                        proc.on('close', (code) => {
-                            if (code === 0) resolve();
-                            else reject(new Error(`7z 解压失败(code=${code}): ${stderr || ''}`));
-                        });
-                        proc.on('error', (err) => reject(err));
+                    progressWindow = new BrowserWindow({
+                        width: 500,
+                        height: 400,
+                        show: false,
+                        resizable: false,
+                        autoHideMenuBar: true,
+                        parent: BrowserWindow.getFocusedWindow(),
+                        modal: false,
+                        webPreferences: {
+                            nodeIntegration: false,
+                            contextIsolation: true,
+                        },
                     });
-                } else {
-                    throw new Error(`不支持的文件格式: ${fileExtension}`);
-                }
 
-                fs.unlinkSync(tempFile);
+                    logInfo('[编译器下载] 进度窗口已创建');
 
-                updateProgress('解压完成，查找编译器可执行文件...');
+                    progressWindow.setMenuBarVisibility(false);
+                    progressWindow.setMenu(null);
 
-                const compilerPath = findCompilerExecutable(versionDir);
-                logInfo('[编译器下载] 编译器探测结果:', Boolean(compilerPath));
+                    progressWindow.on('close', (event) => {
+                        logInfo('[编译器下载] 进度窗口关闭事件, downloadCompleted:', downloadCompleted);
 
-                downloadCompleted = true;
-                updateProgress('编译器安装完成！');
+                        if (!backgroundDownload && !downloadCompleted) {
+                            event.preventDefault();
 
-                const result = {
-                    success: true,
-                    compilerPath: compilerPath || path.join(versionDir, 'bin', 'g++.exe')
-                };
+                            const choice = dialog.showMessageBoxSync(progressWindow, {
+                                type: 'question',
+                                title: '后台下载',
+                                message: '是否在后台继续下载编译器？',
+                                detail: '关闭此窗口后，下载将在后台继续进行。',
+                                buttons: ['后台下载', '取消下载'],
+                                defaultId: 0,
+                            });
 
-                if (backgroundDownload) {
-                    notifyUser('编译器下载完成', `${name} ${version} 已下载并安装完成。`, 'success');
-                }
-
-                if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                    setTimeout(() => {
-                        if (progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.close();
+                            if (choice === 0) {
+                                backgroundDownload = true;
+                                logInfo('[编译器下载] 用户选择后台下载编译器');
+                                progressWindow.destroy();
+                                bringMainWindowToFront();
+                            } else {
+                                logInfo('[编译器下载] 用户取消编译器下载');
+                                if (downloader) {
+                                    downloader.cancel();
+                                }
+                                resolve({ success: false, error: '用户取消下载' });
+                                progressWindow.destroy();
+                                return;
+                            }
+                        } else {
+                            try {
+                                if (fs.existsSync(htmlFile)) {
+                                    fs.unlinkSync(htmlFile);
+                                    logInfo('[编译器下载] 临时HTML文件已清理');
+                                }
+                            } catch (error) {
+                                logInfo('[编译器下载] 清理临时文件失败:', error.message);
+                            }
                         }
-                    }, 2000); // 2秒后关闭
-                }
+                    });
 
-                resolve(result);
+                    progressWindow.loadFile(htmlFile);
 
-            } catch (error) {
-                downloadCompleted = true;
+                    progressWindow.webContents.once('did-finish-load', () => {
+                        progressWindow.show();
+                        updateProgress('开始下载编译器...');
+                    });
 
-                const isCancelledError = error.message.includes('下载已取消') || error.message.includes('用户取消');
-                const errorMessage = isCancelledError ? '下载已取消' : `下载失败: ${error.message}`;
+                    progressWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                        logError('[编译器下载] 页面加载失败:', errorCode, errorDescription);
+                    });
 
-                logError('[编译器下载] 下载过程出错:', error.message);
+                    updateProgress(`开始下载编译器: ${name} ${version}`);
 
-                if (backgroundDownload && !isCancelledError) {
-                    notifyUser('编译器下载失败', `${name} ${version} 下载失败: ${error.message}`, 'error');
-                }
+                    if (typeof url !== 'string' || !url.includes('.')) {
+                        throw new Error('无效的下载URL格式');
+                    }
 
-                if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                    updateProgress(errorMessage);
-                    setTimeout(() => {
-                        if (progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.close();
+                    let fileExtension = '';
+                    try {
+                        const u = new URL(url);
+                        const ext = path.extname(u.pathname).toLowerCase();
+                        fileExtension = ext ? ext.slice(1) : '';
+                    } catch (_) {
+                        const urlParts = url.split('.');
+                        fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+                    }
+                    if (!fileExtension) throw new Error('无法识别下载文件类型');
+                    const tempFile = path.join(compilersDir, `${version}.${fileExtension}`);
+
+                    downloader = new MultiThreadDownloader({
+                        maxConcurrency: 16,
+                        chunkSize: 1024 * 1024 * 2,
+                        timeout: 45000,
+                        retryCount: 8,
+                        minMultiThreadSize: 1024 * 1024 * 2,
+                        progressCallback: (progress) => {
+                            let percent = null;
+                            let speedText = null;
+                            let receivedMB = null;
+                            let totalMB = null;
+                            if (progress.type === 'single' || progress.type === 'multi') {
+                                percent = progress.progress;
+                                speedText =
+                                    progress.speed > 1024 * 1024
+                                        ? `${(progress.speed / 1024 / 1024).toFixed(1)} MB/s`
+                                        : `${(progress.speed / 1024).toFixed(0)} KB/s`;
+                                receivedMB = (progress.downloadedBytes / 1024 / 1024).toFixed(1);
+                                totalMB =
+                                    progress.totalBytes > 0 ? (progress.totalBytes / 1024 / 1024).toFixed(1) : '未知';
+                                const prefix = progress.type === 'multi' ? `多线程下载中` : '下载中';
+                                const threadInfo = progress.type === 'multi' ? ` (${progress.activeChunks}线程)` : '';
+                                updateProgress(
+                                    `${prefix}${threadInfo}: ${receivedMB}MB / ${totalMB}MB`,
+                                    percent,
+                                    speedText
+                                );
+                            }
+                        },
+                    });
+
+                    await downloader.download(url, tempFile);
+
+                    updateProgress('下载完成，开始解压...', 100);
+                    logInfo('[编译器下载] 开始解压缩:', { archive: tempFile, targetDir: versionDir });
+
+                    if (!fs.existsSync(versionDir)) {
+                        fs.mkdirSync(versionDir, { recursive: true });
+                    }
+
+                    if (fileExtension === 'zip') {
+                        await extractZip(tempFile, { dir: versionDir });
+                    } else if (fileExtension === '7z') {
+                        if (!sevenBinPath || !fs.existsSync(sevenBinPath)) {
+                            throw new Error('7z 解压工具不可用，请联网安装依赖或改用zip包');
                         }
-                    }, isCancelledError ? 1000 : 3000); // 取消时更快关闭
-                }
+                        await new Promise((resolve, reject) => {
+                            const { spawn } = require('child_process');
+                            const args = ['x', '-y', `-o${versionDir}`, tempFile];
+                            const proc = spawn(sevenBinPath, args, { windowsHide: true });
+                            let stderr = '';
+                            proc.stderr.on('data', (d) => {
+                                stderr += d.toString();
+                            });
+                            proc.on('close', (code) => {
+                                if (code === 0) resolve();
+                                else reject(new Error(`7z 解压失败(code=${code}): ${stderr || ''}`));
+                            });
+                            proc.on('error', (err) => reject(err));
+                        });
+                    } else {
+                        throw new Error(`不支持的文件格式: ${fileExtension}`);
+                    }
 
-                resolve({ success: false, error: errorMessage });
-            }
+                    fs.unlinkSync(tempFile);
+
+                    updateProgress('解压完成，查找编译器可执行文件...');
+
+                    const compilerPath = findCompilerExecutable(versionDir);
+                    logInfo('[编译器下载] 编译器探测结果:', Boolean(compilerPath));
+
+                    downloadCompleted = true;
+                    updateProgress('编译器安装完成！');
+
+                    const result = {
+                        success: true,
+                        compilerPath: compilerPath || path.join(versionDir, 'bin', 'g++.exe'),
+                    };
+
+                    if (backgroundDownload) {
+                        notifyUser('编译器下载完成', `${name} ${version} 已下载并安装完成。`, 'success');
+                    }
+
+                    if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
+                        setTimeout(() => {
+                            if (progressWindow && !progressWindow.isDestroyed()) {
+                                progressWindow.close();
+                            }
+                        }, 2000); // 2秒后关闭
+                    }
+
+                    resolve(result);
+                } catch (error) {
+                    downloadCompleted = true;
+
+                    const isCancelledError = error.message.includes('下载已取消') || error.message.includes('用户取消');
+                    const errorMessage = isCancelledError ? '下载已取消' : `下载失败: ${error.message}`;
+
+                    logError('[编译器下载] 下载过程出错:', error.message);
+
+                    if (backgroundDownload && !isCancelledError) {
+                        notifyUser('编译器下载失败', `${name} ${version} 下载失败: ${error.message}`, 'error');
+                    }
+
+                    if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
+                        updateProgress(errorMessage);
+                        setTimeout(
+                            () => {
+                                if (progressWindow && !progressWindow.isDestroyed()) {
+                                    progressWindow.close();
+                                }
+                            },
+                            isCancelledError ? 1000 : 3000
+                        ); // 取消时更快关闭
+                    }
+
+                    resolve({ success: false, error: errorMessage });
+                }
+            };
+
+            download().catch((error) => {
+                logError('[编译器下载] 未处理的下载错误:', error);
+                resolve({ success: false, error: `下载失败: ${error?.message || String(error)}` });
+            });
         });
     });
 
@@ -5567,8 +5948,6 @@ function setupIPC() {
         }
     });
 
-
-
     ipcMain.handle('get-downloaded-testlibs', async (event) => {
         try {
             const userHome = os.homedir();
@@ -5578,9 +5957,10 @@ function setupIPC() {
                 return [];
             }
 
-            const dirs = fs.readdirSync(testlibsDir, { withFileTypes: true })
-                .filter(dirent => dirent.isDirectory())
-                .map(dirent => dirent.name);
+            const dirs = fs
+                .readdirSync(testlibsDir, { withFileTypes: true })
+                .filter((dirent) => dirent.isDirectory())
+                .map((dirent) => dirent.name);
 
             return dirs;
         } catch (error) {
@@ -5597,39 +5977,42 @@ function setupIPC() {
             return { success: false, error: '缺少必要的下载参数' };
         }
 
-        return new Promise(async (resolve) => {
-            const userHome = os.homedir();
-            const testlibsDir = path.join(userHome, '.oicpp', 'Testlibs');
-            const versionDir = path.join(testlibsDir, version);
+        return new Promise((resolve) => {
+            const download = async () => {
+                const userHome = os.homedir();
+                const testlibsDir = path.join(userHome, '.oicpp', 'Testlibs');
+                const versionDir = path.join(testlibsDir, version);
 
-            logInfo('[testlib下载] 目录路径:', { testlibsDir, versionDir });
+                logInfo('[testlib下载] 目录路径:', { testlibsDir, versionDir });
 
-            if (!fs.existsSync(testlibsDir)) {
-                fs.mkdirSync(testlibsDir, { recursive: true });
-                logInfo('[testlib下载] 创建testlib目录:', testlibsDir);
-            }
-
-            if (fs.existsSync(versionDir)) {
-                logInfo('[testlib下载] 版本目录已存在:', versionDir);
-                resolve({ success: false, error: '该版本已存在' });
-                return;
-            }
-
-            let backgroundDownload = false;
-            let downloadCompleted = false;
-            let progressWindow = null;
-            let downloader = null;
-
-            try {
-                logInfo('[testlib下载] 创建进度窗口...');
-
-                const tmpDir = path.join(os.tmpdir(), 'oicpp-testlib-download');
-                if (!fs.existsSync(tmpDir)) {
-                    fs.mkdirSync(tmpDir, { recursive: true });
+                if (!fs.existsSync(testlibsDir)) {
+                    fs.mkdirSync(testlibsDir, { recursive: true });
+                    logInfo('[testlib下载] 创建testlib目录:', testlibsDir);
                 }
 
-                const htmlFile = path.join(tmpDir, 'testlib-progress.html');
-                const htmlContent = `
+                if (fs.existsSync(versionDir)) {
+                    logInfo('[testlib下载] 版本目录已存在:', versionDir);
+                    resolve({ success: false, error: '该版本已存在' });
+                    return;
+                }
+
+                let backgroundDownload = false;
+                let downloadCompleted = false;
+                let progressWindow = null;
+                let downloader = null;
+                const updateProgress = (message, percent = null, speed = null) =>
+                    updateDownloadProgress(progressWindow, backgroundDownload, message, percent, speed);
+
+                try {
+                    logInfo('[testlib下载] 创建进度窗口...');
+
+                    const tmpDir = path.join(os.tmpdir(), 'oicpp-testlib-download');
+                    if (!fs.existsSync(tmpDir)) {
+                        fs.mkdirSync(tmpDir, { recursive: true });
+                    }
+
+                    const htmlFile = path.join(tmpDir, 'testlib-progress.html');
+                    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -5702,237 +6085,216 @@ function setupIPC() {
 </body>
 </html>`;
 
-                fs.writeFileSync(htmlFile, htmlContent, 'utf8');
-                logInfo('[testlib下载] HTML文件已创建:', htmlFile);
+                    fs.writeFileSync(htmlFile, htmlContent, 'utf8');
+                    logInfo('[testlib下载] HTML文件已创建:', htmlFile);
 
-                progressWindow = new BrowserWindow({
-                    width: 500,
-                    height: 400,
-                    show: false,
-                    resizable: false,
-                    autoHideMenuBar: true,
-                    parent: BrowserWindow.getFocusedWindow(),
-                    modal: false,
-                    webPreferences: {
-                        nodeIntegration: false,
-                        contextIsolation: true
-                    }
-                });
-
-                logInfo('[testlib下载] 进度窗口已创建');
-
-                progressWindow.setMenuBarVisibility(false);
-                progressWindow.setMenu(null);
-
-                progressWindow.on('close', (event) => {
-                    logInfo('[testlib下载] 进度窗口关闭事件, downloadCompleted:', downloadCompleted);
-
-                    if (!backgroundDownload && !downloadCompleted) {
-                        event.preventDefault();
-
-                        const choice = dialog.showMessageBoxSync(progressWindow, {
-                            type: 'question',
-                            title: '后台下载',
-                            message: '是否在后台继续下载testlib？',
-                            detail: '关闭此窗口后，下载将在后台继续进行。',
-                            buttons: ['后台下载', '取消下载'],
-                            defaultId: 0
-                        });
-
-                        if (choice === 0) {
-                            backgroundDownload = true;
-                            logInfo('[testlib下载] 用户选择后台下载testlib');
-                            progressWindow.destroy();
-                            bringMainWindowToFront();
-                        } else {
-                            logInfo('[testlib下载] 用户取消testlib下载');
-                            if (downloader) {
-                                downloader.cancel();
-                            }
-                            resolve({ success: false, error: '用户取消下载' });
-                            progressWindow.destroy();
-                            return;
-                        }
-                    } else {
-                        try {
-                            if (fs.existsSync(htmlFile)) {
-                                fs.unlinkSync(htmlFile);
-                                logInfo('[testlib下载] 临时HTML文件已清理');
-                            }
-                        } catch (error) {
-                            logInfo('[testlib下载] 清理临时文件失败:', error.message);
-                        }
-                    }
-                });
-
-                progressWindow.loadFile(htmlFile);
-
-                progressWindow.webContents.once('did-finish-load', () => {
-                    progressWindow.show();
-                    updateProgress('开始下载testlib...');
-                });
-
-                progressWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-                    logError('[testlib下载] 页面加载失败:', errorCode, errorDescription);
-                });
-
-                function updateProgress(message, percent = null, speed = null) {
-                    try {
-                        if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.webContents.executeJavaScript(`
-                (function() {
-                  try {
-                    const statusElement = document.getElementById('status');
-                    const progressBar = document.getElementById('progress-bar');
-                    const progressText = document.getElementById('progress-text');
-                    const speedElement = document.getElementById('speed');
-                    
-                    if (statusElement) {
-                      statusElement.textContent = ${JSON.stringify(message)};
-                    }
-                    
-                    if (progressBar && progressText && ${percent !== null}) {
-                      const percentValue = Math.max(0, Math.min(100, Math.round(${percent})));
-                      progressBar.style.width = percentValue + '%';
-                      progressText.textContent = percentValue + '%';
-                    }
-                    
-                    if (speedElement && ${speed !== null}) {
-                      speedElement.textContent = ${JSON.stringify(speed)};
-                    }
-                    
-                    return true;
-                  } catch (error) {
-                    return false;
-                  }
-                })()
-              `).catch(() => {
-                            });
-                        }
-                    } catch (error) {
-                    }
-                }
-
-                updateProgress(`开始下载testlib: ${name} ${version}`);
-
-                if (typeof url !== 'string' || !url.includes('.')) {
-                    throw new Error('无效的下载URL格式');
-                }
-
-                let fileExtension = '';
-                try {
-                    const u = new URL(url);
-                    const ext = path.extname(u.pathname).toLowerCase();
-                    fileExtension = ext ? ext.slice(1) : '';
-                } catch (_) {
-                    const urlParts = url.split('.');
-                    fileExtension = urlParts[urlParts.length - 1].toLowerCase();
-                }
-                if (!fileExtension) throw new Error('无法识别下载文件类型');
-                const tempFile = path.join(testlibsDir, `${version}.${fileExtension}`);
-
-                downloader = new MultiThreadDownloader({
-                    maxConcurrency: 16,
-                    chunkSize: 1024 * 1024 * 2,
-                    timeout: 45000,
-                    retryCount: 8,
-                    minMultiThreadSize: 1024 * 1024 * 2,
-                    progressCallback: (progress) => {
-                        if (progress.type === 'single' || progress.type === 'multi') {
-                            const percent = progress.progress;
-                            const speedText = progress.speed > 1024 * 1024
-                                ? `${(progress.speed / 1024 / 1024).toFixed(1)} MB/s`
-                                : `${(progress.speed / 1024).toFixed(0)} KB/s`;
-                            const receivedMB = (progress.downloadedBytes / 1024 / 1024).toFixed(1);
-                            const totalMB = progress.totalBytes > 0 ? (progress.totalBytes / 1024 / 1024).toFixed(1) : '未知';
-                            const prefix = progress.type === 'multi' ? `多线程下载中` : '下载中';
-                            const threadInfo = progress.type === 'multi' ? ` (${progress.activeChunks}线程)` : '';
-                            updateProgress(`${prefix}${threadInfo}: ${receivedMB}MB / ${totalMB}MB`, percent, speedText);
-                        }
-                    }
-                });
-
-                await downloader.download(url, tempFile);
-
-                updateProgress('下载完成，开始解压...', 100);
-
-                if (!fs.existsSync(versionDir)) {
-                    fs.mkdirSync(versionDir, { recursive: true });
-                }
-
-                if (fileExtension === 'zip') {
-                    await extractZip(tempFile, { dir: versionDir });
-                } else if (fileExtension === '7z') {
-                    if (!sevenBinPath || !fs.existsSync(sevenBinPath)) {
-                        throw new Error('7z 解压工具不可用，请联网安装依赖或改用zip包');
-                    }
-                    await new Promise((resolve, reject) => {
-                        const { spawn } = require('child_process');
-                        const args = ['x', '-y', `-o${versionDir}`, tempFile];
-                        const proc = spawn(sevenBinPath, args, { windowsHide: true });
-                        let stderr = '';
-                        proc.stderr.on('data', (d) => { stderr += d.toString(); });
-                        proc.on('close', (code) => {
-                            if (code === 0) resolve();
-                            else reject(new Error(`7z 解压失败(code=${code}): ${stderr || ''}`));
-                        });
-                        proc.on('error', (err) => reject(err));
+                    progressWindow = new BrowserWindow({
+                        width: 500,
+                        height: 400,
+                        show: false,
+                        resizable: false,
+                        autoHideMenuBar: true,
+                        parent: BrowserWindow.getFocusedWindow(),
+                        modal: false,
+                        webPreferences: {
+                            nodeIntegration: false,
+                            contextIsolation: true,
+                        },
                     });
-                } else {
-                    throw new Error(`不支持的文件格式: ${fileExtension}`);
-                }
 
-                fs.unlinkSync(tempFile);
+                    logInfo('[testlib下载] 进度窗口已创建');
 
-                updateProgress('解压完成，查找testlib文件...');
+                    progressWindow.setMenuBarVisibility(false);
+                    progressWindow.setMenu(null);
 
-                const testlibPath = findTestlibFile(versionDir);
+                    progressWindow.on('close', (event) => {
+                        logInfo('[testlib下载] 进度窗口关闭事件, downloadCompleted:', downloadCompleted);
 
-                downloadCompleted = true;
-                updateProgress('testlib安装完成！');
+                        if (!backgroundDownload && !downloadCompleted) {
+                            event.preventDefault();
 
-                const result = {
-                    success: true,
-                    testlibPath: testlibPath || path.join(versionDir, 'testlib.h')
-                };
+                            const choice = dialog.showMessageBoxSync(progressWindow, {
+                                type: 'question',
+                                title: '后台下载',
+                                message: '是否在后台继续下载testlib？',
+                                detail: '关闭此窗口后，下载将在后台继续进行。',
+                                buttons: ['后台下载', '取消下载'],
+                                defaultId: 0,
+                            });
 
-                if (backgroundDownload) {
-                    notifyUser('testlib 下载完成', `${name} ${version} 已下载并安装完成。`, 'success');
-                }
-
-                if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                    setTimeout(() => {
-                        if (progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.close();
+                            if (choice === 0) {
+                                backgroundDownload = true;
+                                logInfo('[testlib下载] 用户选择后台下载testlib');
+                                progressWindow.destroy();
+                                bringMainWindowToFront();
+                            } else {
+                                logInfo('[testlib下载] 用户取消testlib下载');
+                                if (downloader) {
+                                    downloader.cancel();
+                                }
+                                resolve({ success: false, error: '用户取消下载' });
+                                progressWindow.destroy();
+                                return;
+                            }
+                        } else {
+                            try {
+                                if (fs.existsSync(htmlFile)) {
+                                    fs.unlinkSync(htmlFile);
+                                    logInfo('[testlib下载] 临时HTML文件已清理');
+                                }
+                            } catch (error) {
+                                logInfo('[testlib下载] 清理临时文件失败:', error.message);
+                            }
                         }
-                    }, 2000); // 2秒后关闭
-                }
+                    });
 
-                resolve(result);
+                    progressWindow.loadFile(htmlFile);
 
-            } catch (error) {
-                downloadCompleted = true;
+                    progressWindow.webContents.once('did-finish-load', () => {
+                        progressWindow.show();
+                        updateProgress('开始下载testlib...');
+                    });
 
-                const isCancelledError = error.message.includes('下载已取消') || error.message.includes('用户取消');
-                const errorMessage = isCancelledError ? '下载已取消' : `下载失败: ${error.message}`;
+                    progressWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                        logError('[testlib下载] 页面加载失败:', errorCode, errorDescription);
+                    });
 
-                logError('[testlib下载] 下载过程出错:', error.message);
+                    updateProgress(`开始下载testlib: ${name} ${version}`);
 
-                if (backgroundDownload && !isCancelledError) {
-                    notifyUser('testlib 下载失败', `${name} ${version} 下载失败: ${error.message}`, 'error');
-                }
+                    if (typeof url !== 'string' || !url.includes('.')) {
+                        throw new Error('无效的下载URL格式');
+                    }
 
-                if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
-                    updateProgress(errorMessage);
-                    setTimeout(() => {
-                        if (progressWindow && !progressWindow.isDestroyed()) {
-                            progressWindow.close();
+                    let fileExtension = '';
+                    try {
+                        const u = new URL(url);
+                        const ext = path.extname(u.pathname).toLowerCase();
+                        fileExtension = ext ? ext.slice(1) : '';
+                    } catch (_) {
+                        const urlParts = url.split('.');
+                        fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+                    }
+                    if (!fileExtension) throw new Error('无法识别下载文件类型');
+                    const tempFile = path.join(testlibsDir, `${version}.${fileExtension}`);
+
+                    downloader = new MultiThreadDownloader({
+                        maxConcurrency: 16,
+                        chunkSize: 1024 * 1024 * 2,
+                        timeout: 45000,
+                        retryCount: 8,
+                        minMultiThreadSize: 1024 * 1024 * 2,
+                        progressCallback: (progress) => {
+                            if (progress.type === 'single' || progress.type === 'multi') {
+                                const percent = progress.progress;
+                                const speedText =
+                                    progress.speed > 1024 * 1024
+                                        ? `${(progress.speed / 1024 / 1024).toFixed(1)} MB/s`
+                                        : `${(progress.speed / 1024).toFixed(0)} KB/s`;
+                                const receivedMB = (progress.downloadedBytes / 1024 / 1024).toFixed(1);
+                                const totalMB =
+                                    progress.totalBytes > 0 ? (progress.totalBytes / 1024 / 1024).toFixed(1) : '未知';
+                                const prefix = progress.type === 'multi' ? `多线程下载中` : '下载中';
+                                const threadInfo = progress.type === 'multi' ? ` (${progress.activeChunks}线程)` : '';
+                                updateProgress(
+                                    `${prefix}${threadInfo}: ${receivedMB}MB / ${totalMB}MB`,
+                                    percent,
+                                    speedText
+                                );
+                            }
+                        },
+                    });
+
+                    await downloader.download(url, tempFile);
+
+                    updateProgress('下载完成，开始解压...', 100);
+
+                    if (!fs.existsSync(versionDir)) {
+                        fs.mkdirSync(versionDir, { recursive: true });
+                    }
+
+                    if (fileExtension === 'zip') {
+                        await extractZip(tempFile, { dir: versionDir });
+                    } else if (fileExtension === '7z') {
+                        if (!sevenBinPath || !fs.existsSync(sevenBinPath)) {
+                            throw new Error('7z 解压工具不可用，请联网安装依赖或改用zip包');
                         }
-                    }, isCancelledError ? 1000 : 3000); // 取消时更快关闭
-                }
+                        await new Promise((resolve, reject) => {
+                            const { spawn } = require('child_process');
+                            const args = ['x', '-y', `-o${versionDir}`, tempFile];
+                            const proc = spawn(sevenBinPath, args, { windowsHide: true });
+                            let stderr = '';
+                            proc.stderr.on('data', (d) => {
+                                stderr += d.toString();
+                            });
+                            proc.on('close', (code) => {
+                                if (code === 0) resolve();
+                                else reject(new Error(`7z 解压失败(code=${code}): ${stderr || ''}`));
+                            });
+                            proc.on('error', (err) => reject(err));
+                        });
+                    } else {
+                        throw new Error(`不支持的文件格式: ${fileExtension}`);
+                    }
 
-                resolve({ success: false, error: errorMessage });
-            }
+                    fs.unlinkSync(tempFile);
+
+                    updateProgress('解压完成，查找testlib文件...');
+
+                    const testlibPath = findTestlibFile(versionDir);
+
+                    downloadCompleted = true;
+                    updateProgress('testlib安装完成！');
+
+                    const result = {
+                        success: true,
+                        testlibPath: testlibPath || path.join(versionDir, 'testlib.h'),
+                    };
+
+                    if (backgroundDownload) {
+                        notifyUser('testlib 下载完成', `${name} ${version} 已下载并安装完成。`, 'success');
+                    }
+
+                    if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
+                        setTimeout(() => {
+                            if (progressWindow && !progressWindow.isDestroyed()) {
+                                progressWindow.close();
+                            }
+                        }, 2000); // 2秒后关闭
+                    }
+
+                    resolve(result);
+                } catch (error) {
+                    downloadCompleted = true;
+
+                    const isCancelledError = error.message.includes('下载已取消') || error.message.includes('用户取消');
+                    const errorMessage = isCancelledError ? '下载已取消' : `下载失败: ${error.message}`;
+
+                    logError('[testlib下载] 下载过程出错:', error.message);
+
+                    if (backgroundDownload && !isCancelledError) {
+                        notifyUser('testlib 下载失败', `${name} ${version} 下载失败: ${error.message}`, 'error');
+                    }
+
+                    if (!backgroundDownload && progressWindow && !progressWindow.isDestroyed()) {
+                        updateProgress(errorMessage);
+                        setTimeout(
+                            () => {
+                                if (progressWindow && !progressWindow.isDestroyed()) {
+                                    progressWindow.close();
+                                }
+                            },
+                            isCancelledError ? 1000 : 3000
+                        ); // 取消时更快关闭
+                    }
+
+                    resolve({ success: false, error: errorMessage });
+                }
+            };
+
+            download().catch((error) => {
+                logError('[testlib下载] 未处理的下载错误:', error);
+                resolve({ success: false, error: `下载失败: ${error?.message || String(error)}` });
+            });
         });
     });
 
@@ -5992,7 +6354,7 @@ function setupIPC() {
                 outputFile: testExeFile,
                 compilerPath: compilerPath,
                 compilerArgs: compilerArgs,
-                workingDirectory: testDir
+                workingDirectory: testDir,
             });
 
             if (!compileResult.success) {
@@ -6011,10 +6373,10 @@ function setupIPC() {
                         compilerDir,
                         path.join(compilerRoot, 'bin'),
                         path.join(compilerRoot, 'mingw64', 'bin'),
-                        path.join(compilerRoot, 'mingw32', 'bin')
+                        path.join(compilerRoot, 'mingw32', 'bin'),
                     ];
 
-                    mingwBinPaths = mingwBinPaths.filter(p => fs.existsSync(p));
+                    mingwBinPaths = mingwBinPaths.filter((p) => fs.existsSync(p));
 
                     if (mingwBinPaths.length > 0) {
                         const envPath = [process.env.PATH, ...mingwBinPaths].join(path.delimiter);
@@ -6024,13 +6386,13 @@ function setupIPC() {
 
                 const proc = spawn(testExeFile, [], {
                     env: testEnv,
-                    timeout: 10000  // 10秒超时
+                    timeout: 10000, // 10秒超时
                 });
                 let output = '';
                 let stderr = '';
 
-                proc.stdout.on('data', (data) => output += data.toString());
-                proc.stderr.on('data', (data) => stderr += data.toString());
+                proc.stdout.on('data', (data) => (output += data.toString()));
+                proc.stderr.on('data', (data) => (stderr += data.toString()));
 
                 proc.on('close', (code) => {
                     if (code === 0 && output.includes('oicpp-test-success')) {
@@ -6039,7 +6401,7 @@ function setupIPC() {
                         resolve({
                             success: false,
                             message: `测试程序运行失败 (退出码: ${code})`,
-                            details: stderr || output || '程序无输出'
+                            details: stderr || output || '程序无输出',
                         });
                     }
                 });
@@ -6095,7 +6457,7 @@ function setupIPC() {
             }
 
             const files = walkDir(baseDir);
-            const testlibFile = files.find(file => path.basename(file).toLowerCase() === 'testlib.h');
+            const testlibFile = files.find((file) => path.basename(file).toLowerCase() === 'testlib.h');
 
             return testlibFile || null;
         } catch (error) {
@@ -6115,7 +6477,10 @@ function normalizeDroppedPath(filePath) {
         return '';
     }
 
-    if ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith('\'') && normalized.endsWith('\''))) {
+    if (
+        (normalized.startsWith('"') && normalized.endsWith('"')) ||
+        (normalized.startsWith("'") && normalized.endsWith("'"))
+    ) {
         normalized = normalized.slice(1, -1);
     }
 
@@ -6137,7 +6502,7 @@ function normalizeDroppedPath(filePath) {
                 } else {
                     console.warn('[normalizeDroppedPath] 文件路径解析失败，使用原值:', error);
                 }
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 
@@ -6149,7 +6514,7 @@ function normalizeDroppedPath(filePath) {
 
     try {
         normalized = path.normalize(normalized);
-    } catch (_) { }
+    } catch (_) {}
 
     return normalized;
 }
@@ -6187,12 +6552,12 @@ async function readFileContent(filePath) {
 }
 
 function detectEncoding(buffer) {
-    if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+    if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
         return 'utf8';
     }
 
     if (buffer.length >= 2) {
-        if ((buffer[0] === 0xFF && buffer[1] === 0xFE) || (buffer[0] === 0xFE && buffer[1] === 0xFF)) {
+        if ((buffer[0] === 0xff && buffer[1] === 0xfe) || (buffer[0] === 0xfe && buffer[1] === 0xff)) {
             return 'utf16';
         }
     }
@@ -6201,20 +6566,25 @@ function detectEncoding(buffer) {
     for (let i = 0; i < buffer.length; i++) {
         const byte = buffer[i];
         if (byte > 127) {
-            if ((byte & 0xE0) === 0xC0) {
-                if (i + 1 >= buffer.length || (buffer[i + 1] & 0xC0) !== 0x80) {
+            if ((byte & 0xe0) === 0xc0) {
+                if (i + 1 >= buffer.length || (buffer[i + 1] & 0xc0) !== 0x80) {
                     isValidUTF8 = false;
                     break;
                 }
                 i++;
-            } else if ((byte & 0xF0) === 0xE0) {
-                if (i + 2 >= buffer.length || (buffer[i + 1] & 0xC0) !== 0x80 || (buffer[i + 2] & 0xC0) !== 0x80) {
+            } else if ((byte & 0xf0) === 0xe0) {
+                if (i + 2 >= buffer.length || (buffer[i + 1] & 0xc0) !== 0x80 || (buffer[i + 2] & 0xc0) !== 0x80) {
                     isValidUTF8 = false;
                     break;
                 }
                 i += 2;
-            } else if ((byte & 0xF8) === 0xF0) {
-                if (i + 3 >= buffer.length || (buffer[i + 1] & 0xC0) !== 0x80 || (buffer[i + 2] & 0xC0) !== 0x80 || (buffer[i + 3] & 0xC0) !== 0x80) {
+            } else if ((byte & 0xf8) === 0xf0) {
+                if (
+                    i + 3 >= buffer.length ||
+                    (buffer[i + 1] & 0xc0) !== 0x80 ||
+                    (buffer[i + 2] & 0xc0) !== 0x80 ||
+                    (buffer[i + 3] & 0xc0) !== 0x80
+                ) {
                     isValidUTF8 = false;
                     break;
                 }
@@ -6233,6 +6603,23 @@ function detectEncoding(buffer) {
     return 'gbk';
 }
 
+function decodeBufferAuto(buffer) {
+    if (!buffer || buffer.length === 0) return '';
+
+    try {
+        if (detectEncoding(buffer) === 'utf8') return buffer.toString('utf8');
+    } catch (_) {
+        // Fall back to the Windows code page when encoding detection fails.
+    }
+
+    try {
+        const iconv = require('iconv-lite');
+        return iconv.decode(buffer, 'gbk');
+    } catch (_) {
+        return buffer.toString('utf8');
+    }
+}
+
 function getBundledCompilerPath() {
     // 自包含：随安装包内置的精简 MinGW-w64 工具链（scripts/prepare-compiler.js 生成）
     const rel = path.join('compiler', 'win32', 'bin', 'g++.exe');
@@ -6242,7 +6629,9 @@ function getBundledCompilerPath() {
     for (const c of candidates) {
         try {
             if (fs.existsSync(c)) return c;
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
     }
     return null;
 }
@@ -6258,7 +6647,9 @@ async function detectInstalledCompilers() {
             if (seen.has(key)) return;
             seen.add(key);
             found.push({ name, path: norm, kind });
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
     };
 
     // 1) 内置编译器（打包资源 / 开发目录）优先
@@ -6287,16 +6678,23 @@ async function detectInstalledCompilers() {
                 }
             }
         }
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+        /* ignore */
+    }
 
     // 3) 常见安装目录
     const commonDirs = [
-        'C:/msys64/ucrt64/bin/g++.exe', 'C:/msys64/mingw64/bin/g++.exe',
-        'C:/mingw64/bin/g++.exe', 'C:/MinGW/bin/g++.exe',
-        'C:/TDM-GCC-64/bin/g++.exe', 'C:/TDM-GCC-64/release/bin/g++.exe',
-        'C:/WinLibs/mingw64/bin/g++.exe', 'C:/Program Files/Dev-Cpp/MinGW64/bin/g++.exe',
+        'C:/msys64/ucrt64/bin/g++.exe',
+        'C:/msys64/mingw64/bin/g++.exe',
+        'C:/mingw64/bin/g++.exe',
+        'C:/MinGW/bin/g++.exe',
+        'C:/TDM-GCC-64/bin/g++.exe',
+        'C:/TDM-GCC-64/release/bin/g++.exe',
+        'C:/WinLibs/mingw64/bin/g++.exe',
+        'C:/Program Files/Dev-Cpp/MinGW64/bin/g++.exe',
         'C:/Program Files (x86)/Dev-Cpp/MinGW64/bin/g++.exe',
-        'C:/Program Files/LLVM/bin/clang++.exe', 'C:/Program Files (x86)/LLVM/bin/clang++.exe'
+        'C:/Program Files/LLVM/bin/clang++.exe',
+        'C:/Program Files (x86)/LLVM/bin/clang++.exe',
     ];
     for (const p of commonDirs) {
         push(p.includes('clang') ? 'Clang' : 'MinGW-w64 GCC', p, 'system');
@@ -6325,7 +6723,7 @@ async function readDirectory(dirPath) {
                     name: entry.name,
                     type: 'folder',
                     path: fullPath,
-                    children: [] // 延迟加载子目录
+                    children: [], // 延迟加载子目录
                 });
             } else if (entry.isFile()) {
                 // 显示所有文件（隐藏项已由上面的 . 前缀 / .dsym 规则过滤）
@@ -6333,7 +6731,7 @@ async function readDirectory(dirPath) {
                     name: entry.name,
                     type: 'file',
                     path: fullPath,
-                    extension: path.extname(entry.name).toLowerCase()
+                    extension: path.extname(entry.name).toLowerCase(),
                 });
             }
         }
@@ -6344,7 +6742,6 @@ async function readDirectory(dirPath) {
             }
             return a.name.localeCompare(b.name);
         });
-
     } catch (error) {
         logError('读取目录失败:', error);
         throw error;
@@ -6385,14 +6782,16 @@ function getUniquePath(targetDir, fileName) {
 }
 
 async function openFile() {
-    try { logInfo('[打开文件] 打开对话框'); } catch (_) { }
+    try {
+        logInfo('[打开文件] 打开对话框');
+    } catch (_) {}
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
         filters: [
             { name: 'C++ Files', extensions: ['cpp', 'cxx', 'cc', 'c'] },
             { name: 'Text Files', extensions: ['txt', 'in', 'out'] },
-            { name: 'All Files', extensions: ['*'] }
-        ]
+            { name: 'All Files', extensions: ['*'] },
+        ],
     });
 
     if (!result.canceled && result.filePaths.length > 0) {
@@ -6400,28 +6799,38 @@ async function openFile() {
         try {
             logInfo('[打开文件] 选择路径:', filePath);
             const buffer = fs.readFileSync(filePath);
-            try { logInfo('[打开文件] 文件大小(bytes):', buffer.length); } catch (_) { }
-            const isBinary = buffer.some(byte => byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13));
+            try {
+                logInfo('[打开文件] 文件大小(bytes):', buffer.length);
+            } catch (_) {}
+            const isBinary = buffer.some(
+                (byte) => byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13)
+            );
 
             if (isBinary) {
                 logWarn('[打开文件] 检测到二进制文件，发送提示，文件名:', path.basename(filePath));
                 mainWindow.webContents.send('file-open-binary', path.basename(filePath));
             } else {
                 const content = buffer.toString('utf8');
-                try { logInfo('[打开文件] 文本文件读取成功，内容长度:', content.length); } catch (_) { }
+                try {
+                    logInfo('[打开文件] 文本文件读取成功，内容长度:', content.length);
+                } catch (_) {}
                 mainWindow.webContents.send('file-opened', {
                     fileName: path.basename(filePath),
                     filePath: filePath,
-                    content: content
+                    content: content,
                 });
-                try { logInfo('[打开文件] 已发送 file-opened 事件'); } catch (_) { }
+                try {
+                    logInfo('[打开文件] 已发送 file-opened 事件');
+                } catch (_) {}
             }
         } catch (error) {
             logError('打开文件失败:', error);
             dialog.showErrorBox('错误', `无法打开文件: ${error.message}`);
         }
     } else {
-        try { logInfo('[打开文件] 用户取消或未选择文件'); } catch (_) { }
+        try {
+            logInfo('[打开文件] 用户取消或未选择文件');
+        } catch (_) {}
     }
 }
 
@@ -6443,12 +6852,12 @@ function updateRecentFiles(filePath) {
         logWarn('[最近列表] 检测/转换路径失败，原样使用:', filePath, e.message);
     }
 
-    settings.recentFiles = settings.recentFiles.filter(item => item.path !== filePath);
+    settings.recentFiles = settings.recentFiles.filter((item) => item.path !== filePath);
 
     settings.recentFiles.unshift({
         path: filePath,
         name: path.basename(filePath),
-        lastAccessed: new Date().toISOString()
+        lastAccessed: new Date().toISOString(),
     });
 
     if (settings.recentFiles.length > 10) {
@@ -6458,7 +6867,7 @@ function updateRecentFiles(filePath) {
 
 async function openFolder() {
     const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory', 'createDirectory']
+        properties: ['openDirectory', 'createDirectory'],
     });
 
     if (!result.canceled && result.filePaths.length > 0) {
@@ -6492,8 +6901,8 @@ async function saveAsFile() {
         filters: [
             { name: 'C++ Files', extensions: ['cpp'] },
             { name: 'Text Files', extensions: ['txt'] },
-            { name: 'All Files', extensions: ['*'] }
-        ]
+            { name: 'All Files', extensions: ['*'] },
+        ],
     });
 
     if (!result.canceled) {
@@ -6523,10 +6932,10 @@ function openCompilerSettings() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: false,
-            webSecurity: false
+            webSecurity: false,
         },
         title: '编译器设置',
-        icon: getUserIconPath()
+        icon: getUserIconPath(),
     });
 
     compilerSettingsWindow.loadFile('src/renderer/settings/compiler.html');
@@ -6537,7 +6946,6 @@ function openCompilerSettings() {
 }
 
 function openEditorSettings() {
-
     if (editorSettingsWindow) {
         logInfo('编辑器设置窗口已存在，聚焦窗口');
         editorSettingsWindow.focus();
@@ -6557,10 +6965,10 @@ function openEditorSettings() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: false,
-            webSecurity: false
+            webSecurity: false,
         },
         title: '编辑器设置',
-        icon: getUserIconPath()
+        icon: getUserIconPath(),
     });
 
     editorSettingsWindow.loadFile('src/renderer/settings/editor.html', { query: { theme: settings.theme } });
@@ -6597,10 +7005,10 @@ function openCodeTemplates() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: false,
-            webSecurity: false
+            webSecurity: false,
         },
         title: '代码模板设置',
-        icon: getUserIconPath()
+        icon: getUserIconPath(),
     });
 
     codeTemplatesWindow.loadFile('src/renderer/settings/templates.html');
@@ -6612,50 +7020,56 @@ function openCodeTemplates() {
 
 function promptLinuxManualInstall(pendingUpdate) {
     if (!pendingUpdate || !pendingUpdate.installerPath) return;
-    const updateDesc = String(pendingUpdate.description || '').replace(/\\n/g, '\n').trim();
-    const detailParts = [
-        `安装包已下载到：\n${pendingUpdate.installerPath}`,
-        '请手动运行安装包完成更新。'
-    ];
+    const updateDesc = String(pendingUpdate.description || '')
+        .replace(/\\n/g, '\n')
+        .trim();
+    const detailParts = [`安装包已下载到：\n${pendingUpdate.installerPath}`, '请手动运行安装包完成更新。'];
     if (updateDesc) {
         detailParts.push('\n更新内容：');
         detailParts.push(updateDesc);
     }
 
-    dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: '更新包已下载',
-        message: `版本 ${pendingUpdate.version || ''} 已下载完成`,
-        detail: detailParts.join('\n'),
-        buttons: ['打开所在目录', '知道了'],
-        defaultId: 0
-    }).then((result) => {
-        if (result.response === 0) {
-            try { shell.showItemInFolder(pendingUpdate.installerPath); } catch (_) { }
-        }
-    }).catch(() => { });
+    dialog
+        .showMessageBox(mainWindow, {
+            type: 'info',
+            title: '更新包已下载',
+            message: `版本 ${pendingUpdate.version || ''} 已下载完成`,
+            detail: detailParts.join('\n'),
+            buttons: ['打开所在目录', '知道了'],
+            defaultId: 0,
+        })
+        .then((result) => {
+            if (result.response === 0) {
+                try {
+                    shell.showItemInFolder(pendingUpdate.installerPath);
+                } catch (_) {}
+            }
+        })
+        .catch(() => {});
 }
-
 
 function launchInstallerDetached(installerPath, installerArgs = []) {
     const { spawn } = require('child_process');
     const child = spawn(installerPath, Array.isArray(installerArgs) ? installerArgs : [], {
         detached: true,
         stdio: 'ignore',
-        windowsHide: true
+        windowsHide: true,
     });
     child.on('error', (err) => {
-        try { logError('[更新] 启动安装程序失败:', err?.message || err); } catch (_) { }
+        try {
+            logError('[更新] 启动安装程序失败:', err?.message || err);
+        } catch (_) {}
         try {
             const { shell } = require('electron');
-            shell.openPath(installerPath).catch(() => { });
-        } catch (_) { }
+            shell.openPath(installerPath).catch(() => {});
+        } catch (_) {}
     });
     child.unref();
 }
 
-
 function runInstaller(installerPath) {
+    let launchInstallerOnQuit = null;
+
     try {
         logInfo('准备运行安装程序:', installerPath);
         if (!fs.existsSync(installerPath)) throw new Error('安装程序文件不存在');
@@ -6663,10 +7077,11 @@ function runInstaller(installerPath) {
 
         if (!isWindows) {
             const { shell } = require('electron');
-            const openPromise = (process.platform === 'linux' || process.platform === 'darwin')
-                ? shell.openPath(installerPath)
-                : shell.openExternal(installerPath);
-            openPromise.catch(() => { });
+            const openPromise =
+                process.platform === 'linux' || process.platform === 'darwin'
+                    ? shell.openPath(installerPath)
+                    : shell.openExternal(installerPath);
+            openPromise.catch(() => {});
             return;
         }
 
@@ -6677,12 +7092,12 @@ function runInstaller(installerPath) {
                 message: 'OICPP 将在退出后自动安装更新',
                 detail: '请不要关闭电脑，安装过程将自动完成，预计需要 1-2 分钟。',
                 buttons: ['确定'],
-                defaultId: 0
+                defaultId: 0,
             });
-        } catch (_) { }
+        } catch (_) {}
 
-        allowQuitForPendingUpdateInstall = true;
-        armInstallerLaunchOnQuit(installerPath);
+        launchInstallerOnQuit = () => launchInstallerDetached(installerPath);
+        app.once('will-quit', launchInstallerOnQuit);
 
         if (mainWindow && !mainWindow.isDestroyed()) {
             armAllowMainWindowClose(SAVE_ALL_TIMEOUT + 10000);
@@ -6692,18 +7107,27 @@ function runInstaller(installerPath) {
         }
 
         setTimeout(() => {
-            try { app.quit(); } catch (_) { }
+            try {
+                app.quit();
+            } catch (_) {}
         }, SAVE_ALL_TIMEOUT + 8000);
     } catch (error) {
+        if (launchInstallerOnQuit) {
+            app.removeListener('will-quit', launchInstallerOnQuit);
+        }
         logError('运行安装程序失败:', error);
         let errorDetail = `错误信息: ${error.message}\n\n安装程序位置: ${installerPath}\n\n您可以手动运行安装程序来完成更新。`;
-        dialog.showMessageBox(mainWindow, {
-            type: 'error',
-            title: '无法启动安装程序',
-            message: '自动启动安装程序失败',
-            detail: errorDetail,
-            buttons: ['打开安装程序所在文件夹', '确定']
-        }).then(res => { if (res.response === 0) shell.showItemInFolder(installerPath); });
+        dialog
+            .showMessageBox(mainWindow, {
+                type: 'error',
+                title: '无法启动安装程序',
+                message: '自动启动安装程序失败',
+                detail: errorDetail,
+                buttons: ['打开安装程序所在文件夹', '确定'],
+            })
+            .then((res) => {
+                if (res.response === 0) shell.showItemInFolder(installerPath);
+            });
     }
 }
 
@@ -6718,7 +7142,9 @@ function restoreSettingsBackupLinux() {
             try {
                 const stat = fs.statSync(settingsPath);
                 if (stat.size < 10) needRestore = true; // 基本空文件
-            } catch (_) { needRestore = true; }
+            } catch (_) {
+                needRestore = true;
+            }
         }
         if (needRestore) {
             const targetDir = path.dirname(settingsPath);
@@ -6726,8 +7152,12 @@ function restoreSettingsBackupLinux() {
             fs.copyFileSync(backupFile, settingsPath);
             logInfo('[启动] 已从临时备份恢复 settings.json');
         }
-        try { fs.unlinkSync(backupFile); } catch (_) { }
-    } catch (e) { logWarn('[启动] 恢复 Linux 设置备份失败(可忽略):', e.message); }
+        try {
+            fs.unlinkSync(backupFile);
+        } catch (_) {}
+    } catch (e) {
+        logWarn('[启动] 恢复 Linux 设置备份失败(可忽略):', e.message);
+    }
 }
 
 function ensureUserIconForLinux() {
@@ -6743,9 +7173,10 @@ function ensureUserIconForLinux() {
                 logInfo('[启动] 已复制图标到用户目录 (Linux)');
             }
         }
-    } catch (e) { logWarn('[启动] 复制 Linux 图标失败(可忽略):', e.message); }
+    } catch (e) {
+        logWarn('[启动] 复制 Linux 图标失败(可忽略):', e.message);
+    }
 }
-
 
 function getSettingsPath() {
     const settingsDir = path.join(os.homedir(), '.oicpp');
@@ -6772,7 +7203,57 @@ function loadSettings() {
 
         if (fs.existsSync(settingsPath)) {
             const savedSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-            const validKeys = ['compilerPath', 'pythonInterpreterPath', 'compilerArgs', 'runMode', 'testlibPath', 'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme', 'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors', 'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'fontLigaturesEnabled', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled', 'autoSave', 'autoSaveInterval', 'formatOnSave', 'language', 'autoBackupSettings', 'receiveBetaUpdates', 'markdownMode', 'cppTemplate', 'codeSnippets', 'lastOpen', 'recentFiles', 'fileHistory', 'lastOpenTabs', 'lastUpdateCheck', 'pendingUpdate', 'postInstallNotice', 'windowOpacity', 'glassEffectEnabled', 'onboardingCompleted', 'backgroundImage', 'keybindings', 'autoOpenLastWorkspace', 'account', 'runAllSamples'];
+            const validKeys = [
+                'compilerPath',
+                'pythonInterpreterPath',
+                'compilerArgs',
+                'runMode',
+                'testlibPath',
+                'font',
+                'fontSize',
+                'terminalFontSize',
+                'terminalStartupCommand',
+                'syntaxCheckEnabled',
+                'lineHeight',
+                'theme',
+                'syntaxColorsByTheme',
+                'syntaxFontStyles',
+                'unifiedPreprocessorColor',
+                'syntaxColors',
+                'tabSize',
+                'formatterIndentStyle',
+                'clangFormatStyle',
+                'clangFormatRaw',
+                'fontLigaturesEnabled',
+                'enableAutoCompletion',
+                'foldingEnabled',
+                'stickyScrollEnabled',
+                'wordWrap',
+                'autoSave',
+                'autoSaveInterval',
+                'formatOnSave',
+                'language',
+                'autoBackupSettings',
+                'receiveBetaUpdates',
+                'markdownMode',
+                'cppTemplate',
+                'codeSnippets',
+                'lastOpen',
+                'recentFiles',
+                'fileHistory',
+                'lastOpenTabs',
+                'lastUpdateCheck',
+                'pendingUpdate',
+                'postInstallNotice',
+                'windowOpacity',
+                'glassEffectEnabled',
+                'onboardingCompleted',
+                'backgroundImage',
+                'keybindings',
+                'autoOpenLastWorkspace',
+                'account',
+                'runAllSamples',
+            ];
             let needsSaveAfterMigration = false;
 
             for (const key of validKeys) {
@@ -6784,6 +7265,16 @@ function loadSettings() {
                 settings.onboardingCompleted = true;
                 needsSaveAfterMigration = true;
             }
+            if (process.platform === 'win32') {
+                const bundledCompilerPath = getBundledCompilerPath();
+                if (bundledCompilerPath && settings.compilerPath !== bundledCompilerPath) {
+                    settings.compilerPath = bundledCompilerPath;
+                    needsSaveAfterMigration = true;
+                } else if (settings.compilerPath && !fs.existsSync(settings.compilerPath)) {
+                    settings.compilerPath = '';
+                    needsSaveAfterMigration = true;
+                }
+            }
             normalizeSettingsRuntimeShape(settings);
 
             if (
@@ -6791,18 +7282,21 @@ function loadSettings() {
                 settings.syntaxColors &&
                 typeof settings.syntaxColors === 'object'
             ) {
-                const currentTheme = typeof settings.theme === 'string' && settings.theme.trim() ? settings.theme.trim() : 'dark';
+                const currentTheme =
+                    typeof settings.theme === 'string' && settings.theme.trim() ? settings.theme.trim() : 'dark';
                 settings.syntaxColorsByTheme = {
-                    [currentTheme]: settings.syntaxColors
+                    [currentTheme]: settings.syntaxColors,
                 };
                 needsSaveAfterMigration = true;
             }
             if (needsSaveAfterMigration) {
                 saveSettings();
             }
-
         } else {
             logInfo('设置文件不存在，使用默认设置');
+            if (process.platform === 'win32') {
+                settings.compilerPath = getBundledCompilerPath() || '';
+            }
             saveSettings();
         }
         if (process.platform !== 'win32' && !settings.compilerPath) {
@@ -6840,27 +7334,31 @@ function loadSettings() {
         const isIntegratedOnlyPlatform = process.platform === 'darwin' || process.platform === 'linux';
         if (isIntegratedOnlyPlatform) {
             const normalizedRunMode = normalizeRunModeForPlatform(settings.runMode, process.platform);
-            const normalizedCompilerArgs = process.platform === 'darwin'
-                ? normalizeCompilerArgsForPlatform(settings.compilerArgs, 'darwin')
-                : settings.compilerArgs;
+            const normalizedCompilerArgs =
+                process.platform === 'darwin'
+                    ? normalizeCompilerArgsForPlatform(settings.compilerArgs, 'darwin')
+                    : settings.compilerArgs;
             const normalizedCompileAndRunShortcut = 'Ctrl+F11';
-            const existingKeybindings = settings.keybindings && typeof settings.keybindings === 'object'
-                ? settings.keybindings
-                : {};
-            const existingCompileAndRun = typeof existingKeybindings.compileAndRun === 'string'
-                ? existingKeybindings.compileAndRun.trim()
-                : '';
-            const shouldMigrateCompileAndRun = process.platform === 'darwin'
-                && (!existingCompileAndRun || existingCompileAndRun.toUpperCase() === 'F11');
+            const existingKeybindings =
+                settings.keybindings && typeof settings.keybindings === 'object' ? settings.keybindings : {};
+            const existingCompileAndRun =
+                typeof existingKeybindings.compileAndRun === 'string' ? existingKeybindings.compileAndRun.trim() : '';
+            const shouldMigrateCompileAndRun =
+                process.platform === 'darwin' &&
+                (!existingCompileAndRun || existingCompileAndRun.toUpperCase() === 'F11');
 
             if (shouldMigrateCompileAndRun) {
                 settings.keybindings = {
                     ...existingKeybindings,
-                    compileAndRun: normalizedCompileAndRunShortcut
+                    compileAndRun: normalizedCompileAndRunShortcut,
                 };
             }
 
-            if (settings.runMode !== normalizedRunMode || settings.compilerArgs !== normalizedCompilerArgs || shouldMigrateCompileAndRun) {
+            if (
+                settings.runMode !== normalizedRunMode ||
+                settings.compilerArgs !== normalizedCompilerArgs ||
+                shouldMigrateCompileAndRun
+            ) {
                 settings.runMode = normalizedRunMode;
                 settings.compilerArgs = normalizedCompilerArgs;
                 saveSettings();
@@ -6868,7 +7366,6 @@ function loadSettings() {
         }
 
         normalizeSettingsRuntimeShape(settings);
-
     } catch (error) {
         logError('加载设置失败:', error);
         settings = getDefaultSettings();
@@ -6879,7 +7376,50 @@ function loadSettings() {
 
 function mergeSettings(defaultSettings, userSettings) {
     const result = JSON.parse(JSON.stringify(defaultSettings));
-    const validKeys = ['compilerPath', 'pythonInterpreterPath', 'compilerArgs', 'runMode', 'testlibPath', 'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme', 'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors', 'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'fontLigaturesEnabled', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled', 'autoSave', 'autoSaveInterval', 'formatOnSave', 'language', 'autoBackupSettings', 'receiveBetaUpdates', 'markdownMode', 'cppTemplate', 'codeSnippets', 'windowOpacity', 'glassEffectEnabled', 'onboardingCompleted', 'backgroundImage', 'keybindings', 'autoOpenLastWorkspace', 'account', 'runAllSamples'];
+    const validKeys = [
+        'compilerPath',
+        'pythonInterpreterPath',
+        'compilerArgs',
+        'runMode',
+        'testlibPath',
+        'font',
+        'fontSize',
+        'terminalFontSize',
+        'terminalStartupCommand',
+        'syntaxCheckEnabled',
+        'lineHeight',
+        'theme',
+        'syntaxColorsByTheme',
+        'syntaxFontStyles',
+        'unifiedPreprocessorColor',
+        'syntaxColors',
+        'tabSize',
+        'formatterIndentStyle',
+        'clangFormatStyle',
+        'clangFormatRaw',
+        'fontLigaturesEnabled',
+        'enableAutoCompletion',
+        'foldingEnabled',
+        'stickyScrollEnabled',
+        'wordWrap',
+        'autoSave',
+        'autoSaveInterval',
+        'formatOnSave',
+        'language',
+        'autoBackupSettings',
+        'receiveBetaUpdates',
+        'markdownMode',
+        'cppTemplate',
+        'codeSnippets',
+        'windowOpacity',
+        'glassEffectEnabled',
+        'onboardingCompleted',
+        'backgroundImage',
+        'keybindings',
+        'autoOpenLastWorkspace',
+        'account',
+        'runAllSamples',
+    ];
 
     for (const key of validKeys) {
         const incoming = userSettings[key];
@@ -6914,13 +7454,49 @@ function saveSettings() {
 
 function updateSettings(settingsType, newSettings) {
     try {
-
         const validKeys = [
-            'compilerPath', 'pythonInterpreterPath', 'compilerArgs', 'runMode', 'testlibPath', 'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme',
-            'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled', 'fontLigaturesEnabled', 'cppTemplate', 'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'autoSave', 'autoSaveInterval', 'formatOnSave',
-            'codeSnippets', 'windowOpacity', 'glassEffectEnabled', 'onboardingCompleted', 'backgroundImage', 'markdownMode', 'keybindings',
-            'fileHistory', 'lastOpenTabs', 'autoOpenLastWorkspace', 'language', 'autoBackupSettings', 'receiveBetaUpdates',
-            'runAllSamples'
+            'compilerPath',
+            'pythonInterpreterPath',
+            'compilerArgs',
+            'runMode',
+            'testlibPath',
+            'font',
+            'fontSize',
+            'terminalFontSize',
+            'terminalStartupCommand',
+            'syntaxCheckEnabled',
+            'lineHeight',
+            'theme',
+            'syntaxColorsByTheme',
+            'syntaxFontStyles',
+            'unifiedPreprocessorColor',
+            'syntaxColors',
+            'enableAutoCompletion',
+            'foldingEnabled',
+            'stickyScrollEnabled',
+            'fontLigaturesEnabled',
+            'cppTemplate',
+            'tabSize',
+            'formatterIndentStyle',
+            'clangFormatStyle',
+            'clangFormatRaw',
+            'autoSave',
+            'autoSaveInterval',
+            'formatOnSave',
+            'codeSnippets',
+            'windowOpacity',
+            'glassEffectEnabled',
+            'onboardingCompleted',
+            'backgroundImage',
+            'markdownMode',
+            'keybindings',
+            'fileHistory',
+            'lastOpenTabs',
+            'autoOpenLastWorkspace',
+            'language',
+            'autoBackupSettings',
+            'receiveBetaUpdates',
+            'runAllSamples',
         ];
 
         for (const key in newSettings) {
@@ -6941,8 +7517,6 @@ function updateSettings(settingsType, newSettings) {
         normalizeSettingsRuntimeShape(settings);
 
         saveSettings();
-        scheduleAutoSettingsBackup('update-top-level-settings');
-
         if (newSettings && Object.prototype.hasOwnProperty.call(newSettings, 'keybindings')) {
             createMenuBar();
         }
@@ -6985,11 +7559,44 @@ function updateSettings(settingsType, newSettings) {
 
 function getResettableSettingsKeys() {
     return [
-        'compilerPath', 'pythonInterpreterPath', 'compilerArgs', 'runMode', 'testlibPath',
-        'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme', 'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors',
-        'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'fontLigaturesEnabled', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled',
-        'autoSave', 'autoSaveInterval', 'formatOnSave', 'language', 'autoBackupSettings', 'receiveBetaUpdates', 'markdownMode', 'cppTemplate', 'codeSnippets',
-        'windowOpacity', 'glassEffectEnabled', 'backgroundImage', 'keybindings', 'autoOpenLastWorkspace'
+        'compilerPath',
+        'pythonInterpreterPath',
+        'compilerArgs',
+        'runMode',
+        'testlibPath',
+        'font',
+        'fontSize',
+        'terminalFontSize',
+        'terminalStartupCommand',
+        'syntaxCheckEnabled',
+        'lineHeight',
+        'theme',
+        'syntaxColorsByTheme',
+        'syntaxFontStyles',
+        'unifiedPreprocessorColor',
+        'syntaxColors',
+        'tabSize',
+        'formatterIndentStyle',
+        'clangFormatStyle',
+        'clangFormatRaw',
+        'fontLigaturesEnabled',
+        'enableAutoCompletion',
+        'foldingEnabled',
+        'stickyScrollEnabled',
+        'autoSave',
+        'autoSaveInterval',
+        'formatOnSave',
+        'language',
+        'autoBackupSettings',
+        'receiveBetaUpdates',
+        'markdownMode',
+        'cppTemplate',
+        'codeSnippets',
+        'windowOpacity',
+        'glassEffectEnabled',
+        'backgroundImage',
+        'keybindings',
+        'autoOpenLastWorkspace',
     ];
 }
 
@@ -7003,13 +7610,15 @@ function resetSettings(settingsType = null) {
                 settings[key] = JSON.parse(JSON.stringify(defaultSettings[key]));
             }
         }
+        if (process.platform === 'win32') {
+            settings.compilerPath = getBundledCompilerPath() || '';
+        }
 
         normalizeSettingsRuntimeShape(settings);
 
         saveSettings();
 
         if (mainWindow) {
-
             mainWindow.webContents.send('settings-reset', settings);
         }
 
@@ -7031,7 +7640,7 @@ function exportSettings(filePath) {
         const exportData = {
             version: '1.0.0',
             timestamp: new Date().toISOString(),
-            settings: exportable
+            settings: exportable,
         };
 
         fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf8');
@@ -7055,7 +7664,43 @@ function importSettings(filePath) {
             throw new Error('无效的设置文件格式');
         }
 
-        const validKeys = ['compilerPath', 'compilerArgs', 'testlibPath', 'font', 'fontSize', 'terminalFontSize', 'terminalStartupCommand', 'syntaxCheckEnabled', 'lineHeight', 'theme', 'syntaxColorsByTheme', 'syntaxFontStyles', 'unifiedPreprocessorColor', 'syntaxColors', 'tabSize', 'formatterIndentStyle', 'clangFormatStyle', 'clangFormatRaw', 'fontLigaturesEnabled', 'enableAutoCompletion', 'foldingEnabled', 'stickyScrollEnabled', 'autoSave', 'autoSaveInterval', 'formatOnSave', 'language', 'autoBackupSettings', 'receiveBetaUpdates', 'cppTemplate', 'codeSnippets', 'windowOpacity', 'glassEffectEnabled', 'backgroundImage', 'keybindings', 'runAllSamples'];
+        const validKeys = [
+            'compilerPath',
+            'compilerArgs',
+            'testlibPath',
+            'font',
+            'fontSize',
+            'terminalFontSize',
+            'terminalStartupCommand',
+            'syntaxCheckEnabled',
+            'lineHeight',
+            'theme',
+            'syntaxColorsByTheme',
+            'syntaxFontStyles',
+            'unifiedPreprocessorColor',
+            'syntaxColors',
+            'tabSize',
+            'formatterIndentStyle',
+            'clangFormatStyle',
+            'clangFormatRaw',
+            'fontLigaturesEnabled',
+            'enableAutoCompletion',
+            'foldingEnabled',
+            'stickyScrollEnabled',
+            'autoSave',
+            'autoSaveInterval',
+            'formatOnSave',
+            'language',
+            'autoBackupSettings',
+            'receiveBetaUpdates',
+            'cppTemplate',
+            'codeSnippets',
+            'windowOpacity',
+            'glassEffectEnabled',
+            'backgroundImage',
+            'keybindings',
+            'runAllSamples',
+        ];
         const defaultSettings = getDefaultSettings();
 
         for (const key of validKeys) {
@@ -7084,7 +7729,7 @@ function importSettings(filePath) {
 
 let compilerSystemPathCache = {
     value: process.env.PATH || '',
-    loadedAt: 0
+    loadedAt: 0,
 };
 
 function getCompilerSystemPathCached() {
@@ -7093,27 +7738,28 @@ function getCompilerSystemPathCached() {
     }
 
     const now = Date.now();
-    if (compilerSystemPathCache.value && (now - compilerSystemPathCache.loadedAt) < 5 * 60 * 1000) {
+    if (compilerSystemPathCache.value && now - compilerSystemPathCache.loadedAt < 5 * 60 * 1000) {
         return compilerSystemPathCache.value;
     }
 
     try {
         const { execSync } = require('child_process');
-        const systemPathCmd = 'reg query "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" /v PATH';
+        const systemPathCmd =
+            'reg query "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" /v PATH';
         const userPathCmd = 'reg query "HKEY_CURRENT_USER\\Environment" /v PATH';
 
         const systemPathOutput = execSync(systemPathCmd, {
             encoding: 'utf8',
-            timeout: 3000
+            timeout: 3000,
         });
 
         let userPathOutput = '';
         try {
             userPathOutput = execSync(userPathCmd, {
                 encoding: 'utf8',
-                timeout: 3000
+                timeout: 3000,
             });
-        } catch (_) { }
+        } catch (_) {}
 
         const systemMatch = systemPathOutput.match(/PATH\s+REG_EXPAND_SZ\s+(.+)/i);
         const userMatch = userPathOutput.match(/PATH\s+REG_EXPAND_SZ\s+(.+)/i);
@@ -7121,19 +7767,21 @@ function getCompilerSystemPathCached() {
         const userPathValue = userMatch ? userMatch[1].trim() : '';
 
         const merged = systemPathValue
-            ? (userPathValue ? `${userPathValue};${systemPathValue}` : systemPathValue)
-            : (process.env.PATH || '');
+            ? userPathValue
+                ? `${userPathValue};${systemPathValue}`
+                : systemPathValue
+            : process.env.PATH || '';
 
         compilerSystemPathCache = {
             value: merged,
-            loadedAt: now
+            loadedAt: now,
         };
         return merged;
     } catch (_) {
         const fallback = process.env.PATH || '';
         compilerSystemPathCache = {
             value: fallback,
-            loadedAt: now
+            loadedAt: now,
         };
         logInfo('[编译环境] 读取系统PATH失败，回退到当前进程PATH');
         return fallback;
@@ -7145,7 +7793,6 @@ async function compileFile(options) {
     const path = require('path');
 
     const { inputFile, outputFile, compilerPath, compilerArgs, workingDirectory } = options;
-
 
     function parseArgsPreservingQuotes(argString) {
         if (!argString || typeof argString !== 'string') return [];
@@ -7178,20 +7825,6 @@ async function compileFile(options) {
         return args;
     }
 
-    function decodeBufferAuto(buffer) {
-        if (!buffer || buffer.length === 0) return '';
-        try {
-            const encoding = detectEncoding(buffer);
-            if (encoding === 'utf8') return buffer.toString('utf8');
-        } catch (_) { }
-        try {
-            const iconv = require('iconv-lite');
-            return iconv.decode(buffer, 'gbk');
-        } catch (_) {
-            return buffer.toString('utf8');
-        }
-    }
-
     try {
         if (process.platform === 'win32') {
             // These checks spawn PowerShell processes.  Run the two target-specific
@@ -7200,10 +7833,7 @@ async function compileFile(options) {
             // it is unrelated to a normal build and made every compilation wait for
             // an additional process launch.
             if (outputFile) {
-                await Promise.all([
-                    killByExePathWindows(outputFile),
-                    killConsolePauserForTargetWindows(outputFile)
-                ]);
+                await Promise.all([killByExePathWindows(outputFile), killConsolePauserForTargetWindows(outputFile)]);
             }
             try {
                 await ensureConsolePauserExecutable(compilerPath);
@@ -7211,7 +7841,7 @@ async function compileFile(options) {
                 logWarn('[ConsolePauser] 自动构建失败，将继续编译当前代码:', ensureErr?.message || ensureErr);
             }
         }
-    } catch (_) { }
+    } catch (_) {}
 
     return new Promise((resolve, reject) => {
         const t0 = Date.now();
@@ -7234,7 +7864,7 @@ async function compileFile(options) {
             logInfo('编译器文件信息:', {
                 size: stats.size,
                 isFile: stats.isFile(),
-                mode: stats.mode.toString(8)
+                mode: stats.mode.toString(8),
             });
         } catch (statError) {
             logError('无法获取编译器文件信息:', statError);
@@ -7251,58 +7881,72 @@ async function compileFile(options) {
         let userArgsStr = compilerArgs || '';
         try {
             if (process.platform !== 'win32' && /(^|\s)-static(\s|$)/.test(userArgsStr)) {
-                userArgsStr = userArgsStr.replace(/(^|\s)-static(\s|$)/g, ' ').replace(/\s{2,}/g, ' ').trim();
+                userArgsStr = userArgsStr
+                    .replace(/(^|\s)-static(\s|$)/g, ' ')
+                    .replace(/\s{2,}/g, ' ')
+                    .trim();
                 logInfo('[编译参数] 已在非 Windows 平台移除 -static');
             }
-        } catch (_) { }
-        const parsedUserArgs = parseArgsPreservingQuotes(userArgsStr).filter(a => a && a.trim());
-    const compileCacheVersion = 1;
-    const cacheMetadataPath = outputFile ? `${path.resolve(outputFile)}.oicpp-cache` : '';
-    let compileCacheRecord = null;
+        } catch (_) {}
+        const parsedUserArgs = parseArgsPreservingQuotes(userArgsStr).filter((a) => a && a.trim());
+        const compileCacheVersion = 1;
+        const cacheMetadataPath = outputFile ? `${path.resolve(outputFile)}.oicpp-cache` : '';
+        let compileCacheRecord = null;
 
-    const createCompileCacheRecord = () => {
-        if (!inputFile || !outputFile || !compilerPath) return null;
-        const inputStats = fs.statSync(inputFile);
-        const compilerAbsolutePath = path.resolve(compilerPath);
-        const compilerStats = fs.statSync(compilerAbsolutePath);
-        const payload = {
-            cacheVersion: compileCacheVersion,
-            inputFile: path.resolve(inputFile),
-            inputSize: inputStats.size,
-            inputMtimeMs: inputStats.mtimeMs,
-            outputFile: path.resolve(outputFile),
-            compilerPath: compilerAbsolutePath,
-            compilerSize: compilerStats.size,
-            compilerMtimeMs: compilerStats.mtimeMs,
-            compilerArgs: parsedUserArgs,
-            workingDirectory: path.resolve(workingDirectory || process.cwd())
+        const createCompileCacheRecord = () => {
+            if (!inputFile || !outputFile || !compilerPath) return null;
+            const inputStats = fs.statSync(inputFile);
+            const compilerAbsolutePath = path.resolve(compilerPath);
+            const compilerStats = fs.statSync(compilerAbsolutePath);
+            const payload = {
+                cacheVersion: compileCacheVersion,
+                inputFile: path.resolve(inputFile),
+                inputSize: inputStats.size,
+                inputMtimeMs: inputStats.mtimeMs,
+                outputFile: path.resolve(outputFile),
+                compilerPath: compilerAbsolutePath,
+                compilerSize: compilerStats.size,
+                compilerMtimeMs: compilerStats.mtimeMs,
+                compilerArgs: parsedUserArgs,
+                workingDirectory: path.resolve(workingDirectory || process.cwd()),
+            };
+            const signature = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+            return { ...payload, signature };
         };
-        const signature = crypto.createHash('sha256')
-            .update(JSON.stringify(payload))
-            .digest('hex');
-        return { ...payload, signature };
-    };
 
-    try {
-        if (inputFile && outputFile && compilerPath && fs.existsSync(inputFile)
-            && fs.existsSync(compilerPath)) {
-            compileCacheRecord = createCompileCacheRecord();
-            const outputStats = fs.existsSync(outputFile) ? fs.statSync(outputFile) : null;
-            if (compileCacheRecord && outputStats && outputStats.mtimeMs >= compileCacheRecord.inputMtimeMs
-                && fs.existsSync(cacheMetadataPath)) {
-                const cached = JSON.parse(fs.readFileSync(cacheMetadataPath, 'utf8'));
-                if (cached?.cacheVersion === compileCacheVersion
-                    && cached.signature === compileCacheRecord.signature) {
-                    logInfo('[编译缓存] 编译器、参数和源文件签名均未变化，跳过编译:', inputFile);
-                    resolve({ success: true, cached: true, exitCode: 0, stdout: '', stderr: '', warnings: [], errors: [], diagnostics: [] });
-                    return;
+        try {
+            if (inputFile && outputFile && compilerPath && fs.existsSync(inputFile) && fs.existsSync(compilerPath)) {
+                compileCacheRecord = createCompileCacheRecord();
+                const outputStats = fs.existsSync(outputFile) ? fs.statSync(outputFile) : null;
+                if (
+                    compileCacheRecord &&
+                    outputStats &&
+                    outputStats.mtimeMs >= compileCacheRecord.inputMtimeMs &&
+                    fs.existsSync(cacheMetadataPath)
+                ) {
+                    const cached = JSON.parse(fs.readFileSync(cacheMetadataPath, 'utf8'));
+                    if (
+                        cached?.cacheVersion === compileCacheVersion &&
+                        cached.signature === compileCacheRecord.signature
+                    ) {
+                        logInfo('[编译缓存] 编译器、参数和源文件签名均未变化，跳过编译:', inputFile);
+                        resolve({
+                            success: true,
+                            cached: true,
+                            exitCode: 0,
+                            stdout: '',
+                            stderr: '',
+                            warnings: [],
+                            errors: [],
+                            diagnostics: [],
+                        });
+                        return;
+                    }
                 }
             }
+        } catch (cacheError) {
+            logWarn('[编译缓存] 签名检查失败，将正常编译:', cacheError?.message || cacheError);
         }
-    } catch (cacheError) {
-        logWarn('[编译缓存] 签名检查失败，将正常编译:', cacheError?.message || cacheError);
-    }
-
 
         const outputDir = path.dirname(outputFile);
         if (!fs.existsSync(outputDir)) {
@@ -7336,11 +7980,7 @@ async function compileFile(options) {
             }
         }
 
-        const args = [
-            actualInputFile,
-            ...parsedUserArgs,
-            '-o', outputFile
-        ];
+        const args = [actualInputFile, ...parsedUserArgs, '-o', outputFile];
 
         if (tempInputFile) {
             const originalDir = path.dirname(inputFile);
@@ -7353,10 +7993,10 @@ async function compileFile(options) {
             compilerDir,
             path.join(compilerRoot, 'bin'),
             path.join(compilerRoot, 'mingw64', 'bin'),
-            path.join(compilerRoot, 'mingw32', 'bin')
+            path.join(compilerRoot, 'mingw32', 'bin'),
         ];
 
-        mingwBinPaths = mingwBinPaths.filter(p => fs.existsSync(p));
+        mingwBinPaths = mingwBinPaths.filter((p) => fs.existsSync(p));
 
         const systemPath = getCompilerSystemPathCached();
 
@@ -7379,7 +8019,7 @@ async function compileFile(options) {
                     if (fs.existsSync(pth)) {
                         existing.push(pth);
                     }
-                } catch (_) { }
+                } catch (_) {}
             }
             return existing;
         };
@@ -7410,14 +8050,14 @@ async function compileFile(options) {
         const cpathEnvValue = mergeEnvPathValue(includePaths, process.env.CPATH);
         const libraryCandidates = ensureExistingDirs([
             path.join(compilerRoot, 'lib'),
-            path.join(compilerRoot, 'lib64')
+            path.join(compilerRoot, 'lib64'),
         ]);
         const libraryEnvValue = mergeEnvPathValue(libraryCandidates, process.env.LIBRARY_PATH);
 
         const compilerEnv = {
             ...process.env,
             PATH: envPath,
-            MINGW_PREFIX: compilerRoot
+            MINGW_PREFIX: compilerRoot,
         };
 
         if (includeEnvValue) {
@@ -7442,14 +8082,16 @@ async function compileFile(options) {
             cwd: workingDirectory,
             stdio: ['pipe', 'pipe', 'pipe'],
             env: compilerEnv,
-            shell: false // 禁用shell模式以避免路径解析问题
+            shell: false, // 禁用shell模式以避免路径解析问题
         });
 
         let timedOut = false;
         const compilationTimeout = setTimeout(() => {
             timedOut = true;
             logWarn('[编译] 超过 120 秒，正在终止编译器进程:', inputFile);
-            try { compiler.kill(); } catch (_) { }
+            try {
+                compiler.kill();
+            } catch (_) {}
         }, 120000);
 
         const stdoutChunks = [];
@@ -7487,7 +8129,7 @@ async function compileFile(options) {
                 stderr: stderr,
                 warnings: [],
                 errors: [],
-                diagnostics: []
+                diagnostics: [],
             };
 
             if (timedOut) {
@@ -7504,20 +8146,24 @@ async function compileFile(options) {
             }
 
             if (stderr) {
-                const lines = stderr.split(/\r?\n/).filter(line => line.trim());
+                const lines = stderr.split(/\r?\n/).filter((line) => line.trim());
 
                 const parseDiagnostic = (line) => {
                     const m = line.match(/^(.+?):(\d+):(?:(\d+):)?\s*(fatal error|error|warning|note):\s*(.+)$/i);
                     if (m) {
                         const [, file, lineNum, colNum, sevRaw, msg] = m;
-                        const sev = /fatal error|error/i.test(sevRaw) ? 'error' : (/warning/i.test(sevRaw) ? 'warning' : 'note');
+                        const sev = /fatal error|error/i.test(sevRaw)
+                            ? 'error'
+                            : /warning/i.test(sevRaw)
+                              ? 'warning'
+                              : 'note';
                         return {
                             file: file,
                             line: parseInt(lineNum, 10) || 1,
                             column: colNum ? parseInt(colNum, 10) : 1,
                             severity: sev,
                             message: msg.trim(),
-                            raw: line
+                            raw: line,
                         };
                     }
                     const noteMatch = line.match(/^(.+?):(\d+):(?:(\d+):)?\s*(.+)$/);
@@ -7529,7 +8175,7 @@ async function compileFile(options) {
                             column: colNum ? parseInt(colNum, 10) : 1,
                             severity: 'note',
                             message: String(msg).trim(),
-                            raw: line
+                            raw: line,
                         };
                     }
                     return null;
@@ -7562,7 +8208,8 @@ async function compileFile(options) {
                         if (code === 0) {
                             try {
                                 const st = fs.statSync(outputFile);
-                                if ((st.mode & 0o111) !== 0o111) { // 任意执行位缺失则赋 755
+                                if ((st.mode & 0o111) !== 0o111) {
+                                    // 任意执行位缺失则赋 755
                                     fs.chmodSync(outputFile, 0o755);
                                     changed = true;
                                 }
@@ -7572,7 +8219,9 @@ async function compileFile(options) {
                         } else {
                             logInfo('[编译后] 编译失败，跳过自动 chmod');
                         }
-                        const afterMode = fs.existsSync(outputFile) ? (fs.statSync(outputFile).mode & 0o777).toString(8) : 'missing';
+                        const afterMode = fs.existsSync(outputFile)
+                            ? (fs.statSync(outputFile).mode & 0o777).toString(8)
+                            : 'missing';
                         logInfo('[编译后][权限]', { before: beforeMode, after: afterMode, changed });
                     } else {
                         logWarn('[编译后] 输出文件不存在，无法设置权限');
@@ -7631,27 +8280,13 @@ async function runExecutable(options) {
     const { executablePath, workingDirectory } = options;
     const normalizedRunMode = normalizeRunModeForPlatform(settings?.runMode, process.platform);
 
-    function decodeBufferAuto(buffer) {
-        if (!buffer || buffer.length === 0) return '';
-        try {
-            const encoding = detectEncoding(buffer);
-            if (encoding === 'utf8') return buffer.toString('utf8');
-        } catch (_) { }
-        try {
-            const iconv = require('iconv-lite');
-            return iconv.decode(buffer, 'gbk');
-        } catch (_) {
-            return buffer.toString('utf8');
-        }
-    }
-
     try {
         if (process.platform === 'win32') {
             const abs = require('path').resolve(executablePath);
             await killByExePathWindows(abs);
             await killConsolePauserForTargetWindows(abs);
         }
-    } catch (_) { }
+    } catch (_) {}
 
     return new Promise((resolve, reject) => {
         logInfo('运行可执行文件:', executablePath);
@@ -7664,15 +8299,13 @@ async function runExecutable(options) {
 
         if (normalizedRunMode === 'integrated-terminal') {
             const absoluteExePath = path.resolve(executablePath);
-            const resolvedCwd = workingDirectory
-                ? path.resolve(workingDirectory)
-                : path.dirname(absoluteExePath);
+            const resolvedCwd = workingDirectory ? path.resolve(workingDirectory) : path.dirname(absoluteExePath);
             resolve({
                 success: true,
                 mode: 'integrated-terminal',
                 executablePath: absoluteExePath,
                 workingDirectory: resolvedCwd,
-                message: '程序已转交内置终端运行'
+                message: '程序已转交内置终端运行',
             });
             return;
         }
@@ -7706,7 +8339,11 @@ async function runExecutable(options) {
 
             if (!consolePauserPath) {
                 logInfo('错误: 未找到consolepauser.exe');
-                reject(new Error('未找到consolepauser.exe，无法启动程序。请确保%userprofile%/.oicpp/consolepauser.exe已正确生成。'));
+                reject(
+                    new Error(
+                        '未找到consolepauser.exe，无法启动程序。请确保%userprofile%/.oicpp/consolepauser.exe已正确生成。'
+                    )
+                );
                 return;
             }
             command = 'cmd';
@@ -7728,8 +8365,8 @@ async function runExecutable(options) {
                     compilerDir,
                     path.join(compilerRoot, 'bin'),
                     path.join(compilerRoot, 'mingw64', 'bin'),
-                    path.join(compilerRoot, 'mingw32', 'bin')
-                ].filter(p => require('fs').existsSync(p));
+                    path.join(compilerRoot, 'mingw32', 'bin'),
+                ].filter((p) => require('fs').existsSync(p));
 
                 if (mingwBinPaths.length > 0) {
                     runEnv.PATH = [...mingwBinPaths, process.env.PATH].join(path.delimiter);
@@ -7741,7 +8378,7 @@ async function runExecutable(options) {
                 detached: true,
                 stdio: 'ignore',
                 shell: true,
-                env: runEnv
+                env: runEnv,
             };
         } else {
             const which = (bin) => {
@@ -7749,18 +8386,18 @@ async function runExecutable(options) {
                     const { execSync } = require('child_process');
                     execSync(`command -v ${bin}`, { stdio: 'pipe', timeout: 2500 });
                     return true;
-                } catch (_) { return false; }
+                } catch (_) {
+                    return false;
+                }
             };
-            const candidates = [
-                'gnome-terminal',
-                'konsole',
-                'xfce4-terminal',
-                'x-terminal-emulator',
-                'xterm'
-            ];
-            const picked = candidates.find(c => which(c));
+            const candidates = ['gnome-terminal', 'konsole', 'xfce4-terminal', 'x-terminal-emulator', 'xterm'];
+            const picked = candidates.find((c) => which(c));
             if (!picked) {
-                reject(new Error('未找到可用的终端模拟器（gnome-terminal/konsole/xfce4-terminal/x-terminal-emulator/xterm）'));
+                reject(
+                    new Error(
+                        '未找到可用的终端模拟器（gnome-terminal/konsole/xfce4-terminal/x-terminal-emulator/xterm）'
+                    )
+                );
                 return;
             }
             command = picked;
@@ -7771,7 +8408,7 @@ async function runExecutable(options) {
                 `cd ${quoteForBash(cwd)}`,
                 `${quoteForBash(absExe)}`,
                 `printf '\\n程序执行完成，按回车键继续...\\n'`,
-                'read -r'
+                'read -r',
             ].join('; ');
             if (picked === 'gnome-terminal') {
                 args = ['--', 'bash', '-lc', bashCmd];
@@ -7781,13 +8418,14 @@ async function runExecutable(options) {
                 args = ['-x', 'bash', '-lc', bashCmd];
             } else if (picked === 'x-terminal-emulator') {
                 args = ['-e', 'bash', '-lc', bashCmd];
-            } else { // xterm 或其他
+            } else {
+                // xterm 或其他
                 args = ['-e', 'bash', '-lc', bashCmd];
             }
             spawnOptions = {
                 cwd,
                 detached: true,
-                stdio: 'ignore'
+                stdio: 'ignore',
             };
         }
 
@@ -7809,12 +8447,12 @@ async function runExecutable(options) {
                         } else {
                             diag.targetExists = false;
                         }
-                    } catch (_) { }
+                    } catch (_) {}
                     diag.command = command;
                     diag.args = args;
                     diag.cwd = spawnOptions?.cwd;
                     logError('[运行][spawn-error]', diag);
-                } catch (_) { }
+                } catch (_) {}
                 reject(new Error(`启动程序失败: ${error.message}`));
             });
 
@@ -7829,14 +8467,12 @@ async function runExecutable(options) {
                     resolve({ success: true, message: '程序启动中...' });
                 }
             }, 1000);
-
         } catch (error) {
             logInfo('创建子进程失败:', error.message);
             reject(new Error(`创建子进程失败: ${error.message}`));
         }
     });
 }
-
 
 app.whenReady().then(() => {
     app.commandLine.appendSwitch('charset', 'utf-8');
@@ -7847,7 +8483,7 @@ app.whenReady().then(() => {
         } else {
             logWarn('[LSP] 启动时 clangd 未就绪:', clangdStatus.error || 'unknown');
         }
-    } catch (_) { }
+    } catch (_) {}
     createWindow();
 
     handleCommandLineArgs();
@@ -7871,16 +8507,22 @@ app.on('before-quit', () => {
         if (gdbDebugger && (gdbDebugger.isRunning || gdbDebugger.gdbProcess)) {
             gdbDebugger.stop();
         }
-    } catch (_) { }
+    } catch (_) {}
     try {
         for (const child of Array.from(activeRunChildren)) {
-            try { if (child && !child.killed) child.kill('SIGKILL'); } catch (_) { }
+            try {
+                if (child && !child.killed) child.kill('SIGKILL');
+            } catch (_) {}
         }
         activeRunChildren.clear();
-    } catch (_) { }
+    } catch (_) {}
     disposeAllFileWatchers();
-    try { terminalManager.disposeAll(); } catch (_) { }
-    try { clangdLspManager.stop(); } catch (_) { }
+    try {
+        terminalManager.disposeAll();
+    } catch (_) {}
+    try {
+        clangdLspManager.stop();
+    } catch (_) {}
     try {
         const tempDir = path.join(os.homedir(), '.oicpp', 'codeTemp');
         fs.rmSync(tempDir, { recursive: true, force: true });
@@ -7899,14 +8541,16 @@ app.on('web-contents-created', (event, contents) => {
                 // Links opened from the built-in browser (target="_blank",
                 // window.open, middle click, etc.) belong in another built-in
                 // browser tab rather than the operating system's browser.
-                if (contents.getType() === 'webview'
-                    && (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')) {
+                if (
+                    contents.getType() === 'webview' &&
+                    (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')
+                ) {
                     const hostContents = contents.hostWebContents;
                     if (hostContents && !hostContents.isDestroyed()) {
                         hostContents.send('browser-open-new-tab', {
                             url: parsedUrl.href,
                             disposition: disposition || 'default',
-                            sourceWebContentsId: contents.id
+                            sourceWebContentsId: contents.id,
                         });
                     }
                     return { action: 'deny' };
@@ -7924,7 +8568,9 @@ app.on('web-contents-created', (event, contents) => {
     }
 
     contents.on('destroyed', () => {
-        try { removeRendererWatchers(contents.id); } catch (_) { }
+        try {
+            removeRendererWatchers(contents.id);
+        } catch (_) {}
     });
 });
 function handleCommandLineArgs(argv = process.argv) {
@@ -7974,14 +8620,16 @@ function extractSupportedFilesFromArgs(args = [], options = {}) {
         try {
             return path.resolve(p).replace(/\\/g, '/').toLowerCase();
         } catch (_) {
-            return String(p || '').replace(/\\/g, '/').toLowerCase();
+            return String(p || '')
+                .replace(/\\/g, '/')
+                .toLowerCase();
         }
     };
 
     const intrinsicLaunchPaths = new Set([
         normalizeArgPath(process.execPath),
         normalizeArgPath(app.getAppPath()),
-        normalizeArgPath(process.cwd())
+        normalizeArgPath(process.cwd()),
     ]);
 
     for (const raw of args) {
@@ -8004,8 +8652,7 @@ function extractSupportedFilesFromArgs(args = [], options = {}) {
             try {
                 const fileUrl = new URL(candidate);
                 candidate = fileUrl.pathname || candidate;
-            } catch (_) {
-            }
+            } catch (_) {}
         }
 
         const normalized = normalizeDroppedPath(candidate);
@@ -8015,13 +8662,9 @@ function extractSupportedFilesFromArgs(args = [], options = {}) {
 
         let resolved = normalized;
         try {
-            resolved = path.isAbsolute(normalized)
-                ? normalized
-                : path.resolve(baseDir, normalized);
+            resolved = path.isAbsolute(normalized) ? normalized : path.resolve(baseDir, normalized);
         } catch (_) {
-            resolved = path.isAbsolute(normalized)
-                ? normalized
-                : path.join(baseDir, normalized);
+            resolved = path.isAbsolute(normalized) ? normalized : path.join(baseDir, normalized);
         }
 
         const resolvedNorm = normalizeArgPath(resolved);
@@ -8062,14 +8705,16 @@ function extractOpenTargetsFromArgs(args = [], options = {}) {
         try {
             return path.resolve(p).replace(/\\/g, '/').toLowerCase();
         } catch (_) {
-            return String(p || '').replace(/\\/g, '/').toLowerCase();
+            return String(p || '')
+                .replace(/\\/g, '/')
+                .toLowerCase();
         }
     };
 
     const intrinsicLaunchPaths = new Set([
         normalizeArgPath(process.execPath),
         normalizeArgPath(app.getAppPath()),
-        normalizeArgPath(process.cwd())
+        normalizeArgPath(process.cwd()),
     ]);
 
     for (const raw of args) {
@@ -8092,8 +8737,7 @@ function extractOpenTargetsFromArgs(args = [], options = {}) {
             try {
                 const fileUrl = new URL(candidate);
                 candidate = fileUrl.pathname || candidate;
-            } catch (_) {
-            }
+            } catch (_) {}
         }
 
         const normalized = normalizeDroppedPath(candidate);
@@ -8103,13 +8747,9 @@ function extractOpenTargetsFromArgs(args = [], options = {}) {
 
         let resolved = normalized;
         try {
-            resolved = path.isAbsolute(normalized)
-                ? normalized
-                : path.resolve(baseDir, normalized);
+            resolved = path.isAbsolute(normalized) ? normalized : path.resolve(baseDir, normalized);
         } catch (_) {
-            resolved = path.isAbsolute(normalized)
-                ? normalized
-                : path.join(baseDir, normalized);
+            resolved = path.isAbsolute(normalized) ? normalized : path.join(baseDir, normalized);
         }
 
         const resolvedNorm = normalizeArgPath(resolved);
@@ -8166,7 +8806,7 @@ function queueExternalFileOpen(filePath) {
         let resolvedPath = normalizedPath;
         try {
             resolvedPath = path.resolve(normalizedPath);
-        } catch (_) { }
+        } catch (_) {}
 
         if (!pendingExternalOpenQueue.includes(resolvedPath)) {
             pendingExternalOpenQueue.push(resolvedPath);
@@ -8207,7 +8847,7 @@ function queueExternalFolderOpen(folderPath) {
         let resolvedPath = normalizedPath;
         try {
             resolvedPath = path.resolve(normalizedPath);
-        } catch (_) { }
+        } catch (_) {}
 
         if (!pendingExternalFolderQueue.includes(resolvedPath)) {
             pendingExternalFolderQueue.push(resolvedPath);
@@ -8280,7 +8920,7 @@ async function openFileFromExternalQueue(filePath) {
         } else if (folderPath && fs.existsSync(folderPath) && currentExternalWorkspacePath) {
             logInfo('[外部打开文件] 已存在工作区，保留现有工作区并直接打开文件:', {
                 filePath,
-                workspace: currentExternalWorkspacePath
+                workspace: currentExternalWorkspacePath,
             });
         }
 
@@ -8289,7 +8929,7 @@ async function openFileFromExternalQueue(filePath) {
             mainWindow.webContents.send('file-opened-from-args', {
                 path: filePath,
                 fileName: path.basename(filePath),
-                content
+                content,
             });
         }
     } catch (error) {
@@ -8297,7 +8937,7 @@ async function openFileFromExternalQueue(filePath) {
         if (mainWindow && !mainWindow.isDestroyed()) {
             try {
                 dialog.showErrorBox('打开文件失败', `${path.basename(filePath)}\n${error?.message || error}`);
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 }
@@ -8358,10 +8998,12 @@ function bringMainWindowToFront() {
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.setAlwaysOnTop(false);
                 }
-            } catch (_) { }
+            } catch (_) {}
         }, 300);
     } catch (err) {
-        try { logWarn('[窗口] 主窗口前置失败:', err?.message || String(err)); } catch (_) { }
+        try {
+            logWarn('[窗口] 主窗口前置失败:', err?.message || String(err));
+        } catch (_) {}
     }
 }
 
@@ -8373,8 +9015,6 @@ app.on('open-file', (event, filePath) => {
 });
 
 logInfo('OICPP IDE 主进程启动完成');
-
-
 
 function getLoggedInUser() {
     return settings?.account?.user || null;
@@ -8388,26 +9028,6 @@ function getLoginToken() {
     return settings?.account?.loginToken || '';
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function listClientLogFiles() {
     const logDir = path.join(os.homedir(), '.oicpp', 'logs');
     try {
@@ -8415,7 +9035,8 @@ function listClientLogFiles() {
             return { success: true, logs: [] };
         }
 
-        const logs = fs.readdirSync(logDir)
+        const logs = fs
+            .readdirSync(logDir)
             .filter((name) => path.extname(name).toLowerCase() === '.log')
             .map((name) => {
                 const fullPath = path.join(logDir, name);
@@ -8429,7 +9050,7 @@ function listClientLogFiles() {
                     name,
                     path: fullPath,
                     size: stat?.isFile() ? stat.size : 0,
-                    mtimeMs: stat?.isFile() ? stat.mtimeMs : 0
+                    mtimeMs: stat?.isFile() ? stat.mtimeMs : 0,
                 };
             })
             .filter((item) => !!item.path)
@@ -8441,9 +9062,6 @@ function listClientLogFiles() {
         return { success: false, logs: [], message: error?.message || '读取日志列表失败' };
     }
 }
-
-
-
 
 ipcMain.handle('list-client-logs', () => {
     return listClientLogFiles();
@@ -8476,13 +9094,14 @@ ipcMain.handle('get-recent-files', () => {
                     if (st.isFile()) {
                         const dir = path.dirname(p);
                         logInfo('[最近列表迁移] 文件路径转换为目录:', p, '->', dir);
-                        p = dir; changed = true;
+                        p = dir;
+                        changed = true;
                     }
                 } else {
                     logInfo('[最近列表] 路径不存在，已移除:', p);
                     changed = true;
                 }
-            } catch (_) { 
+            } catch (_) {
                 logInfo('[最近列表] 路径检查失败，已移除:', p);
                 changed = true;
             }
@@ -8538,8 +9157,12 @@ ipcMain.handle('add-to-file-history', async (event, filePath) => {
         }
 
         // 移除以存在的相同路径（去重）
-        const existingIndex = settings.fileHistory.findIndex(item => {
-            try { return path.resolve(item.path) === resolved; } catch (_) { return item.path === filePath; }
+        const existingIndex = settings.fileHistory.findIndex((item) => {
+            try {
+                return path.resolve(item.path) === resolved;
+            } catch (_) {
+                return item.path === filePath;
+            }
         });
         if (existingIndex !== -1) {
             settings.fileHistory.splice(existingIndex, 1);
@@ -8549,7 +9172,7 @@ ipcMain.handle('add-to-file-history', async (event, filePath) => {
         settings.fileHistory.unshift({
             path: resolved,
             name: path.basename(resolved),
-            lastOpened: new Date().toISOString()
+            lastOpened: new Date().toISOString(),
         });
 
         // 最多保留 50 条记录
@@ -8581,7 +9204,7 @@ ipcMain.handle('get-file-history', () => {
             let exists = false;
             try {
                 exists = fs.existsSync(p);
-            } catch (_) { }
+            } catch (_) {}
             if (!exists) {
                 changed = true;
                 continue;
@@ -8595,7 +9218,7 @@ ipcMain.handle('get-file-history', () => {
             valid.push({
                 ...item,
                 path: normalized,
-                name: path.basename(normalized)
+                name: path.basename(normalized),
             });
         }
         if (changed || valid.length !== settings.fileHistory.length) {
@@ -8622,12 +9245,16 @@ ipcMain.handle('open-file-from-history', async (event, filePath) => {
             mainWindow.webContents.send('file-opened', {
                 filePath: resolved,
                 fileName: fileName,
-                content: content
+                content: content,
             });
 
             // 更新历史记录时间
-            const existingIndex = settings.fileHistory.findIndex(item => {
-                try { return path.resolve(item.path) === resolved; } catch (_) { return item.path === filePath; }
+            const existingIndex = settings.fileHistory.findIndex((item) => {
+                try {
+                    return path.resolve(item.path) === resolved;
+                } catch (_) {
+                    return item.path === filePath;
+                }
             });
             if (existingIndex !== -1) {
                 settings.fileHistory[existingIndex].lastOpened = new Date().toISOString();
@@ -8644,7 +9271,7 @@ ipcMain.handle('open-file-from-history', async (event, filePath) => {
 ipcMain.handle('save-last-open-tabs', async (event, tabs) => {
     try {
         if (!Array.isArray(tabs)) return false;
-        settings.lastOpenTabs = tabs.filter(t => t && t.filePath && typeof t.filePath === 'string');
+        settings.lastOpenTabs = tabs.filter((t) => t && t.filePath && typeof t.filePath === 'string');
         if (settings.lastOpenTabs.length > 20) {
             settings.lastOpenTabs = settings.lastOpenTabs.slice(0, 20);
         }
@@ -8661,8 +9288,12 @@ ipcMain.handle('get-last-open-tabs', () => {
         if (!Array.isArray(settings.lastOpenTabs)) return [];
 
         // 过滤掉已经不存在的文件
-        const valid = settings.lastOpenTabs.filter(t => {
-            try { return t && t.filePath && fs.existsSync(t.filePath); } catch (_) { return false; }
+        const valid = settings.lastOpenTabs.filter((t) => {
+            try {
+                return t && t.filePath && fs.existsSync(t.filePath);
+            } catch (_) {
+                return false;
+            }
         });
         if (valid.length !== settings.lastOpenTabs.length) {
             settings.lastOpenTabs = valid;
@@ -8728,13 +9359,13 @@ function runCommandVersionProbe(command, args = [], options = {}) {
             env,
             encoding: 'utf8',
             timeout: Number.isFinite(options.timeoutMs) ? options.timeoutMs : 5000,
-            windowsHide: true
+            windowsHide: true,
         });
         if (result.error) {
             return {
                 ok: false,
                 output: '',
-                message: result.error.message || String(result.error)
+                message: result.error.message || String(result.error),
             };
         }
         const output = `${result.stdout || ''}${result.stderr || ''}`.trim();
@@ -8742,19 +9373,19 @@ function runCommandVersionProbe(command, args = [], options = {}) {
             return {
                 ok: true,
                 output,
-                message: output
+                message: output,
             };
         }
         return {
             ok: false,
             output,
-            message: output || `退出码: ${result.status}`
+            message: output || `退出码: ${result.status}`,
         };
     } catch (error) {
         return {
             ok: false,
             output: '',
-            message: error?.message || String(error)
+            message: error?.message || String(error),
         };
     }
 }
@@ -8767,10 +9398,9 @@ function resolveDebuggerLaunchConfig() {
     return {
         kind: 'gdb',
         command: 'gdb',
-        relaxedInit: false
+        relaxedInit: false,
     };
 }
-
 
 async function checkGDBAvailability() {
     if (process.platform === 'darwin') {
@@ -8778,7 +9408,7 @@ async function checkGDBAvailability() {
         return {
             available: false,
             debugger: 'unsupported',
-            message: 'macOS 暂不支持调试功能。'
+            message: 'macOS 暂不支持调试功能。',
         };
     }
 
@@ -8797,8 +9427,8 @@ async function checkGDBAvailability() {
                 compilerDir,
                 path.join(compilerRoot, 'bin'),
                 path.join(compilerRoot, 'mingw64', 'bin'),
-                path.join(compilerRoot, 'mingw32', 'bin')
-            ].filter(p => fs.existsSync(p));
+                path.join(compilerRoot, 'mingw32', 'bin'),
+            ].filter((p) => fs.existsSync(p));
 
             if (mingwBinPaths.length > 0) {
                 const envPath = [...mingwBinPaths, process.env.PATH].join(path.delimiter);
@@ -8809,7 +9439,7 @@ async function checkGDBAvailability() {
 
         const testProcess = spawn('gdb', ['--version'], {
             stdio: ['pipe', 'pipe', 'pipe'],
-            env: gdbEnv
+            env: gdbEnv,
         });
 
         let output = '';
@@ -8830,13 +9460,13 @@ async function checkGDBAvailability() {
                 resolve({
                     available: true,
                     version: versionLine,
-                    message: `GDB可用: ${versionLine}`
+                    message: `GDB可用: ${versionLine}`,
                 });
             } else {
                 logInfo('[主进程] GDB不可用，退出码:', code);
                 resolve({
                     available: false,
-                    message: 'GDB调试器未安装或不可用。请安装GDB调试器以使用调试功能。'
+                    message: 'GDB调试器未安装或不可用。请安装GDB调试器以使用调试功能。',
                 });
             }
         });
@@ -8845,7 +9475,7 @@ async function checkGDBAvailability() {
             logInfo('[主进程] GDB检查出错:', error.message);
             resolve({
                 available: false,
-                message: `GDB调试器不可用: ${error.message}。请安装GDB调试器以使用调试功能。`
+                message: `GDB调试器不可用: ${error.message}。请安装GDB调试器以使用调试功能。`,
             });
         });
 
@@ -8853,12 +9483,11 @@ async function checkGDBAvailability() {
             testProcess.kill();
             resolve({
                 available: false,
-                message: 'GDB检查超时。请确保GDB调试器已正确安装。'
+                message: 'GDB检查超时。请确保GDB调试器已正确安装。',
             });
         }, 5000);
     });
 }
-
 
 let gdbDebugger = null;
 let pendingWatchExprs = new Set();
@@ -8877,14 +9506,14 @@ function buildPendingWatchPayload(message = '(等待调试开始)') {
                 isArray: false,
                 isContainer: false,
                 elementCount: null,
-                children: []
+                children: [],
             };
         });
-    } catch (_) { }
+    } catch (_) {}
     return {
         local: {},
         global: {},
-        watches: watchesObj
+        watches: watchesObj,
     };
 }
 
@@ -8894,12 +9523,12 @@ function broadcastPendingWatchSnapshot(event = null, message = '(等待调试开
         if (event && typeof event.reply === 'function') {
             event.reply('debug-variables-updated', payload);
         }
-    } catch (_) { }
+    } catch (_) {}
     try {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('debug-variables-updated', payload);
         }
-    } catch (_) { }
+    } catch (_) {}
 }
 
 async function killImageWindows(imageName) {
@@ -8909,10 +9538,16 @@ async function killImageWindows(imageName) {
         await new Promise((resolve) => {
             const p = spawn('taskkill', ['/F', '/IM', imageName], { stdio: 'ignore', windowsHide: true });
             const to = setTimeout(resolve, 1500);
-            p.on('close', () => { clearTimeout(to); resolve(); });
-            p.on('error', () => { clearTimeout(to); resolve(); });
+            p.on('close', () => {
+                clearTimeout(to);
+                resolve();
+            });
+            p.on('error', () => {
+                clearTimeout(to);
+                resolve();
+            });
         });
-    } catch (_) { }
+    } catch (_) {}
 }
 
 async function killByExePathWindows(exePath) {
@@ -8923,12 +9558,21 @@ async function killByExePathWindows(exePath) {
         const escaped = String(exePath).replace(/'/g, "''");
         const ps = `Try { Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -eq '${escaped}' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force } } Catch {}`;
         await new Promise((resolve) => {
-            const p = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps], { stdio: 'ignore', windowsHide: true });
+            const p = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps], {
+                stdio: 'ignore',
+                windowsHide: true,
+            });
             const to = setTimeout(resolve, 2000);
-            p.on('close', () => { clearTimeout(to); resolve(); });
-            p.on('error', () => { clearTimeout(to); resolve(); });
+            p.on('close', () => {
+                clearTimeout(to);
+                resolve();
+            });
+            p.on('error', () => {
+                clearTimeout(to);
+                resolve();
+            });
         });
-    } catch (_) { }
+    } catch (_) {}
 }
 
 async function killConsolePauserForTargetWindows(targetExePath) {
@@ -8939,12 +9583,21 @@ async function killConsolePauserForTargetWindows(targetExePath) {
         const escaped = String(targetExePath).replace(/`/g, '``').replace(/'/g, "''");
         const ps = `Try { Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -match 'consolepauser\\.exe$' -and $_.CommandLine -like '*${escaped}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force } } Catch {}`;
         await new Promise((resolve) => {
-            const p = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps], { stdio: 'ignore', windowsHide: true });
+            const p = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', ps], {
+                stdio: 'ignore',
+                windowsHide: true,
+            });
             const to = setTimeout(resolve, 2000);
-            p.on('close', () => { clearTimeout(to); resolve(); });
-            p.on('error', () => { clearTimeout(to); resolve(); });
+            p.on('close', () => {
+                clearTimeout(to);
+                resolve();
+            });
+            p.on('error', () => {
+                clearTimeout(to);
+                resolve();
+            });
         });
-    } catch (_) { }
+    } catch (_) {}
 }
 
 async function startDebugSession(filePath, options = {}) {
@@ -8952,9 +9605,7 @@ async function startDebugSession(filePath, options = {}) {
         logInfo('[主进程] 开始调试会话:', filePath);
         logInfo('[主进程] 调试选项:', options);
 
-        const requestedInferiorTTY = typeof options?.inferiorTTY === 'string'
-            ? options.inferiorTTY.trim()
-            : '';
+        const requestedInferiorTTY = typeof options?.inferiorTTY === 'string' ? options.inferiorTTY.trim() : '';
         const useInputBridge = !!options?.useInputBridge;
         const normalizedRunMode = normalizeRunModeForPlatform(
             options?.runMode !== undefined ? options.runMode : settings?.runMode,
@@ -8990,7 +9641,7 @@ async function startDebugSession(filePath, options = {}) {
         if (isDebugging || (gdbDebugger && gdbDebugger.isRunning)) {
             logInfo('[主进程] 停止当前调试会话...');
             await stopDebugSession();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
         if (!fs.existsSync(filePath)) {
@@ -9007,7 +9658,7 @@ async function startDebugSession(filePath, options = {}) {
                     logWarn('[主进程] 发现非 Windows 平台带 .exe 的路径，自动改为无扩展:', noExt);
                     executablePath = noExt;
                 }
-            } catch (_) { }
+            } catch (_) {}
         }
         logInfo('[主进程] 可执行文件预期路径:', executablePath);
         if (!isWinPlatform) {
@@ -9017,7 +9668,7 @@ async function startDebugSession(filePath, options = {}) {
                     if (stat && stat.isFile()) {
                         executablePath = base; // 已存在无扩展名文件
                     }
-                } catch (_) { }
+                } catch (_) {}
             }
         }
 
@@ -9025,7 +9676,7 @@ async function startDebugSession(filePath, options = {}) {
             await killImageWindows('gdb.exe');
             await killByExePathWindows(executablePath);
             await killConsolePauserForTargetWindows(executablePath);
-        } catch (_) { }
+        } catch (_) {}
 
         if (!fs.existsSync(executablePath)) {
             throw new Error(`可执行文件不存在: ${executablePath}。请先编译代码（需要包含 -g 参数）。`);
@@ -9044,8 +9695,8 @@ async function startDebugSession(filePath, options = {}) {
                     compilerDir,
                     path.join(compilerRoot, 'bin'),
                     path.join(compilerRoot, 'mingw64', 'bin'),
-                    path.join(compilerRoot, 'mingw32', 'bin')
-                ].filter(p => fs.existsSync(p));
+                    path.join(compilerRoot, 'mingw32', 'bin'),
+                ].filter((p) => fs.existsSync(p));
 
                 if (mingwBinPaths.length > 0) {
                     const envPath = [process.env.PATH, ...mingwBinPaths].join(path.delimiter);
@@ -9055,7 +9706,7 @@ async function startDebugSession(filePath, options = {}) {
 
             const objdumpProcess = spawn('objdump', ['-h', executablePath], {
                 stdio: 'pipe',
-                env: debugEnv
+                env: debugEnv,
             });
             let hasDebugInfo = false;
 
@@ -9095,25 +9746,25 @@ async function startDebugSession(filePath, options = {}) {
                     compilerDir,
                     path.join(compilerRoot, 'bin'),
                     path.join(compilerRoot, 'mingw64', 'bin'),
-                    path.join(compilerRoot, 'mingw32', 'bin')
-                ].filter(p => fs.existsSync(p));
+                    path.join(compilerRoot, 'mingw32', 'bin'),
+                ].filter((p) => fs.existsSync(p));
                 if (mingwBinPaths.length > 0) {
                     const envPath = [...mingwBinPaths, process.env.PATH].join(path.delimiter);
                     gdbEnv.PATH = envPath;
                     logInfo('[主进程] 调试启动已注入 PATH，包含编译器目录数量:', mingwBinPaths.length);
                 }
             }
-        } catch (e) { logWarn('[主进程] 构造 GDB 环境失败:', e?.message || String(e)); }
+        } catch (e) {
+            logWarn('[主进程] 构造 GDB 环境失败:', e?.message || String(e));
+        }
         try {
             const startOptions = {
                 env: gdbEnv,
                 noNewConsole: shouldUseIntegratedTerminal,
-                ...((requestedInferiorTTY && !useInputBridge)
-                    ? { inferiorTTY: requestedInferiorTTY }
-                    : {}),
+                ...(requestedInferiorTTY && !useInputBridge ? { inferiorTTY: requestedInferiorTTY } : {}),
                 ...(process.platform === 'linux'
                     ? { consoleTerminalTemplate: resolveLinuxConsoleTerminalTemplate() }
-                    : {})
+                    : {}),
             };
 
             await gdbDebugger.start(executablePath, filePath, startOptions);
@@ -9148,9 +9799,9 @@ async function startDebugSession(filePath, options = {}) {
         if (mainWindow) {
             mainWindow.webContents.send('debug-ready-waiting', {
                 hasBreakpoints: hasBreakpoints,
-                message: hasBreakpoints ?
-                    '调试器已启动，程序已加载断点，点击继续执行开始调试' :
-                    '调试器已启动，程序已准备就绪，点击继续执行开始运行'
+                message: hasBreakpoints
+                    ? '调试器已启动，程序已加载断点，点击继续执行开始调试'
+                    : '调试器已启动，程序已准备就绪，点击继续执行开始运行',
             });
         }
 
@@ -9166,9 +9817,8 @@ async function startDebugSession(filePath, options = {}) {
             file: filePath,
             executable: executablePath,
             process: gdbDebugger.gdbProcess ? gdbDebugger.gdbProcess.pid : null,
-            mode: normalizedRunMode
+            mode: normalizedRunMode,
         };
-
     } catch (error) {
         logError('[主进程] 启动调试会话失败:', error);
         isDebugging = false;
@@ -9228,7 +9878,7 @@ function _resolvePidsOnTTY(ttyPath) {
                 }
             }
         }
-    } catch (_) { }
+    } catch (_) {}
     return pids;
 }
 
@@ -9267,8 +9917,10 @@ async function stopDebugSession() {
         // read false, stop() was skipped, and the reference was then nulled --
         // leaving a live gdb.exe and the debuggee as orphans with no handle.
         if (gdbDebugger && (gdbDebugger.isRunning || gdbDebugger.gdbProcess)) {
-            try { await gdbDebugger.stop(); } catch (_) { }
-            await new Promise(r => setTimeout(r, 200));
+            try {
+                await gdbDebugger.stop();
+            } catch (_) {}
+            await new Promise((r) => setTimeout(r, 200));
         }
 
         isDebugging = false;
@@ -9281,7 +9933,6 @@ async function stopDebugSession() {
 
         logInfo('调试会话已停止');
         return { success: true };
-
     } catch (error) {
         logError('停止调试会话失败:', error);
         autoStoppingOnProgramExit = false;
@@ -9308,13 +9959,20 @@ function setupDebuggerEvents() {
             const toApply = Array.from(pendingWatchExprs);
             (async () => {
                 for (const expr of toApply) {
-                    try { await gdbDebugger.addWatchVariable(expr); } catch (e) { try { logWarn('[主进程] 应用缓冲监视失败:', expr, e?.message || String(e)); } catch (_) { } }
+                    try {
+                        await gdbDebugger.addWatchVariable(expr);
+                    } catch (e) {
+                        try {
+                            logWarn('[主进程] 应用缓冲监视失败:', expr, e?.message || String(e));
+                        } catch (_) {}
+                    }
                 }
                 try {
                     await gdbDebugger.updateVariables();
                     const vars = gdbDebugger.getVariables();
-                    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('debug-variables-updated', vars);
-                } catch (_) { }
+                    if (mainWindow && !mainWindow.isDestroyed())
+                        mainWindow.webContents.send('debug-variables-updated', vars);
+                } catch (_) {}
             })();
         }
     });
@@ -9327,41 +9985,47 @@ function setupDebuggerEvents() {
             return;
         }
         const targetDebugger = gdbDebugger;
-        refreshChain = refreshChain.then(async () => {
-            if (!targetDebugger || targetDebugger !== gdbDebugger) return;
-            if (!targetDebugger.isRunning || targetDebugger.programExited) return;
-            const now = Date.now();
-            const gap = now - lastUpdateAt;
-            const delay = gap >= 250 ? 0 : (250 - gap);
-            if (delay > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-            lastUpdateAt = Date.now();
-            let variables = null;
-            try {
-                variables = await getDebugVariables();
-            } catch (e) {
-                logWarn('[主进程] 获取变量失败:', e);
-            }
-            if (variables) {
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    try { mainWindow.webContents.send('debug-variables-updated', variables); } catch (_) { }
+        refreshChain = refreshChain
+            .then(async () => {
+                if (!targetDebugger || targetDebugger !== gdbDebugger) return;
+                if (!targetDebugger.isRunning || targetDebugger.programExited) return;
+                const now = Date.now();
+                const gap = now - lastUpdateAt;
+                const delay = gap >= 250 ? 0 : 250 - gap;
+                if (delay > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, delay));
                 }
-            } else {
-                broadcastCurrentVariablesSnapshot();
-            }
-            let callStack = null;
-            try {
-                callStack = await getDebugCallStack();
-            } catch (e) {
-                logWarn('[主进程] 获取调用栈失败:', e);
-            }
-            if (callStack && mainWindow && !mainWindow.isDestroyed()) {
-                try { mainWindow.webContents.send('debug-callstack-updated', callStack); } catch (_) { }
-            }
-        }).catch((err) => {
-            logWarn('[主进程] 调试刷新链执行失败:', err?.message || err);
-        });
+                lastUpdateAt = Date.now();
+                let variables = null;
+                try {
+                    variables = await getDebugVariables();
+                } catch (e) {
+                    logWarn('[主进程] 获取变量失败:', e);
+                }
+                if (variables) {
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        try {
+                            mainWindow.webContents.send('debug-variables-updated', variables);
+                        } catch (_) {}
+                    }
+                } else {
+                    broadcastCurrentVariablesSnapshot();
+                }
+                let callStack = null;
+                try {
+                    callStack = await getDebugCallStack();
+                } catch (e) {
+                    logWarn('[主进程] 获取调用栈失败:', e);
+                }
+                if (callStack && mainWindow && !mainWindow.isDestroyed()) {
+                    try {
+                        mainWindow.webContents.send('debug-callstack-updated', callStack);
+                    } catch (_) {}
+                }
+            })
+            .catch((err) => {
+                logWarn('[主进程] 调试刷新链执行失败:', err?.message || err);
+            });
     };
 
     gdbDebugger.on('stopped', (data) => {
@@ -9369,13 +10033,16 @@ function setupDebuggerEvents() {
         const reason = String(data?.reason || '').toLowerCase();
         const frameFile = data?.frame?.file || '';
         const eligible = lastDebugCommand && AUTO_SKIP_ELIGIBLE_COMMANDS.has(lastDebugCommand);
-        const autoSkipReason = reason === 'end-stepping-range' || reason === 'location-reached' || reason === 'function-finished';
+        const autoSkipReason =
+            reason === 'end-stepping-range' || reason === 'location-reached' || reason === 'function-finished';
         const outsideUserCode = isFrameOutsideUserCode(frameFile);
 
         if (eligible && autoSkipReason && outsideUserCode && autoSkipInternalCounter < AUTO_SKIP_INTERNAL_LIMIT) {
             const retryCommand = lastDebugCommand;
             autoSkipInternalCounter += 1;
-            logInfo(`[主进程] 检测到内部暂停(${reason})，frame=${frameFile || '未知'}，自动重试 ${retryCommand} (${autoSkipInternalCounter}/${AUTO_SKIP_INTERNAL_LIMIT})`);
+            logInfo(
+                `[主进程] 检测到内部暂停(${reason})，frame=${frameFile || '未知'}，自动重试 ${retryCommand} (${autoSkipInternalCounter}/${AUTO_SKIP_INTERNAL_LIMIT})`
+            );
             setTimeout(() => {
                 if (!gdbDebugger || !gdbDebugger.isRunning || gdbDebugger.programExited) {
                     return;
@@ -9417,9 +10084,9 @@ function setupDebuggerEvents() {
         if (!mainWindow || mainWindow.isDestroyed()) return;
         try {
             mainWindow.webContents.send('debug-terminal-output', {
-                data: typeof text === 'string' ? text : String(text ?? '')
+                data: typeof text === 'string' ? text : String(text ?? ''),
             });
-        } catch (_) { }
+        } catch (_) {}
     });
 
     // Linux / macOS TTY 接管：将被调试进程设为终端前台进程组
@@ -9443,7 +10110,7 @@ function setupDebuggerEvents() {
             // 先记录当前 TTY 上的 PID（shell 等）
             const beforePids = _resolvePidsOnTTY(ttyPath);
             // 短暂延迟等待 inferior 启动
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise((r) => setTimeout(r, 120));
             const afterPids = _resolvePidsOnTTY(ttyPath);
             // 找出新出现的 PID
             for (const pid of afterPids) {
@@ -9516,13 +10183,13 @@ function setupDebuggerEvents() {
                 const vars = gdbDebugger.getVariables() || {};
                 pendingWatchExprs = new Set(Object.keys(vars.watches || {}));
             }
-        } catch (_) { }
+        } catch (_) {}
         broadcastPendingWatchSnapshot();
         if (mainWindow) {
             mainWindow.webContents.send('debug-stopped', {
                 exitCode: data.code,
                 signal: data.signal,
-                reason: 'exited'
+                reason: 'exited',
             });
         }
     });
@@ -9551,10 +10218,16 @@ function setupDebuggerEvents() {
                     mainWindow.show();
                     mainWindow.focus();
                     setTimeout(() => {
-                        try { if (!mainWindow.isDestroyed()) mainWindow.setAlwaysOnTop(false); } catch (_) { }
+                        try {
+                            if (!mainWindow.isDestroyed()) mainWindow.setAlwaysOnTop(false);
+                        } catch (_) {}
                     }, 600);
                 }
-            } catch (e) { try { logWarn('[主进程] 置顶聚焦失败:', e?.message || String(e)); } catch (_) { } }
+            } catch (e) {
+                try {
+                    logWarn('[主进程] 置顶聚焦失败:', e?.message || String(e));
+                } catch (_) {}
+            }
         }
     });
 
@@ -9579,7 +10252,7 @@ function setupDebuggerEvents() {
             setTimeout(() => {
                 mainWindow.webContents.send('debug-stopped', {
                     reason: 'program-exited',
-                    exitCode: data.exitCode
+                    exitCode: data.exitCode,
                 });
             }, 100);
         }
@@ -9587,11 +10260,13 @@ function setupDebuggerEvents() {
         if (!autoStoppingOnProgramExit) {
             autoStoppingOnProgramExit = true;
             setTimeout(() => {
-                stopDebugSession().catch((err) => {
-                    logWarn('[主进程] 程序退出后自动停止调试失败:', err?.message || String(err));
-                }).finally(() => {
-                    autoStoppingOnProgramExit = false;
-                });
+                stopDebugSession()
+                    .catch((err) => {
+                        logWarn('[主进程] 程序退出后自动停止调试失败:', err?.message || String(err));
+                    })
+                    .finally(() => {
+                        autoStoppingOnProgramExit = false;
+                    });
             }, 150);
         }
     });
@@ -9612,18 +10287,23 @@ async function sendDebugCommand(command) {
 
         switch (command) {
             case 'continue':
-                try { await gdbDebugger.run(); logInfo('[主进程] 程序已启动'); }
-                catch (error) {
+                try {
+                    await gdbDebugger.run();
+                    logInfo('[主进程] 程序已启动');
+                } catch (error) {
                     const msg = String(error?.message || error || '').toLowerCase();
                     if (/running|already\s*running|already\s*started|not\s*stopped/.test(msg)) {
                         logInfo('[主进程] 程序已在运行（run 报 running），忽略错误');
                     } else {
-                        try { await gdbDebugger.continue(); }
-                        catch (err2) {
+                        try {
+                            await gdbDebugger.continue();
+                        } catch (err2) {
                             const msg2 = String(err2?.message || err2 || '').toLowerCase();
                             if (/running|not\s*stopped/.test(msg2)) {
                                 logInfo('[主进程] 程序处于 running/非暂停状态（continue 报错），忽略');
-                            } else { throw err2; }
+                            } else {
+                                throw err2;
+                            }
                         }
                     }
                 }
@@ -9642,7 +10322,6 @@ async function sendDebugCommand(command) {
         }
 
         return { success: true };
-
     } catch (error) {
         logError('[主进程] 发送调试命令失败:', error);
         lastDebugCommand = null;
@@ -9663,13 +10342,12 @@ async function sendDebugInput(input) {
                 lastDebugInputRejectedNoticeTs = now;
                 try {
                     mainWindow.webContents.send('debug-terminal-output', {
-                        data: '\r\n[调试] 当前处于暂停态，请点击继续运行后再输入\r\n'
+                        data: '\r\n[调试] 当前处于暂停态，请点击继续运行后再输入\r\n',
                     });
-                } catch (_) { }
+                } catch (_) {}
             }
         }
         return { success: true, accepted };
-
     } catch (error) {
         logError('发送调试输入失败:', error);
         throw error;
@@ -9694,12 +10372,11 @@ async function addBreakpoint(breakpoint) {
         breakpoints.set(breakpointKey, {
             file: breakpoint.file,
             line: breakpoint.line,
-            enabled: true
+            enabled: true,
         });
 
         logInfo('[主进程] 断点添加成功:', breakpointKey);
         return { success: true, file: breakpoint.file, line: breakpoint.line };
-
     } catch (error) {
         logError('[主进程] 添加断点失败:', error);
         throw error;
@@ -9741,7 +10418,6 @@ async function removeBreakpoint(breakpoint) {
 
         logInfo('[主进程] 断点移除成功:', breakpointKey);
         return { success: true, file: breakpoint.file, line: breakpoint.line };
-
     } catch (error) {
         logError('[主进程] 移除断点失败:', error);
         throw error;
@@ -9759,7 +10435,7 @@ async function getDebugVariables() {
         return {
             local: variables.local || {},
             global: variables.global || {},
-            watches: variables.watches || {}
+            watches: variables.watches || {},
         };
     } catch (error) {
         logError('获取调试变量失败:', error);
@@ -9775,7 +10451,6 @@ async function getDebugCallStack() {
     try {
         await gdbDebugger.updateCallStack();
         return gdbDebugger.getCallStack();
-
     } catch (error) {
         logError('获取调用堆栈失败:', error);
         throw error;

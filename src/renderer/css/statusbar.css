@@ -86,12 +86,12 @@
         font-size: 11px;
         padding: 0 8px;
     }
-    
+
     .status-left,
     .status-right {
         gap: 8px;
     }
-    
+
     .status-item {
         padding: 0 2px;
     }

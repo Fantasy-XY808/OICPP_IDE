@@ -84,9 +84,11 @@ class LanguageManager {
      * @returns {string}
      */
     getCurrentLanguageName() {
-        return this._getNested(this._messages, 'meta.name') ||
-               this._getNested(this._fallbackMessages, 'meta.name') ||
-               'Unknown';
+        return (
+            this._getNested(this._messages, 'meta.name') ||
+            this._getNested(this._fallbackMessages, 'meta.name') ||
+            'Unknown'
+        );
     }
 
     /**
@@ -108,7 +110,7 @@ class LanguageManager {
                         languages.push({
                             code: content.meta.code,
                             name: content.meta.name || file.replace('.json', ''),
-                            nameEn: content.meta.nameEn || content.meta.name || file.replace('.json', '')
+                            nameEn: content.meta.nameEn || content.meta.name || file.replace('.json', ''),
                         });
                     }
                 } catch (_) {

@@ -196,8 +196,12 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .update-footer {
@@ -457,7 +461,10 @@
     font-size: 13px;
     line-height: 1.2;
     cursor: pointer;
-    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.08s ease;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.08s ease;
 }
 
 .feedback-btn:hover {
@@ -500,7 +507,10 @@
     border-radius: 8px;
     padding: 10px 12px;
     cursor: pointer;
-    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.08s ease;
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.08s ease;
 }
 
 .log-picker-item:hover {
@@ -653,7 +663,9 @@
     padding: 0 4px;
     line-height: 1;
     border-radius: 4px;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease;
 }
 
 .file-history-close-btn:hover {
@@ -758,7 +770,10 @@
     color: var(--text-secondary, #9a9a9a);
     cursor: pointer;
     font-size: 13px;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
 }
 
 .file-history-clear-btn:hover {

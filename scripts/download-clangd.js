@@ -26,21 +26,15 @@ const version = readArg('version', process.env.CLANGD_VERSION || '22.1.0');
 const tag = readArg('tag', process.env.CLANGD_TAG || version);
 const repo = readArg('repo', process.env.CLANGD_REPO || 'clangd/clangd');
 const platform = normalizePlatform(readArg('platform', process.env.OICPP_CLANGD_PLATFORM || process.platform));
-const outputRoot = path.resolve(readArg('output', process.env.CLANGD_OUTPUT || path.join(__dirname, '..', 'build', 'clangd')));
+const outputRoot = path.resolve(
+    readArg('output', process.env.CLANGD_OUTPUT || path.join(__dirname, '..', 'build', 'clangd'))
+);
 const tempRoot = path.join(outputRoot, '_download');
 
 const platformPatterns = {
-    win32: [
-        /^clangd-windows-.*\.zip$/i,
-        /^clangd-win.*\.zip$/i
-    ],
-    darwin: [
-        /^clangd-mac-.*\.zip$/i,
-        /^clangd-macos-.*\.zip$/i
-    ],
-    linux: [
-        /^clangd-linux-.*\.zip$/i
-    ]
+    win32: [/^clangd-windows-.*\.zip$/i, /^clangd-win.*\.zip$/i],
+    darwin: [/^clangd-mac-.*\.zip$/i, /^clangd-macos-.*\.zip$/i],
+    linux: [/^clangd-linux-.*\.zip$/i],
 };
 
 const ensureDir = (dirPath) => {
@@ -55,80 +49,103 @@ const getRetryDelayMs = (retryAfter) => {
 const retryAfterRateLimit = (retryAfter, retriesLeft, action) => {
     if (retriesLeft <= 0) return null;
     const delayMs = getRetryDelayMs(retryAfter);
-    console.warn(`[clangd] GitHub returned 403, retrying in ${Math.ceil(delayMs / 1000)} seconds (${retriesLeft} retries left)`);
+    console.warn(
+        `[clangd] GitHub returned 403, retrying in ${Math.ceil(delayMs / 1000)} seconds (${retriesLeft} retries left)`
+    );
     return new Promise((resolve) => setTimeout(resolve, delayMs)).then(action);
 };
 
-const requestJson = (url, token, retriesLeft = 3) => new Promise((resolve, reject) => {
-    const opts = new URL(url);
-    const headers = {
-        'User-Agent': 'oicpp-clangd-downloader',
-        'Accept': 'application/vnd.github+json'
-    };
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-    opts.headers = headers;
-    https.get(opts, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-            if (res.statusCode === 403) {
-                const retry = retryAfterRateLimit(res.headers['retry-after'], retriesLeft, () => requestJson(url, token, retriesLeft - 1));
-                if (retry) {
-                    retry.then(resolve, reject);
+const requestJson = (url, token, retriesLeft = 3) =>
+    new Promise((resolve, reject) => {
+        const opts = new URL(url);
+        const headers = {
+            'User-Agent': 'oicpp-clangd-downloader',
+            Accept: 'application/vnd.github+json',
+        };
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+        opts.headers = headers;
+        https
+            .get(opts, (res) => {
+                let data = '';
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                res.on('end', () => {
+                    if (res.statusCode === 403) {
+                        const retry = retryAfterRateLimit(res.headers['retry-after'], retriesLeft, () =>
+                            requestJson(url, token, retriesLeft - 1)
+                        );
+                        if (retry) {
+                            retry.then(resolve, reject);
+                            return;
+                        }
+                    }
+                    if (res.statusCode && res.statusCode >= 400) {
+                        reject(new Error(`GitHub API error ${res.statusCode}: ${data.slice(0, 200)}`));
+                        return;
+                    }
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            })
+            .on('error', reject);
+    });
+
+const downloadFile = (url, dest, token, retriesLeft = 3) =>
+    new Promise((resolve, reject) => {
+        const opts = new URL(url);
+        const headers = { 'User-Agent': 'oicpp-clangd-downloader' };
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+        opts.headers = headers;
+
+        https
+            .get(opts, (res) => {
+                if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    res.resume();
+                    downloadFile(res.headers.location, dest, token, retriesLeft).then(resolve).catch(reject);
                     return;
                 }
-            }
-            if (res.statusCode && res.statusCode >= 400) {
-                reject(new Error(`GitHub API error ${res.statusCode}: ${data.slice(0, 200)}`));
-                return;
-            }
-            try {
-                resolve(JSON.parse(data));
-            } catch (err) {
+                if (res.statusCode === 403) {
+                    res.resume();
+                    const retry = retryAfterRateLimit(res.headers['retry-after'], retriesLeft, () =>
+                        downloadFile(url, dest, token, retriesLeft - 1)
+                    );
+                    if (retry) {
+                        retry.then(resolve, reject);
+                        return;
+                    }
+                }
+                if (res.statusCode && res.statusCode >= 400) {
+                    res.resume();
+                    reject(new Error(`Download failed ${res.statusCode}: ${url}`));
+                    return;
+                }
+                const file = fs.createWriteStream(dest);
+                file.on('error', reject);
+                res.pipe(file);
+                file.on('finish', () => file.close(resolve));
+            })
+            .on('error', (err) => {
+                try {
+                    fs.unlinkSync(dest);
+                } catch (cleanupError) {
+                    if (cleanupError.code !== 'ENOENT') {
+                        reject(
+                            new AggregateError([err, cleanupError], 'Failed to remove the incomplete clangd archive')
+                        );
+                        return;
+                    }
+                }
                 reject(err);
-            }
-        });
-    }).on('error', reject);
-});
-
-const downloadFile = (url, dest, token, retriesLeft = 3) => new Promise((resolve, reject) => {
-    const opts = new URL(url);
-    const headers = { 'User-Agent': 'oicpp-clangd-downloader' };
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-    opts.headers = headers;
-
-    https.get(opts, (res) => {
-        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            res.resume();
-            downloadFile(res.headers.location, dest, token, retriesLeft).then(resolve).catch(reject);
-            return;
-        }
-        if (res.statusCode === 403) {
-            res.resume();
-            const retry = retryAfterRateLimit(res.headers['retry-after'], retriesLeft, () => downloadFile(url, dest, token, retriesLeft - 1));
-            if (retry) {
-                retry.then(resolve, reject);
-                return;
-            }
-        }
-        if (res.statusCode && res.statusCode >= 400) {
-            res.resume();
-            reject(new Error(`Download failed ${res.statusCode}: ${url}`));
-            return;
-        }
-        const file = fs.createWriteStream(dest);
-        file.on('error', reject);
-        res.pipe(file);
-        file.on('finish', () => file.close(resolve));
-    }).on('error', (err) => {
-        try { fs.unlinkSync(dest); } catch (_) {}
-        reject(err);
+            });
     });
-});
 
 const ensureDownload = async (url, dest, token) => {
     if (!fs.existsSync(dest)) {
@@ -250,7 +267,13 @@ const main = async () => {
         await extractWithRetry();
     } catch (err) {
         console.log('[clangd] Cached archive failed to extract, re-downloading...');
-        try { fs.unlinkSync(downloadPath); } catch (_) {}
+        try {
+            fs.unlinkSync(downloadPath);
+        } catch (cleanupError) {
+            if (cleanupError.code !== 'ENOENT') {
+                throw new AggregateError([err, cleanupError], 'Failed to remove the invalid cached clangd archive');
+            }
+        }
         await downloadFile(selected.browser_download_url, downloadPath, token || undefined);
         await extractWithRetry();
     }

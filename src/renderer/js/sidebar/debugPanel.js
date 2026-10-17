@@ -85,7 +85,7 @@ class DebugPanel {
         this.bound = true;
         const $ = (id) => this.root && this.root.querySelector(id);
         const send = (ch, ...args) => this._ipcSend(ch, ...args);
-        $('#dbg-start')?.addEventListener('click', () => (window.oicppApp?.startDebug?.() || window.app?.startDebug?.()));
+        $('#dbg-start')?.addEventListener('click', () => window.oicppApp?.startDebug?.() || window.app?.startDebug?.());
         $('#dbg-continue')?.addEventListener('click', () => send('debug-continue'));
         $('#dbg-step-over')?.addEventListener('click', () => send('debug-step-over'));
         $('#dbg-step-into')?.addEventListener('click', () => send('debug-step-into'));
@@ -94,17 +94,23 @@ class DebugPanel {
         $('#dbg-add-watch')?.addEventListener('click', () => {
             const input = $('#dbg-watch-input');
             const expr = input?.value?.trim();
-            if (expr) { send('debug-add-watch', expr); input.value = ''; }
+            if (expr) {
+                send('debug-add-watch', expr);
+                input.value = '';
+            }
         });
         $('#dbg-watch-input')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const input = $('#dbg-watch-input');
                 const expr = input?.value?.trim();
-                if (expr) { send('debug-add-watch', expr); input.value = ''; }
+                if (expr) {
+                    send('debug-add-watch', expr);
+                    input.value = '';
+                }
             }
         });
 
-        this.root.querySelectorAll('.category-header').forEach(el => {
+        this.root.querySelectorAll('.category-header').forEach((el) => {
             el.addEventListener('click', () => {
                 const arrow = el.querySelector('.expand-arrow');
                 const content = el.nextElementSibling;
@@ -128,14 +134,13 @@ class DebugPanel {
             ipcRenderer.on('debug-running', () => this._setToolbarEnabled(true));
             ipcRenderer.on('debug-variable-expanded', (_e, payload) => this._handleVariableExpanded(payload));
             ipcRenderer.on('debug-error', (_e, msg) => {
-
                 if (this.loadingMore.size > 0) {
                     this.loadingMore.clear();
-                    this._renderVariables(this.variableCache); 
+                    this._renderVariables(this.variableCache);
                 }
                 console.error('Debug Error:', msg);
             });
-        } catch (_) { }
+        } catch (_) {}
 
         if (this.root) {
             this.root.addEventListener('click', (ev) => {
@@ -247,8 +252,18 @@ class DebugPanel {
 
     _setToolbarEnabled(enabled) {
         if (!this.root) return;
-        ['#dbg-continue', '#dbg-step-over', '#dbg-step-into', '#dbg-step-out', '#dbg-stop', '#dbg-add-watch', '#dbg-start']
-            .forEach(sel => { const el = this.root.querySelector(sel); if (el) el.disabled = false; });
+        [
+            '#dbg-continue',
+            '#dbg-step-over',
+            '#dbg-step-into',
+            '#dbg-step-out',
+            '#dbg-stop',
+            '#dbg-add-watch',
+            '#dbg-start',
+        ].forEach((sel) => {
+            const el = this.root.querySelector(sel);
+            if (el) el.disabled = false;
+        });
     }
 
     _handleVariableExpanded(payload) {
@@ -281,7 +296,7 @@ class DebugPanel {
             } else {
                 cacheRoot[payload.name] = payload.data;
             }
-            
+
             if (scope === 'watch') {
                 this.pendingWatchRemovals.delete(payload.name);
                 const alias = payload.data?.expression || payload.data?.backendName || payload.data?.varObjectName;
@@ -301,7 +316,7 @@ class DebugPanel {
         this.variableCache = {
             local: v?.local || {},
             global: v?.global || {},
-            watches: v?.watches || {}
+            watches: v?.watches || {},
         };
 
         if (this.pendingWatchRemovals.size > 0) {
@@ -324,7 +339,14 @@ class DebugPanel {
         if (!container) return;
         const names = Object.keys(variables || {});
         if (names.length === 0) {
-            const emptyText = scope === 'watch' ? (window.i18n ? window.i18n.t('debug.noItems') : '暂无') : (window.i18n ? window.i18n.t('debug.none') : '无');
+            const emptyText =
+                scope === 'watch'
+                    ? window.i18n
+                        ? window.i18n.t('debug.noItems')
+                        : '暂无'
+                    : window.i18n
+                      ? window.i18n.t('debug.none')
+                      : '无';
             container.innerHTML = `<div class="no-debug-message">${emptyText}</div>`;
             return;
         }
@@ -341,7 +363,7 @@ class DebugPanel {
                 rootName: name,
                 data,
                 path: [],
-                isRoot: true
+                isRoot: true,
             });
             if (nodeEl) frag.appendChild(nodeEl);
         }
@@ -356,7 +378,7 @@ class DebugPanel {
         const item = document.createElement('div');
         item.className = isRoot ? 'variable-item' : 'variable-item variable-child';
         item.dataset.scope = scope;
-        item.dataset.name = isRoot ? rootName : (data?.name != null ? String(data.name) : '');
+        item.dataset.name = isRoot ? rootName : data?.name != null ? String(data.name) : '';
         item.dataset.root = rootName;
         const pathSegments = Array.isArray(path) ? path.map((seg) => String(seg)) : [];
         item.dataset.path = pathSegments.join(',');
@@ -372,7 +394,9 @@ class DebugPanel {
         const numericCount = Number(data?.elementCount);
         const elementCount = Number.isFinite(numericCount)
             ? numericCount
-            : (hasChildren ? data.children.filter(ch => !ch?.isPlaceholder).length : null);
+            : hasChildren
+              ? data.children.filter((ch) => !ch?.isPlaceholder).length
+              : null;
         const inferredExpandable = this._isExpandableVariable(data, elementCount, hasChildren);
         const extraExpandable = Number.isFinite(Number(data?.numchild)) && Number(data.numchild) > 0;
         const canExpand = inferredExpandable || !!data?.canExpand || extraExpandable;
@@ -420,7 +444,7 @@ class DebugPanel {
 
         const nameEl = document.createElement('span');
         nameEl.className = 'variable-name';
-        const displayName = isRoot ? rootName : (data?.name != null ? String(data.name) : '');
+        const displayName = isRoot ? rootName : data?.name != null ? String(data.name) : '';
         nameEl.textContent = displayName;
         if (data?.type) {
             nameEl.title = data.type;
@@ -441,9 +465,10 @@ class DebugPanel {
             rm.className = 'remove-watch-btn';
             rm.title = window.i18n ? window.i18n.t('debug.remove') : '移除';
             rm.textContent = '×';
-            const watchExpression = (data && typeof data.expression === 'string' && data.expression)
-                ? String(data.expression)
-                : backendName || rootName;
+            const watchExpression =
+                data && typeof data.expression === 'string' && data.expression
+                    ? String(data.expression)
+                    : backendName || rootName;
             if (watchExpression) {
                 rm.dataset.watchExpression = watchExpression;
             }
@@ -487,7 +512,7 @@ class DebugPanel {
         if (!pathStr) return [];
         return pathStr
             .split(',')
-            .filter(segment => segment.length > 0)
+            .filter((segment) => segment.length > 0)
             .map((segment) => {
                 const maybeNumber = Number(segment);
                 return Number.isNaN(maybeNumber) ? segment : maybeNumber;
@@ -505,11 +530,14 @@ class DebugPanel {
         const scope = this._normalizeScope(button.dataset.scope || item.dataset.scope);
         const rootName = button.dataset.root || item.dataset.root || item.dataset.name || '';
         const path = this._parsePathSegments(button.dataset.path || item.dataset.path || '');
-        const nodeKey = button.dataset.nodeKey
-            || item.querySelector('.variable-children')?.dataset.nodeKey
-            || this._makeNodeKey(scope, rootName, path);
+        const nodeKey =
+            button.dataset.nodeKey ||
+            item.querySelector('.variable-children')?.dataset.nodeKey ||
+            this._makeNodeKey(scope, rootName, path);
         const backendName = button.dataset.backendName || item.dataset.backendName || rootName;
-        const childrenWrap = item.querySelector(`.variable-children[data-node-key="${nodeKey}"]`) || item.querySelector('.variable-children');
+        const childrenWrap =
+            item.querySelector(`.variable-children[data-node-key="${nodeKey}"]`) ||
+            item.querySelector('.variable-children');
         if (!childrenWrap) return;
 
         const currentlyExpanded = this.expandedVars.has(nodeKey);
@@ -533,12 +561,13 @@ class DebugPanel {
             return;
         }
 
-        childrenWrap.innerHTML = '<div class="no-debug-message">' + (window.i18n ? window.i18n.t('debug.loading') : '加载中…') + '</div>';
+        childrenWrap.innerHTML =
+            '<div class="no-debug-message">' + (window.i18n ? window.i18n.t('debug.loading') : '加载中…') + '</div>';
         const payload = {
             scope,
             path,
             cacheKey: nodeKey,
-            start: 0
+            start: 0,
         };
         if (candidate?.varObjectName) payload.varObjectName = candidate.varObjectName;
         if (candidate?.expression) payload.expression = candidate.expression;
@@ -560,10 +589,8 @@ class DebugPanel {
         const scope = this._normalizeScope(button.dataset.scope || item.dataset.scope);
         if (scope !== 'watch') return;
         const rootName = button.dataset.root || item.dataset.root || item.dataset.name || '';
-        const removalKey = button.dataset.watchExpression
-            || button.dataset.backendName
-            || item.dataset.backendName
-            || rootName;
+        const removalKey =
+            button.dataset.watchExpression || button.dataset.backendName || item.dataset.backendName || rootName;
         if (!removalKey) return;
 
         this._ipcSend('debug-remove-watch', removalKey);
@@ -585,7 +612,9 @@ class DebugPanel {
             }
         }
         this._renderVariableGroup('#watch-variables', this._getCacheRoot(scope), scope);
-        try { item.remove(); } catch (_) { }
+        try {
+            item.remove();
+        } catch (_) {}
     }
 
     _applyForceToggleStyles(button) {
@@ -601,12 +630,27 @@ class DebugPanel {
         if (forceVisible) {
             button.textContent = arrow;
         } else if (withLabel) {
-            const text = expanded ? (window.i18n ? window.i18n.t('debug.collapse') : '收起') : (window.i18n ? window.i18n.t('debug.expand') : '展开');
+            const text = expanded
+                ? window.i18n
+                    ? window.i18n.t('debug.collapse')
+                    : '收起'
+                : window.i18n
+                  ? window.i18n.t('debug.expand')
+                  : '展开';
             button.innerHTML = `<span class="arrow">${arrow}</span><span class="label">${text}</span>`;
         } else {
             button.textContent = arrow;
         }
-        button.setAttribute('aria-label', expanded ? (window.i18n ? window.i18n.t('debug.collapseVar') : '折叠变量') : (window.i18n ? window.i18n.t('debug.expandVar') : '展开变量'));
+        button.setAttribute(
+            'aria-label',
+            expanded
+                ? window.i18n
+                    ? window.i18n.t('debug.collapseVar')
+                    : '折叠变量'
+                : window.i18n
+                  ? window.i18n.t('debug.expandVar')
+                  : '展开变量'
+        );
     }
 
     _shouldForceToggle(scope, data, elementCount) {
@@ -635,7 +679,8 @@ class DebugPanel {
         if (data.isContainer || data.isArray) return true;
         const typeStr = String(data.type || '');
         const valueStr = String(data.value || '');
-        const stdContainerPattern = /std::(vector|array|deque|list|forward_list|basic_string|u8string|u16string|u32string|wstring|set|map|unordered_set|unordered_map|multiset|multimap|queue|stack)\b/;
+        const stdContainerPattern =
+            /std::(vector|array|deque|list|forward_list|basic_string|u8string|u16string|u32string|wstring|set|map|unordered_set|unordered_map|multiset|multimap|queue|stack)\b/;
         if (stdContainerPattern.test(typeStr) || stdContainerPattern.test(valueStr)) return true;
         const trimmed = valueStr.trim();
         if (/^\{.*\}$/.test(trimmed)) return true;
@@ -661,7 +706,7 @@ class DebugPanel {
             return;
         }
 
-        const loadedCount = list.filter(child => !child?.isPlaceholder).length;
+        const loadedCount = list.filter((child) => !child?.isPlaceholder).length;
         container.dataset.loadedCount = String(loadedCount);
 
         list.forEach((child, index) => {
@@ -693,7 +738,7 @@ class DebugPanel {
                         start: nextIndex,
                         count,
                         append: true,
-                        cacheKey: parentKey
+                        cacheKey: parentKey,
                     };
                     if (latestParent?.varObjectName) payload.varObjectName = latestParent.varObjectName;
                     if (latestParent?.expression) payload.expression = latestParent.expression;
@@ -712,7 +757,7 @@ class DebugPanel {
                 rootName,
                 data: child,
                 path: childPath,
-                isRoot: false
+                isRoot: false,
             });
             if (nodeEl) container.appendChild(nodeEl);
         });
@@ -724,21 +769,25 @@ class DebugPanel {
             const { ipcRenderer } = require('electron');
             ipcRenderer.send(channel, ...args);
             return;
-        } catch (_) { }
+        } catch (_) {}
         try {
             window?.electron?.ipcRenderer?.send?.(channel, ...args);
             return;
-        } catch (_) { }
+        } catch (_) {}
         try {
             window?.electronAPI?.ipcRenderer?.send?.(channel, ...args);
-        } catch (_) { }
+        } catch (_) {}
     }
 
     _renderStack(stack) {
         const c = this.root.querySelector('#call-stack');
         if (!c) return;
         c.innerHTML = '';
-        if (!Array.isArray(stack) || stack.length === 0) { c.innerHTML = '<div class="no-debug-message">' + (window.i18n ? window.i18n.t('debug.none') : '无') + '</div>'; return; }
+        if (!Array.isArray(stack) || stack.length === 0) {
+            c.innerHTML =
+                '<div class="no-debug-message">' + (window.i18n ? window.i18n.t('debug.none') : '无') + '</div>';
+            return;
+        }
         for (let i = 0; i < stack.length; i++) {
             const f = stack[i];
             const el = document.createElement('div');
@@ -756,14 +805,19 @@ class DebugPanel {
         const rawType = data.type != null ? String(data.type) : '';
         let display = rawValue || '';
 
-        const stdMatch = rawValue.match(/\bstd::([a-zA-Z_0-9]+)\b/)
-            || rawType.match(/\bstd::([a-zA-Z_0-9]+)\b/);
+        const stdMatch = rawValue.match(/\bstd::([a-zA-Z_0-9]+)\b/) || rawType.match(/\bstd::([a-zA-Z_0-9]+)\b/);
         if (stdMatch && stdMatch[1]) {
             display = stdMatch[1];
         }
         if (data.isArray || data.isContainer) {
             const cnt = data.elementCount != null ? data.elementCount : '?';
-            const typeLabel = data.isArray ? (window.i18n ? window.i18n.t('debug.array') : '数组') : (window.i18n ? window.i18n.t('debug.container') : '容器');
+            const typeLabel = data.isArray
+                ? window.i18n
+                    ? window.i18n.t('debug.array')
+                    : '数组'
+                : window.i18n
+                  ? window.i18n.t('debug.container')
+                  : '容器';
             display = `${typeLabel}[${cnt}] ${display}`;
         }
         if (display.length > 60) display = display.slice(0, 57) + '...';

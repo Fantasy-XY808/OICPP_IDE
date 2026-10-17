@@ -28,19 +28,18 @@ function makeRequest(url, options = {}) {
             path: urlObj.pathname + urlObj.search,
             method: options.method || 'GET',
             headers: options.headers || {},
-            timeout: options.timeout || 30000
+            timeout: options.timeout || 30000,
         };
 
         const req = client.request(requestOptions, (res) => {
-
             resolve({
                 ok: res.statusCode >= 200 && res.statusCode < 300,
                 status: res.statusCode,
                 statusText: res.statusMessage,
                 headers: {
-                    get: (name) => res.headers[name.toLowerCase()]
+                    get: (name) => res.headers[name.toLowerCase()],
                 },
-                body: res
+                body: res,
             });
         });
 
@@ -54,7 +53,6 @@ function makeRequest(url, options = {}) {
     });
 }
 
-
 class MultiThreadDownloader {
     constructor(options = {}) {
         this.isCancelled = false;
@@ -64,7 +62,7 @@ class MultiThreadDownloader {
         this.timeout = options.timeout || 30000; // 超时时间 (30秒)
         this.retryCount = options.retryCount || 8; // 增加重试次数到8次
         this.minMultiThreadSize = options.minMultiThreadSize || 1024 * 1024 * 2;
-        this.progressCallback = options.progressCallback || (() => { });
+        this.progressCallback = options.progressCallback || (() => {});
     }
 
     cancel() {
@@ -73,11 +71,10 @@ class MultiThreadDownloader {
         this.cancelError = new Error('下载已取消');
     }
 
-
     async checkRangeSupport(url) {
         try {
             const headResponse = await makeRequest(url, {
-                method: 'HEAD'
+                method: 'HEAD',
             });
 
             const acceptRanges = headResponse.headers.get('accept-ranges');
@@ -87,8 +84,8 @@ class MultiThreadDownloader {
 
             const rangeResponse = await makeRequest(url, {
                 headers: {
-                    'Range': 'bytes=0-1'
-                }
+                    Range: 'bytes=0-1',
+                },
             });
             const isSupported = rangeResponse.status === 206;
 
@@ -98,7 +95,6 @@ class MultiThreadDownloader {
             return false;
         }
     }
-
 
     async getFileSize(url) {
         try {
@@ -111,7 +107,6 @@ class MultiThreadDownloader {
         }
     }
 
-
     async downloadChunk(url, start, end, chunkIndex, tempDir) {
         const chunkFile = path.join(tempDir, `chunk_${chunkIndex}.tmp`);
         let retries = 0;
@@ -123,9 +118,9 @@ class MultiThreadDownloader {
 
                 const response = await makeRequest(url, {
                     headers: {
-                        'Range': rangeHeader
+                        Range: rangeHeader,
                     },
-                    timeout: this.timeout
+                    timeout: this.timeout,
                 });
 
                 if (!response.ok) {
@@ -158,7 +153,7 @@ class MultiThreadDownloader {
                                 type: 'chunk',
                                 chunkIndex,
                                 downloadedBytes,
-                                totalBytes: end - start + 1
+                                totalBytes: end - start + 1,
                             });
                         }
                     });
@@ -176,7 +171,11 @@ class MultiThreadDownloader {
                             // surfacing much later as a 7z/zip error.
                             const expected = end - start + 1;
                             if (downloadedBytes !== expected) {
-                                reject(new Error(`分片 ${chunkIndex} 大小不完整(${downloadedBytes}/${expected})，服务器可能忽略了 Range 请求`));
+                                reject(
+                                    new Error(
+                                        `分片 ${chunkIndex} 大小不完整(${downloadedBytes}/${expected})，服务器可能忽略了 Range 请求`
+                                    )
+                                );
                                 return;
                             }
                             logInfo(`[多线程下载] 分片 ${chunkIndex} 下载完成`);
@@ -201,11 +200,11 @@ class MultiThreadDownloader {
                         reject(error);
                     });
                 });
-
             } catch (error) {
                 retries++;
 
-                const isNetworkError = error.code === 'ECONNRESET' ||
+                const isNetworkError =
+                    error.code === 'ECONNRESET' ||
                     error.code === 'ENOTFOUND' ||
                     error.code === 'ETIMEDOUT' ||
                     error.code === 'ECONNREFUSED' ||
@@ -213,9 +212,15 @@ class MultiThreadDownloader {
                     error.message.includes('timeout');
 
                 if (isNetworkError) {
-                    logWarn(`[多线程下载] 分片 ${chunkIndex} 网络错误 (尝试 ${retries}/${this.retryCount}):`, error.code || error.message);
+                    logWarn(
+                        `[多线程下载] 分片 ${chunkIndex} 网络错误 (尝试 ${retries}/${this.retryCount}):`,
+                        error.code || error.message
+                    );
                 } else {
-                    logWarn(`[多线程下载] 分片 ${chunkIndex} 下载失败 (尝试 ${retries}/${this.retryCount}):`, error.message);
+                    logWarn(
+                        `[多线程下载] 分片 ${chunkIndex} 下载失败 (尝试 ${retries}/${this.retryCount}):`,
+                        error.message
+                    );
                 }
 
                 if (fs.existsSync(chunkFile)) {
@@ -239,11 +244,10 @@ class MultiThreadDownloader {
                     logInfo(`[多线程下载] 分片 ${chunkIndex} 将在 ${delay / 1000}s 后重试`);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }
-
 
     async mergeChunks(chunks, outputFile) {
         logInfo('[多线程下载] 开始合并分片文件');
@@ -277,7 +281,6 @@ class MultiThreadDownloader {
         }
     }
 
-
     async downloadSingleThread(url, outputFile) {
         logInfo('[多线程下载] 使用单线程下载模式');
 
@@ -296,7 +299,7 @@ class MultiThreadDownloader {
 
             try {
                 response = await makeRequest(url, {
-                    timeout: this.timeout * 3
+                    timeout: this.timeout * 3,
                 });
 
                 if (!response.ok) {
@@ -313,7 +316,9 @@ class MultiThreadDownloader {
                 const resetInactivityTimer = () => {
                     if (inactivityTimer) clearTimeout(inactivityTimer);
                     inactivityTimer = setTimeout(() => {
-                        try { response.body.destroy(new Error('下载超时(无数据)')); } catch (_) { }
+                        try {
+                            response.body.destroy(new Error('下载超时(无数据)'));
+                        } catch (_) {}
                     }, this.timeout);
                 };
 
@@ -323,14 +328,22 @@ class MultiThreadDownloader {
                     if (finished) return;
                     finished = true;
                     if (inactivityTimer) clearTimeout(inactivityTimer);
-                    try { writer.end(() => { }); } catch (_) { }
+                    try {
+                        writer.end(() => {});
+                    } catch (_) {}
                 };
 
                 await new Promise((resolve, reject) => {
                     response.body.on('data', (chunk) => {
                         if (this.isCancelled) {
-                            try { writer.end(() => { if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile); }); } catch (_) { }
-                            try { response.body.destroy(); } catch (_) { }
+                            try {
+                                writer.end(() => {
+                                    if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
+                                });
+                            } catch (_) {}
+                            try {
+                                response.body.destroy();
+                            } catch (_) {}
                             return reject(this.cancelError || new Error('下载已取消'));
                         }
 
@@ -339,18 +352,23 @@ class MultiThreadDownloader {
                         if (!canContinue) {
                             response.body.pause();
                             writer.once('drain', () => {
-                                try { response.body.resume(); } catch (_) { }
+                                try {
+                                    response.body.resume();
+                                } catch (_) {}
                             });
                         }
                         downloadedBytes += chunk.length;
 
                         const now = Date.now();
-                        if (now - lastProgressTime > 500) { // 每500ms报告一次进度
+                        if (now - lastProgressTime > 500) {
+                            // 每500ms报告一次进度
                             const progress = totalSize > 0 ? (downloadedBytes / totalSize) * 100 : 0;
                             const elapsed = (now - startTime) / 1000;
-                            const speed = elapsed > 0 ? (downloadedBytes / elapsed) : 0;
+                            const speed = elapsed > 0 ? downloadedBytes / elapsed : 0;
 
-                            logInfo(`[单线程下载] 进度: ${progress.toFixed(1)}%, 已下载: ${(downloadedBytes / 1024 / 1024).toFixed(1)}MB, 速度: ${(speed / 1024 / 1024).toFixed(1)}MB/s`);
+                            logInfo(
+                                `[单线程下载] 进度: ${progress.toFixed(1)}%, 已下载: ${(downloadedBytes / 1024 / 1024).toFixed(1)}MB, 速度: ${(speed / 1024 / 1024).toFixed(1)}MB/s`
+                            );
 
                             if (this.progressCallback) {
                                 this.progressCallback({
@@ -358,7 +376,7 @@ class MultiThreadDownloader {
                                     downloadedBytes,
                                     totalBytes: totalSize,
                                     progress,
-                                    speed
+                                    speed,
                                 });
                             }
 
@@ -375,7 +393,7 @@ class MultiThreadDownloader {
                                 downloadedBytes: totalSize || downloadedBytes,
                                 totalBytes: totalSize || downloadedBytes,
                                 progress: totalSize ? Math.min(100, (downloadedBytes / totalSize) * 100) : 100,
-                                speed: downloadedBytes / elapsed
+                                speed: downloadedBytes / elapsed,
                             });
                         }
                         resolve();
@@ -391,7 +409,9 @@ class MultiThreadDownloader {
                         if (this.isCancelled) {
                             return reject(this.cancelError);
                         }
-                        try { if (writer && !writer.destroyed) writer.destroy(); } catch (_) { }
+                        try {
+                            if (writer && !writer.destroyed) writer.destroy();
+                        } catch (_) {}
                         reject(error);
                     });
 
@@ -402,8 +422,7 @@ class MultiThreadDownloader {
                         reject(error);
                     });
 
-                    writer.on('finish', () => {
-                    });
+                    writer.on('finish', () => {});
                 });
 
                 try {
@@ -420,22 +439,27 @@ class MultiThreadDownloader {
             } catch (error) {
                 lastError = error;
                 logWarn(`[单线程下载] 失败(尝试 ${attempt}/${maxAttempts}):`, error?.message || String(error));
-                try { if (writer && !writer.destroyed) writer.destroy(); } catch (_) { }
-                try { if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile); } catch (_) { }
+                try {
+                    if (writer && !writer.destroyed) writer.destroy();
+                } catch (_) {}
+                try {
+                    if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
+                } catch (_) {}
                 if (attempt < maxAttempts) {
                     const backoff = Math.min(8000, Math.pow(2, attempt - 1) * 1000);
-                    await new Promise(r => setTimeout(r, backoff));
+                    await new Promise((r) => setTimeout(r, backoff));
                     continue;
                 }
                 throw error;
             } finally {
-                try { if (writer && !writer.destroyed) writer.destroy(); } catch (_) { }
+                try {
+                    if (writer && !writer.destroyed) writer.destroy();
+                } catch (_) {}
             }
         }
 
         throw lastError || new Error('单线程下载失败');
     }
-
 
     async download(url, outputFile, options = {}) {
         const startTime = Date.now();
@@ -488,7 +512,9 @@ class MultiThreadDownloader {
                     parts.push({ index: i, start, end });
                 }
 
-                logInfo(`[多线程下载] 文件大小: ${(fileSize / 1024 / 1024).toFixed(2)} MB，分片数: ${totalParts}，每片 ${(this.chunkSize / 1024 / 1024).toFixed(2)} MB`);
+                logInfo(
+                    `[多线程下载] 文件大小: ${(fileSize / 1024 / 1024).toFixed(2)} MB，分片数: ${totalParts}，每片 ${(this.chunkSize / 1024 / 1024).toFixed(2)} MB`
+                );
 
                 const originalCallback = this.progressCallback;
                 const chunkProgress = new Array(totalParts).fill(0);
@@ -499,7 +525,7 @@ class MultiThreadDownloader {
                     const totalDownloaded = chunkProgress.reduce((sum, v) => sum + v, 0);
                     const percent = Math.min(100, (totalDownloaded / fileSize) * 100);
                     const elapsed = (Date.now() - startTime) / 1000;
-                    const speed = elapsed > 0 ? (totalDownloaded / elapsed) : 0;
+                    const speed = elapsed > 0 ? totalDownloaded / elapsed : 0;
                     if (originalCallback) {
                         originalCallback({
                             type: 'multi',
@@ -507,7 +533,7 @@ class MultiThreadDownloader {
                             totalBytes: fileSize,
                             progress: percent,
                             speed,
-                            activeChunks: activeCount
+                            activeChunks: activeCount,
                         });
                     }
                 };
@@ -516,7 +542,9 @@ class MultiThreadDownloader {
                     if (progress.type === 'chunk') {
                         const safeDownloaded = Math.min(
                             typeof progress.downloadedBytes === 'number' ? progress.downloadedBytes : 0,
-                            typeof progress.totalBytes === 'number' && isFinite(progress.totalBytes) ? progress.totalBytes : Infinity
+                            typeof progress.totalBytes === 'number' && isFinite(progress.totalBytes)
+                                ? progress.totalBytes
+                                : Infinity
                         );
                         chunkProgress[progress.chunkIndex] = safeDownloaded;
                         const now = Date.now();
@@ -563,7 +591,7 @@ class MultiThreadDownloader {
                         totalBytes: fileSize,
                         progress: 100,
                         speed: fileSize / Math.max(0.001, (Date.now() - startTime) / 1000),
-                        activeChunks: 0
+                        activeChunks: 0,
                     });
                 }
 
@@ -576,7 +604,6 @@ class MultiThreadDownloader {
                 } catch (error) {
                     logWarn('[多线程下载] 清理临时目录失败:', error.message);
                 }
-
             } catch (error) {
                 try {
                     if (fs.existsSync(tempDir)) {
@@ -590,18 +617,15 @@ class MultiThreadDownloader {
 
             const elapsed = (Date.now() - startTime) / 1000;
             const speed = fileSize / elapsed;
-            const speedText = speed > 1024 * 1024
-                ? `${(speed / 1024 / 1024).toFixed(1)} MB/s`
-                : `${(speed / 1024).toFixed(0)} KB/s`;
+            const speedText =
+                speed > 1024 * 1024 ? `${(speed / 1024 / 1024).toFixed(1)} MB/s` : `${(speed / 1024).toFixed(0)} KB/s`;
 
             logInfo(`[多线程下载] 下载完成，耗时: ${elapsed.toFixed(1)}s，平均速度: ${speedText}`);
-
         } catch (error) {
             logError('[多线程下载] 下载失败:', error);
             throw error;
         }
     }
-
 
     async verifyFile(filePath, expectedMd5) {
         if (!expectedMd5) return true;

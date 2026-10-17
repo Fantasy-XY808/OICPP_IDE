@@ -29,7 +29,7 @@ class TitlebarManager {
         if (this.isMacPlatform) {
             try {
                 document.body.classList.add('platform-macos');
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 
@@ -61,7 +61,7 @@ class TitlebarManager {
     }
 
     setupWindowControls() {
-    if (!window.electronIPC && typeof require === 'undefined') {
+        if (!window.electronIPC && typeof require === 'undefined') {
             logWarn('不在 Electron 环境中，跳过窗口控制设置');
             return;
         }
@@ -136,7 +136,7 @@ class TitlebarManager {
                 if (window.tabManager && typeof window.tabManager.getUnsavedFiles === 'function') {
                     return window.tabManager.getUnsavedFiles() || [];
                 }
-            } catch (_) { }
+            } catch (_) {}
             return [];
         })();
 
@@ -152,7 +152,9 @@ class TitlebarManager {
         if (!window.dialogManager || typeof window.dialogManager.showActionDialog !== 'function') {
             logWarn('dialogManager 不可用，已阻止关闭以避免无提示自动保存');
             if (source === 'system') {
-                try { window.electronIPC.send('app-close-cancelled'); } catch (_) { }
+                try {
+                    window.electronIPC.send('app-close-cancelled');
+                } catch (_) {}
             }
             return;
         }
@@ -163,17 +165,32 @@ class TitlebarManager {
             const shown = unsavedFiles.slice(0, maxShow);
             const moreCount = Math.max(0, unsavedFiles.length - shown.length);
 
-            const listHtml = shown
-                .map(name => `- ${this._escapeHtml(name)}`)
-                .join('<br>');
-            const moreHtml = moreCount > 0 ? `<br>${window.i18n ? window.i18n.t('dialog.unsavedFilesMore', { count: moreCount }) : '... 还有 ' + moreCount + ' 个文件'}` : '';
+            const listHtml = shown.map((name) => `- ${this._escapeHtml(name)}`).join('<br>');
+            const moreHtml =
+                moreCount > 0
+                    ? `<br>${window.i18n ? window.i18n.t('dialog.unsavedFilesMore', { count: moreCount }) : '... 还有 ' + moreCount + ' 个文件'}`
+                    : '';
 
-            const message = window.i18n ? window.i18n.t('dialog.unsavedFiles', { count: unsavedFiles.length, list: listHtml, more: moreHtml }) : `检测到 ${unsavedFiles.length} 个未保存文件：<br>${listHtml}${moreHtml}<br><br>请选择如何处理这些修改。`;
-            const result = await window.dialogManager.showActionDialog(window.i18n ? window.i18n.t('dialog.confirmQuit') : '确认退出', message, [
-                { id: 'save', label: window.i18n ? window.i18n.t('dialog.save') : '保存', className: 'dialog-btn-confirm' },
-                { id: 'discard', label: window.i18n ? window.i18n.t('dialog.discard') : '丢弃', className: 'dialog-btn-cancel' },
-                { id: 'cancel', label: window.i18n ? window.i18n.t('dialog.cancel') : '取消' }
-            ]);
+            const message = window.i18n
+                ? window.i18n.t('dialog.unsavedFiles', { count: unsavedFiles.length, list: listHtml, more: moreHtml })
+                : `检测到 ${unsavedFiles.length} 个未保存文件：<br>${listHtml}${moreHtml}<br><br>请选择如何处理这些修改。`;
+            const result = await window.dialogManager.showActionDialog(
+                window.i18n ? window.i18n.t('dialog.confirmQuit') : '确认退出',
+                message,
+                [
+                    {
+                        id: 'save',
+                        label: window.i18n ? window.i18n.t('dialog.save') : '保存',
+                        className: 'dialog-btn-confirm',
+                    },
+                    {
+                        id: 'discard',
+                        label: window.i18n ? window.i18n.t('dialog.discard') : '丢弃',
+                        className: 'dialog-btn-cancel',
+                    },
+                    { id: 'cancel', label: window.i18n ? window.i18n.t('dialog.cancel') : '取消' },
+                ]
+            );
 
             if (result === 'save') {
                 if (source === 'system') {
@@ -185,7 +202,9 @@ class TitlebarManager {
             }
 
             if (result === 'discard') {
-                try { window.__oicppDiscardClose = true; } catch (_) { }
+                try {
+                    window.__oicppDiscardClose = true;
+                } catch (_) {}
                 if (source === 'system') {
                     window.electronIPC.send('app-close-discard');
                 } else {
@@ -203,8 +222,9 @@ class TitlebarManager {
     }
 
     async _confirmTemporaryFilesBeforeClose() {
-        const tempFiles = Array.from(window.tabManager?.tabs?.values?.() || [])
-            .filter((tab) => tab?.isTempFile && tab.viewType !== 'pdf');
+        const tempFiles = Array.from(window.tabManager?.tabs?.values?.() || []).filter(
+            (tab) => tab?.isTempFile && tab.viewType !== 'pdf'
+        );
         for (const tab of tempFiles) {
             const fileName = this._escapeHtml(tab.fileName || '临时文件');
             const result = await window.dialogManager?.showActionDialog?.(
@@ -213,7 +233,7 @@ class TitlebarManager {
                 [
                     { id: 'save', label: '保存', className: 'dialog-btn-confirm' },
                     { id: 'discard', label: '丢弃', className: 'dialog-btn-cancel' },
-                    { id: 'cancel', label: '取消' }
+                    { id: 'cancel', label: '取消' },
                 ]
             );
             if (result === 'cancel' || !result) return false;
@@ -247,7 +267,7 @@ class TitlebarManager {
                     try {
                         logWarn('处理 app-close-requested 失败，已取消关闭:', e);
                         window.electronIPC.send('app-close-cancelled');
-                    } catch (_) { }
+                    } catch (_) {}
                 }
             });
         }
@@ -288,6 +308,5 @@ class TitlebarManager {
         }
     }
 }
-
 
 window.TitlebarManager = TitlebarManager;

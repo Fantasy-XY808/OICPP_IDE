@@ -11,14 +11,16 @@ const Logger = Object.getPrototypeOf(loggerInstance).constructor;
 const render = (args, level = 'warn') => String(Logger.stringifyArgs(args, { level }));
 
 test('object keys that look like credentials are redacted', () => {
-    const out = render([{
-        loginToken: 'SECRET123',
-        access_token: 'ACCESSSECRET',
-        cookie: 'a=b',
-        nested: { csrfToken: 'CSRFVALUE', password: 'hunter2' },
-        user: 'bob',
-        path: '/home/user'
-    }]);
+    const out = render([
+        {
+            loginToken: 'SECRET123',
+            access_token: 'ACCESSSECRET',
+            cookie: 'a=b',
+            nested: { csrfToken: 'CSRFVALUE', password: 'hunter2' },
+            user: 'bob',
+            path: '/home/user',
+        },
+    ]);
 
     for (const secret of ['SECRET123', 'ACCESSSECRET', 'a=b', 'CSRFVALUE', 'hunter2']) {
         assert.equal(out.includes(secret), false, 'leaked ' + secret + ' in: ' + out);

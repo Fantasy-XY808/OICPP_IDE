@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     logInfo('DOM 加载完成，开始初始化应用...');
     try {
         if (window.i18n && typeof window.i18n.init === 'function') {
@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     setTimeout(() => {
         try {
             const now = new Date();
-            const isNewYearDay = (now.getMonth() === 0 && now.getDate() === 1);
-            const isSpringFestivalDay = (now.getMonth() === 1 && now.getDate() === 17);
+            const isNewYearDay = now.getMonth() === 0 && now.getDate() === 1;
+            const isSpringFestivalDay = now.getMonth() === 1 && now.getDate() === 17;
 
             if (!window.dialogManager) return;
 
@@ -31,7 +31,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 window.dialogManager.showSpringFestivalGreeting(now);
             }
         } catch (e) {
-            try { logWarn('新年弹窗触发失败:', e); } catch (_) { }
+            try {
+                logWarn('新年弹窗触发失败:', e);
+            } catch (_) {}
         }
     }, 350);
 });
@@ -51,7 +53,7 @@ async function initializeApp() {
     try {
         logInfo('初始化标题栏管理器...');
         window.titlebarManager = new TitlebarManager();
-  
+
         logInfo('初始化侧边栏管理器...');
         window.sidebarManager = new SidebarManager();
         window.sampleTester = window.sidebarManager.getPanelManager('samples');
@@ -69,7 +71,7 @@ async function initializeApp() {
                 return null;
             }
         };
-        
+
         logInfo('初始化标签页管理器...');
         window.tabManager = new TabManager();
 
@@ -79,7 +81,7 @@ async function initializeApp() {
         await window.oicppApp.init();
 
         setupDefaultContent();
-        
+
         logInfo('应用初始化完成！');
         try {
             if (window.electronAPI && window.electronAPI.onRequestSaveAll) {
@@ -95,16 +97,21 @@ async function initializeApp() {
                     }
                 });
             }
-        } catch (e) { logWarn('注册关闭前保存监听失败:', e); }
-        
+        } catch (e) {
+            logWarn('注册关闭前保存监听失败:', e);
+        }
     } catch (error) {
         logError('应用初始化失败:', error);
-        showErrorMessage((window.i18n ? window.i18n.t('app.appInitFailed', {msg: error.message}) : '应用初始化失败: ' + error.message));
+        showErrorMessage(
+            window.i18n
+                ? window.i18n.t('app.appInitFailed', { msg: error.message })
+                : '应用初始化失败: ' + error.message
+        );
     }
 }
 
 function setupDefaultContent() {
-    setTimeout(function() {
+    setTimeout(function () {
         try {
             const fileExplorer = window.sidebarManager?.getPanelManager?.('files');
             const hasWorkspace = !!(fileExplorer && fileExplorer.hasWorkspace);
@@ -113,7 +120,11 @@ function setupDefaultContent() {
                 return;
             }
 
-            if (window.tabManager && typeof window.tabManager.getTabCount === 'function' && window.tabManager.getTabCount() === 0) {
+            if (
+                window.tabManager &&
+                typeof window.tabManager.getTabCount === 'function' &&
+                window.tabManager.getTabCount() === 0
+            ) {
                 logInfo('显示欢迎页面...');
                 if (typeof window.tabManager.showWelcomePage === 'function') {
                     window.tabManager.showWelcomePage();
@@ -127,30 +138,33 @@ function setupDefaultContent() {
                 window.tabManager.createNewCppFile();
             }
         }
-    }, 1000); 
+    }, 1000);
 }
 
 function showErrorMessage(message) {
-    const safeMessage = String(message ?? '').split(/\r?\n/)[0].trim() || '发生错误，请稍后重试';
+    const safeMessage =
+        String(message ?? '')
+            .split(/\r?\n/)[0]
+            .trim() || '发生错误，请稍后重试';
     try {
         logWarn('[RendererErrorToastSuppressed]', safeMessage);
     } catch (_) {}
 }
 
-window.addEventListener('error', function(e) {
+window.addEventListener('error', function (e) {
     try {
         const info = {
             message: e?.error?.message || e?.message,
             filename: e?.filename,
             lineno: e?.lineno,
             colno: e?.colno,
-            stack: e?.error?.stack
+            stack: e?.error?.stack,
         };
         logError('[RendererGlobalError]', info);
     } catch (_) {}
 });
 
-window.addEventListener('unhandledrejection', function(e) {
+window.addEventListener('unhandledrejection', function (e) {
     try {
         const reason = e?.reason;
         const info = reason instanceof Error ? { message: reason.message, stack: reason.stack } : { reason };

@@ -1,802 +1,1240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN" class="startup-pending">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: http: https:; worker-src 'self' blob: file:; connect-src 'self' https://oicpp.mywwzh.top; frame-src * data:;">
-    <meta http-equiv="Permissions-Policy" content="fullscreen=(self)">
-    <style>
-        html.startup-pending body > :not(#onboarding-overlay) {
-            visibility: hidden !important;
-        }
-        html.startup-pending body {
-            background: #101117;
-        }
-    </style>
-    <title>OICPP IDE</title>
-    <link rel="stylesheet" href="css/titlebar.css">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/sidebar.css">
-    <link rel="stylesheet" href="css/editor.css">
-    <link rel="stylesheet" href="css/monaco-editor.css">
-    <link rel="stylesheet" href="css/pdf-viewer.css">
-    <link rel="stylesheet" href="css/statusbar.css">
-    <link rel="stylesheet" href="css/welcome.css">
-    <link rel="stylesheet" href="css/onboarding.css">
-    <link rel="stylesheet" href="css/dialog.css">
-    <link rel="stylesheet" href="css/compile-output.css">
-    <link rel="stylesheet" href="css/samples.css">
-    <link rel="stylesheet" href="css/compare.css">
-    <link rel="stylesheet" href="css/debug.css">
-    <link rel="stylesheet" href="css/quick-open.css">
-    <link rel="stylesheet" href="css/folder-picker.css">
-    <link rel="stylesheet" href="css/terminal.css">
-    <link rel="stylesheet" href="../../node_modules/katex/dist/katex.min.css">
-    <link rel="stylesheet" href="../../node_modules/xterm/css/xterm.css">
-    <link rel="stylesheet" href="css/markdown.css">
-    <link rel="stylesheet" href="css/browser.css">
-    <link rel="stylesheet" href="assets/icons/codicon.css">
-    <link rel="stylesheet" href="assets/fonts/seti.css">
-    <link rel="stylesheet" href="css/modern.css">
-</head>
-<body>
-    <div class="titlebar">
-        <div class="titlebar-left">
-            <div class="app-icon">
-                <img id="app-icon" src="" width="16" height="16" alt="OICPP IDE">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: http: https:; worker-src 'self' blob: file:; connect-src 'self' https://oicpp.mywwzh.top; frame-src * data:;"
+        />
+        <meta http-equiv="Permissions-Policy" content="fullscreen=(self)" />
+        <style>
+            html.startup-pending body > :not(#onboarding-overlay) {
+                visibility: hidden !important;
+            }
+            html.startup-pending body {
+                background: #101117;
+            }
+        </style>
+        <title>OICPP IDE</title>
+        <link rel="stylesheet" href="css/titlebar.css" />
+        <link rel="stylesheet" href="css/main.css" />
+        <link rel="stylesheet" href="css/sidebar.css" />
+        <link rel="stylesheet" href="css/editor.css" />
+        <link rel="stylesheet" href="css/monaco-editor.css" />
+        <link rel="stylesheet" href="css/pdf-viewer.css" />
+        <link rel="stylesheet" href="css/statusbar.css" />
+        <link rel="stylesheet" href="css/welcome.css" />
+        <link rel="stylesheet" href="css/onboarding.css" />
+        <link rel="stylesheet" href="css/dialog.css" />
+        <link rel="stylesheet" href="css/compile-output.css" />
+        <link rel="stylesheet" href="css/samples.css" />
+        <link rel="stylesheet" href="css/compare.css" />
+        <link rel="stylesheet" href="css/debug.css" />
+        <link rel="stylesheet" href="css/quick-open.css" />
+        <link rel="stylesheet" href="css/folder-picker.css" />
+        <link rel="stylesheet" href="css/terminal.css" />
+        <link rel="stylesheet" href="../../node_modules/katex/dist/katex.min.css" />
+        <link rel="stylesheet" href="../../node_modules/xterm/css/xterm.css" />
+        <link rel="stylesheet" href="css/markdown.css" />
+        <link rel="stylesheet" href="css/browser.css" />
+        <link rel="stylesheet" href="assets/icons/codicon.css" />
+        <link rel="stylesheet" href="assets/fonts/seti.css" />
+        <link rel="stylesheet" href="css/modern.css" />
+    </head>
+    <body>
+        <div class="titlebar">
+            <div class="titlebar-left">
+                <div class="app-icon">
+                    <img id="app-icon" src="" width="16" height="16" alt="OICPP IDE" />
+                </div>
+                <span class="app-title">OICPP IDE</span>
             </div>
-            <span class="app-title">OICPP IDE</span>
+            <div class="titlebar-center">
+                <div class="menu-bar">
+                    <div class="menu-item" data-menu="file">
+                        <span class="menu-label" data-i18n="menu.file">文件</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="new-file">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.newFile">新建文件</span>
+                                <span class="menu-shortcut">Ctrl+N</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="new-temp-file">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.newTempFile">新建临时文件</span>
+                                <span class="menu-shortcut">Ctrl+Shift+N</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="open-folder">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.openFolder">打开文件夹</span>
+                                <span class="menu-shortcut">Ctrl+K</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="save-file">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.save">保存</span>
+                                <span class="menu-shortcut">Ctrl+S</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="save-as">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.saveAs">另存为</span>
+                                <span class="menu-shortcut">Ctrl+Shift+S</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="toggle-auto-save" id="menu-toggle-auto-save">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.autoSave">自动保存</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="open-file-history">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.history">历史...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item" data-menu="tools">
+                        <span class="menu-label" data-i18n="menu.tools">工具</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="format-code">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.formatCode">格式化代码</span>
+                                <span class="menu-shortcut">Alt+Shift+S</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="open-terminal">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.openTerminal">打开内置终端</span>
+                                <span class="menu-shortcut">Ctrl+`</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="open-browser">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="browser.openBrowser">打开内置浏览器</span>
+                                <span class="menu-shortcut">Ctrl+Shift+I</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item" data-menu="options">
+                        <span class="menu-label" data-i18n="menu.options">选项</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="toggle-word-wrap" id="menu-toggle-word-wrap">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.wordWrap">自动换行</span>
+                                <span class="menu-shortcut">Alt+Z</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="editor-settings">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.editorSettings">编辑器设置</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="template-settings">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.templateSettings">模板设置</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item" data-menu="run">
+                        <span class="menu-label" data-i18n="menu.run">运行</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="compile">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.compile">编译</span>
+                                <span class="menu-shortcut">F9</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="run">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.runCode">运行</span>
+                                <span class="menu-shortcut">F10</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="compile-run">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.compileAndRun">编译并运行</span>
+                                <span class="menu-shortcut">F11</span>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-dropdown-item" data-action="debug">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.debug">调试</span>
+                                <span class="menu-shortcut">F5</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item" data-menu="account">
+                        <span class="menu-label" data-i18n="menu.account">账户</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="ide-login">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.login">登录</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="ide-account">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.myAccount">我的账户</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="ide-logout">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.logout">退出登录</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-item" data-menu="about">
+                        <span class="menu-label" data-i18n="menu.aboutMenu">关于</span>
+                        <div class="menu-dropdown">
+                            <div class="menu-dropdown-item" data-action="about">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="app.about">关于 OICPP IDE</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="feedback">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.feedback">反馈</span>
+                            </div>
+                            <div class="menu-dropdown-item" data-action="open-source-licenses">
+                                <span class="menu-check">✓</span>
+                                <span class="menu-label-text" data-i18n="menu.openSourceLicenses"
+                                    >开源软件使用声明</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="titlebar-quickopen-wrap">
+                    <div
+                        class="titlebar-quickopen"
+                        id="titlebar-quickopen"
+                        data-i18n-title="panel.quickOpenPlaceholder"
+                        title="快速打开 (Ctrl+P)"
+                    >
+                        <i class="codicon codicon-search qo-icon" aria-hidden="true"></i>
+                        <span class="qo-placeholder" data-i18n="menu.searchFiles">搜索文件 (Ctrl+P)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="titlebar-drag"></div>
+            <div class="titlebar-controls">
+                <button
+                    class="titlebar-button minimize-btn"
+                    id="minimize-btn"
+                    data-i18n-title="titlebar.minimize"
+                    title="最小化"
+                    tabindex="-1"
+                >
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M2.5 6h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button
+                    class="titlebar-button maximize-btn"
+                    id="maximize-btn"
+                    data-i18n-title="titlebar.maximize"
+                    title="最大化"
+                    tabindex="-1"
+                >
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <rect
+                            x="2.5"
+                            y="2.5"
+                            width="7"
+                            height="7"
+                            rx="1.6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.2"
+                        />
+                    </svg>
+                </button>
+                <button
+                    class="titlebar-button close-btn"
+                    id="close-btn"
+                    data-i18n-title="titlebar.close"
+                    title="关闭"
+                    tabindex="-1"
+                >
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div class="titlebar-center">
-            <div class="menu-bar">
-                <div class="menu-item" data-menu="file">
-                    <span class="menu-label" data-i18n="menu.file">文件</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="new-file">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.newFile">新建文件</span>
-                            <span class="menu-shortcut">Ctrl+N</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="new-temp-file">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.newTempFile">新建临时文件</span>
-                            <span class="menu-shortcut">Ctrl+Shift+N</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="open-folder">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.openFolder">打开文件夹</span>
-                            <span class="menu-shortcut">Ctrl+K</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="save-file">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.save">保存</span>
-                            <span class="menu-shortcut">Ctrl+S</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="save-as">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.saveAs">另存为</span>
-                            <span class="menu-shortcut">Ctrl+Shift+S</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="toggle-auto-save" id="menu-toggle-auto-save">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.autoSave">自动保存</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="open-file-history">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.history">历史...</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-item" data-menu="tools">
-                    <span class="menu-label" data-i18n="menu.tools">工具</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="format-code">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.formatCode">格式化代码</span>
-                            <span class="menu-shortcut">Alt+Shift+S</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="open-terminal">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.openTerminal">打开内置终端</span>
-                            <span class="menu-shortcut">Ctrl+`</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="open-browser">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="browser.openBrowser">打开内置浏览器</span>
-                            <span class="menu-shortcut">Ctrl+Shift+I</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-item" data-menu="options">
-                    <span class="menu-label" data-i18n="menu.options">选项</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="toggle-word-wrap" id="menu-toggle-word-wrap">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.wordWrap">自动换行</span>
-                            <span class="menu-shortcut">Alt+Z</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="editor-settings">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.editorSettings">编辑器设置</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="template-settings">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.templateSettings">模板设置</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-item" data-menu="run">
-                    <span class="menu-label" data-i18n="menu.run">运行</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="compile">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.compile">编译</span>
-                            <span class="menu-shortcut">F9</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="run">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.runCode">运行</span>
-                            <span class="menu-shortcut">F10</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="compile-run">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.compileAndRun">编译并运行</span>
-                            <span class="menu-shortcut">F11</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-dropdown-item" data-action="debug">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.debug">调试</span>
-                            <span class="menu-shortcut">F5</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-item" data-menu="account">
-                    <span class="menu-label" data-i18n="menu.account">账户</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="ide-login">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.login">登录</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="ide-account">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.myAccount">我的账户</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="ide-logout">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.logout">退出登录</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="menu-item" data-menu="about">
-                    <span class="menu-label" data-i18n="menu.aboutMenu">关于</span>
-                    <div class="menu-dropdown">
-                        <div class="menu-dropdown-item" data-action="about">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="app.about">关于 OICPP IDE</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="feedback">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.feedback">反馈</span>
-                        </div>
-                        <div class="menu-dropdown-item" data-action="open-source-licenses">
-                            <span class="menu-check">✓</span>
-                            <span class="menu-label-text" data-i18n="menu.openSourceLicenses">开源软件使用声明</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="titlebar-quickopen-wrap">
-                <div class="titlebar-quickopen" id="titlebar-quickopen" data-i18n-title="panel.quickOpenPlaceholder" title="快速打开 (Ctrl+P)">
-                    <i class="codicon codicon-search qo-icon" aria-hidden="true"></i>
-                    <span class="qo-placeholder" data-i18n="menu.searchFiles">搜索文件 (Ctrl+P)</span>
-                </div>
-            </div>
-        </div>
-        <div class="titlebar-drag"></div>
-        <div class="titlebar-controls">
-            <button class="titlebar-button minimize-btn" id="minimize-btn" data-i18n-title="titlebar.minimize" title="最小化" tabindex="-1">
-                <svg width="12" height="12" viewBox="0 0 12 12">
-                    <path d="M2.5 6h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                </svg>
-            </button>
-            <button class="titlebar-button maximize-btn" id="maximize-btn" data-i18n-title="titlebar.maximize" title="最大化" tabindex="-1">
-                <svg width="12" height="12" viewBox="0 0 12 12">
-                    <rect x="2.5" y="2.5" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.2"/>
-                </svg>
-            </button>
-            <button class="titlebar-button close-btn" id="close-btn" data-i18n-title="titlebar.close" title="关闭" tabindex="-1">
-                <svg width="12" height="12" viewBox="0 0 12 12">
-                    <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-    
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="sidebar-resizer"></div>
-            <div class="sidebar-icons">
-                <div class="sidebar-icon active" data-panel="files" data-i18n-title="sidebar.fileExplorer" title="文件管理器">
-                    <i class="codicon codicon-files" aria-hidden="true"></i>
-                </div>
-                <div class="sidebar-icon" data-panel="samples" data-i18n-title="sidebar.sampleTester" title="样例测试器">
-                    <i class="codicon codicon-checklist" aria-hidden="true"></i>
-                </div>
-                <div class="sidebar-icon" data-panel="compare" data-i18n-title="sidebar.codeComparer" title="代码对拍器">
-                    <i class="codicon codicon-compare-changes" aria-hidden="true"></i>
-                </div>
-                <div class="sidebar-icons-spacer"></div>
-                
-            </div>
-            <div class="sidebar-panel" id="sidebar-content">
-                <div class="panel-content active" id="files-panel">
-                    <div class="panel-header">
-                        <span class="panel-title" data-i18n="sidebar.fileExplorer">文件管理器</span>
-                        <div class="panel-actions">
-                            <button class="icon-btn" data-i18n-title="sidebar.newFile" title="新建文件" tabindex="-1">
-                                <i class="codicon codicon-new-file" aria-hidden="true"></i>
-                            </button>
-                            <button class="icon-btn" data-i18n-title="sidebar.newFolder" title="新建文件夹" tabindex="-1">
-                                <i class="codicon codicon-new-folder" aria-hidden="true"></i>
-                            </button>
-                            <button class="icon-btn" data-i18n-title="sidebar.refresh" title="刷新" tabindex="-1">
-                                <i class="codicon codicon-refresh" aria-hidden="true"></i>
-                            </button>
-                            <button class="icon-btn" data-i18n-title="sidebar.batchDelete" title="批量删除" tabindex="-1">
-                                <i class="codicon codicon-trash" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="file-tree">
-                    </div>
-                </div>
-                
-                <div class="panel-content" id="samples-panel">
-                    <div class="panel-header">
-                        <span class="panel-title" data-i18n="tester.title">样例测试器</span>
-                        <div class="panel-actions">
-                            <button class="icon-btn" id="add-sample-btn" data-i18n-title="menu.addSample" title="添加样例组" tabindex="-1">
-                                <i class="codicon codicon-add" aria-hidden="true"></i>
-                            </button>
-                            <button class="icon-btn" id="import-samples-zip-btn" data-i18n-title="tester.importPreview" title="从压缩包导入样例" tabindex="-1">
-                                <i class="codicon codicon-archive" aria-hidden="true"></i>
-                            </button>
-                            <button class="icon-btn run-all-btn" id="run-all-samples-btn" data-i18n-title="tester.runAll" title="运行所有样例" tabindex="-1">
-                                <i class="codicon codicon-run-all" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="samples-summary" id="samples-summary" style="display: none;"></div>
-                    <div class="global-settings" id="global-settings" style="display: none;">
-                        <div class="global-settings-header">
-                            <span class="settings-title" data-i18n="menu.globalSettings">全局设置</span>
-                        </div>
-                        <div class="global-settings-content">
-                            <div class="global-settings-pair">
-                                <div class="setting-group">
-                                    <label class="setting-checkbox">
-                                        <input type="checkbox" id="global-use-testlib" onchange="sampleTester.updateGlobalSetting('useTestlib', this.checked)">
-                                        <span class="setting-label" data-i18n="menu.useTestlib">全局使用 testlib</span>
-                                    </label>
-                                </div>
-                                <div class="setting-group">
-                                    <label class="setting-checkbox">
-                                        <input type="checkbox" id="global-use-interactive" onchange="sampleTester.updateGlobalSetting('useInteractive', this.checked)">
-                                        <span class="setting-label" data-i18n="tester.interactiveMode">交互题模式</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="setting-group" id="global-grader-group" style="display: none;">
-                                <div class="spj-header-row">
-                                    <span class="setting-label" data-i18n="tester.grader">grader.cpp</span>
-                                    <a href="#" class="spj-browse-link" id="browse-global-grader-btn" data-i18n="menu.browse" title="选择 grader.cpp 文件">
-                                        浏览
-                                    </a>
-                                </div>
-                                <div class="spj-file-display" id="grader-file-display" style="display: none;">
-                                    <span class="spj-file-name" id="grader-file-name"></span>
-                                    <a href="#" class="spj-clear-link" onclick="sampleTester.clearGlobalGraderFile(); return false;" title="清除 grader.cpp 文件">
-                                        删除
-                                    </a>
-                                </div>
-                                <input type="hidden" id="global-grader-path">
-                            </div>
-                            <div class="setting-group" id="global-spj-group">
-                                <div class="spj-header-row">
-                                    <span class="setting-label" data-i18n="menu.spj">SPJ</span>
-                                    <a href="#" class="spj-browse-link" onclick="sampleTester.selectGlobalSpjFile(); return false;" data-i18n="menu.browse" data-i18n-title="compare.selectSpjFile" title="Select SPJ file">
-                                        Browse
-                                    </a>
-                                </div>
-                                <div class="spj-file-display" id="spj-file-display" style="display: none;">
-                                    <span class="spj-file-name" id="spj-file-name"></span>
-                                    <a href="#" class="spj-clear-link" onclick="sampleTester.clearGlobalSpjFile(); return false;" title="清除SPJ文件">
-                                        删除
-                                    </a>
-                                </div>
-                                <input type="hidden" id="global-spj-path" onchange="sampleTester.updateGlobalSetting('spjPath', this.value)">
-                            </div>
-                            <div class="setting-group global-bulk-row global-fileio-row">
-                                <span class="setting-label" data-i18n="menu.fileIO">文件IO</span>
-                                <div class="global-fileio-controls">
-                                    <input type="text" class="setting-input setting-input-wide" id="global-freopen-input-file" data-i18n-placeholder="menu.sampleInputPlaceholder" placeholder="Input file name, e.g. sample.in">
-                                    <input type="text" class="setting-input setting-input-wide" id="global-freopen-output-file" data-i18n-placeholder="menu.sampleOutputPlaceholder" placeholder="Output file name, e.g. sample.out">
-                                    <button class="bulk-apply-btn" id="apply-fileio-all-btn" type="button" title="将文件IO设置应用到全部样例" data-i18n="menu.apply">应用</button>
-                                </div>
-                            </div>
-                            <div class="global-settings-pair">
-                                <div class="setting-group global-bulk-row">
-                                    <span class="setting-label" data-i18n="menu.runTime">运行时间</span>
-                                    <input type="number" class="setting-input" id="global-time-limit" min="1" value="1000">
-                                    <span class="setting-unit">ms</span>
-                                    <button class="bulk-apply-btn" id="apply-time-limit-all-btn" type="button" title="将运行时间应用到全部样例" data-i18n="menu.apply">应用</button>
-                                </div>
-                                <div class="setting-group global-bulk-row">
-                                    <span class="setting-label" data-i18n="tester.memoryLimit">内存</span>
-                                    <input type="number" class="setting-input" id="global-memory-limit" min="0" step="0.1" value="0">
-                                    <span class="setting-unit" data-i18n="tester.mb">MB</span>
-                                    <button class="bulk-apply-btn" id="apply-memory-limit-all-btn" type="button" title="将内存限制应用到全部样例" data-i18n="menu.apply">应用</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="global-settings-resizer" id="global-settings-resizer" role="separator" aria-orientation="horizontal" aria-controls="global-settings" tabindex="0"></div>
-                    <div class="samples-content">
-                        <div class="no-file-message" id="no-file-message" style="display: none;">
-                            <div class="message-icon" data-ui-icon="file"></div>
-                            <p data-i18n="tester.noSamples">请先打开一个C++文件</p>
-                            <p class="sub-text" data-i18n="tester.noSamples">样例测试器需要一个活动的C++文件才能工作</p>
-                        </div>
-                        <div class="no-samples-message" id="no-samples-message">
-                            <div class="message-icon" data-ui-icon="sparkle"></div>
-                            <p data-i18n="tester.noSamples">还没有样例组</p>
-                            <p class="sub-text" data-i18n="tester.noSamples">点击上方的 + 按钮添加第一个样例组</p>
-                        </div>
-                        <div class="samples-list" id="samples-list">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="panel-content" id="compare-panel">
-                    <div class="panel-header">
-                        <span class="panel-title" data-i18n="compare.title">代码对拍器</span>
-                    </div>
-                    <div class="compare-content">
-                        <div class="no-compiler-message" id="no-compiler-message" style="display: none;">
-                            <div class="message-icon" data-ui-icon="gear"></div>
-                            <p data-i18n="menu.setCompilerFirst">Please configure the compiler first</p>
-                            <p class="sub-text" data-i18n="menu.compilerNeeded">The comparison tool needs a compiler. Go to settings to configure it.</p>
-                            <button class="empty-state-button" onclick="window.electronAPI?.openCompilerSettings?.()" data-i18n="compare.openCompilerSettings">
-                                Open Compiler Settings
-                            </button>
-                        </div>
 
-                        <div class="compare-file-section" id="compare-file-section">
-                            <div class="compare-notice">
-                                <div class="notice-icon" data-ui-icon="warning"></div>
-                                <div class="notice-text">
-                                    <strong data-i18n="dialog.note">Note:</strong><span data-i18n="menu.importantNotice">Uses stdin/stdout by default. If your code uses freopen, configure the I/O filenames below.</span>
-                                </div>
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="sidebar-resizer"></div>
+                <div class="sidebar-icons">
+                    <div
+                        class="sidebar-icon active"
+                        data-panel="files"
+                        data-i18n-title="sidebar.fileExplorer"
+                        title="文件管理器"
+                    >
+                        <i class="codicon codicon-files" aria-hidden="true"></i>
+                    </div>
+                    <div
+                        class="sidebar-icon"
+                        data-panel="samples"
+                        data-i18n-title="sidebar.sampleTester"
+                        title="样例测试器"
+                    >
+                        <i class="codicon codicon-checklist" aria-hidden="true"></i>
+                    </div>
+                    <div
+                        class="sidebar-icon"
+                        data-panel="compare"
+                        data-i18n-title="sidebar.codeComparer"
+                        title="代码对拍器"
+                    >
+                        <i class="codicon codicon-compare-changes" aria-hidden="true"></i>
+                    </div>
+                    <div class="sidebar-icons-spacer"></div>
+                </div>
+                <div class="sidebar-panel" id="sidebar-content">
+                    <div class="panel-content active" id="files-panel">
+                        <div class="panel-header">
+                            <span class="panel-title" data-i18n="sidebar.fileExplorer">文件管理器</span>
+                            <div class="panel-actions">
+                                <button
+                                    class="icon-btn"
+                                    data-i18n-title="sidebar.newFile"
+                                    title="新建文件"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-new-file" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                    class="icon-btn"
+                                    data-i18n-title="sidebar.newFolder"
+                                    title="新建文件夹"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-new-folder" aria-hidden="true"></i>
+                                </button>
+                                <button class="icon-btn" data-i18n-title="sidebar.refresh" title="刷新" tabindex="-1">
+                                    <i class="codicon codicon-refresh" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                    class="icon-btn"
+                                    data-i18n-title="sidebar.batchDelete"
+                                    title="批量删除"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-trash" aria-hidden="true"></i>
+                                </button>
                             </div>
-                            
-                            <div class="file-select-group">
-                                <div class="file-select-item">
-                                    <div class="file-select-header">
-                                        <span class="file-select-label" data-i18n="menu.standardCode">Standard/Brute Force Code</span>
-                                        <button class="file-browse-btn" id="std-code-browse" data-i18n="menu.browse">浏览</button>
+                        </div>
+                        <div class="file-tree"></div>
+                    </div>
+
+                    <div class="panel-content" id="samples-panel">
+                        <div class="panel-header">
+                            <span class="panel-title" data-i18n="tester.title">样例测试器</span>
+                            <div class="panel-actions">
+                                <button
+                                    class="icon-btn"
+                                    id="add-sample-btn"
+                                    data-i18n-title="menu.addSample"
+                                    title="添加样例组"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-add" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                    class="icon-btn"
+                                    id="import-samples-zip-btn"
+                                    data-i18n-title="tester.importPreview"
+                                    title="从压缩包导入样例"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-archive" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                    class="icon-btn run-all-btn"
+                                    id="run-all-samples-btn"
+                                    data-i18n-title="tester.runAll"
+                                    title="运行所有样例"
+                                    tabindex="-1"
+                                >
+                                    <i class="codicon codicon-run-all" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="samples-summary" id="samples-summary" style="display: none"></div>
+                        <div class="global-settings" id="global-settings" style="display: none">
+                            <div class="global-settings-header">
+                                <span class="settings-title" data-i18n="menu.globalSettings">全局设置</span>
+                            </div>
+                            <div class="global-settings-content">
+                                <div class="global-settings-pair">
+                                    <div class="setting-group">
+                                        <label class="setting-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                id="global-use-testlib"
+                                                onchange="sampleTester.updateGlobalSetting('useTestlib', this.checked)"
+                                            />
+                                            <span class="setting-label" data-i18n="menu.useTestlib"
+                                                >全局使用 testlib</span
+                                            >
+                                        </label>
                                     </div>
-                                    <div class="file-path-display" id="std-code-path" data-i18n="menu.noFile">No file selected</div>
-                                </div>
-
-                                <div class="file-select-item">
-                                    <div class="file-select-header">
-                                        <span class="file-select-label" data-i18n="menu.testCode">Code to Compare</span>
-                                        <button class="file-browse-btn" id="test-code-browse" data-i18n="menu.browse">浏览</button>
-                                    </div>
-                                    <div class="file-path-display" id="test-code-path" data-i18n="menu.noFile">No file selected</div>
-                                </div>
-
-                                <div class="file-select-item">
-                                    <div class="file-select-header">
-                                        <span class="file-select-label" data-i18n="menu.generator">Data Generator</span>
-                                        <button class="file-browse-btn" id="generator-browse" data-i18n="menu.browse">浏览</button>
-                                    </div>
-                                    <div class="file-path-display" id="generator-path" data-i18n="menu.noFile">No file selected</div>
-                                </div>
-                            </div>
-
-                            <div class="compare-config-section">
-                                <div class="config-item">
-                                    <label class="config-label" for="compare-count" data-i18n="menu.compareCount">Comparison Count:</label>
-                                    <input type="number" class="config-input" id="compare-count" value="100" min="1" max="100000">
-                                </div>
-                                <div class="config-item">
-                                    <label class="config-label" for="compare-threads" data-i18n="menu.parallelThreads">Parallel Threads:</label>
-                                    <input type="number" class="config-input" id="compare-threads" value="1" min="1">
-                                    <span class="config-unit" id="compare-threads-hint" data-i18n="compare.threadHint">Max = CPU threads/2</span>
-                                </div>
-                                <div class="config-item">
-                                    <label class="config-label" for="time-limit" data-i18n="menu.timeLimit">Time Limit:</label>
-                                    <input type="number" class="config-input" id="time-limit" value="1000" min="0">
-                                    <span class="config-unit">ms</span>
-                                </div>
-                                <div class="config-item compare-freopen-row">
-                                    <label class="config-label" data-i18n="menu.fileIO_label">File I/O:</label>
-                                    <div class="file-input-group compare-freopen-group">
-                                        <input type="text" class="config-input compare-freopen-input" id="compare-freopen-input-file" data-i18n-placeholder="menu.sampleInputPlaceholder" placeholder="Input file name, e.g. sample.in">
-                                        <input type="text" class="config-input compare-freopen-input" id="compare-freopen-output-file" data-i18n-placeholder="menu.sampleOutputPlaceholder" placeholder="Output file name, e.g. sample.out">
+                                    <div class="setting-group">
+                                        <label class="setting-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                id="global-use-interactive"
+                                                onchange="sampleTester.updateGlobalSetting('useInteractive', this.checked)"
+                                            />
+                                            <span class="setting-label" data-i18n="tester.interactiveMode"
+                                                >交互题模式</span
+                                            >
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="config-item testlib-spj-row">
-                                    <label class="config-label testlib-label" data-i18n="menu.useTestlib_label">
-                                        <input type="checkbox" class="config-checkbox" id="compare-use-testlib">
-                                        Use Testlib
-                                    </label>
-                                    <div class="spj-section">
-                                        <label class="config-label spj-label" data-i18n="compare.spjLabel">Special Judge</label>
-                                        <div class="file-input-group spj-input">
-                                            <input type="text" class="config-input" id="compare-spj-path" data-i18n-placeholder="menu.spjPlaceholder" placeholder="Select SPJ file (optional)" readonly>
-                                            <button class="file-browse-btn" id="compare-spj-browse" data-i18n="menu.browse">Browse</button>
+                                <div class="setting-group" id="global-grader-group" style="display: none">
+                                    <div class="spj-header-row">
+                                        <span class="setting-label" data-i18n="tester.grader">grader.cpp</span>
+                                        <a
+                                            href="#"
+                                            class="spj-browse-link"
+                                            id="browse-global-grader-btn"
+                                            data-i18n="menu.browse"
+                                            title="选择 grader.cpp 文件"
+                                        >
+                                            浏览
+                                        </a>
+                                    </div>
+                                    <div class="spj-file-display" id="grader-file-display" style="display: none">
+                                        <span class="spj-file-name" id="grader-file-name"></span>
+                                        <a
+                                            href="#"
+                                            class="spj-clear-link"
+                                            onclick="sampleTester.clearGlobalGraderFile(); return false;"
+                                            title="清除 grader.cpp 文件"
+                                        >
+                                            删除
+                                        </a>
+                                    </div>
+                                    <input type="hidden" id="global-grader-path" />
+                                </div>
+                                <div class="setting-group" id="global-spj-group">
+                                    <div class="spj-header-row">
+                                        <span class="setting-label" data-i18n="menu.spj">SPJ</span>
+                                        <a
+                                            href="#"
+                                            class="spj-browse-link"
+                                            onclick="sampleTester.selectGlobalSpjFile(); return false;"
+                                            data-i18n="menu.browse"
+                                            data-i18n-title="compare.selectSpjFile"
+                                            title="Select SPJ file"
+                                        >
+                                            Browse
+                                        </a>
+                                    </div>
+                                    <div class="spj-file-display" id="spj-file-display" style="display: none">
+                                        <span class="spj-file-name" id="spj-file-name"></span>
+                                        <a
+                                            href="#"
+                                            class="spj-clear-link"
+                                            onclick="sampleTester.clearGlobalSpjFile(); return false;"
+                                            title="清除SPJ文件"
+                                        >
+                                            删除
+                                        </a>
+                                    </div>
+                                    <input
+                                        type="hidden"
+                                        id="global-spj-path"
+                                        onchange="sampleTester.updateGlobalSetting('spjPath', this.value)"
+                                    />
+                                </div>
+                                <div class="setting-group global-bulk-row global-fileio-row">
+                                    <span class="setting-label" data-i18n="menu.fileIO">文件IO</span>
+                                    <div class="global-fileio-controls">
+                                        <input
+                                            type="text"
+                                            class="setting-input setting-input-wide"
+                                            id="global-freopen-input-file"
+                                            data-i18n-placeholder="menu.sampleInputPlaceholder"
+                                            placeholder="Input file name, e.g. sample.in"
+                                        />
+                                        <input
+                                            type="text"
+                                            class="setting-input setting-input-wide"
+                                            id="global-freopen-output-file"
+                                            data-i18n-placeholder="menu.sampleOutputPlaceholder"
+                                            placeholder="Output file name, e.g. sample.out"
+                                        />
+                                        <button
+                                            class="bulk-apply-btn"
+                                            id="apply-fileio-all-btn"
+                                            type="button"
+                                            title="将文件IO设置应用到全部样例"
+                                            data-i18n="menu.apply"
+                                        >
+                                            应用
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="global-settings-pair">
+                                    <div class="setting-group global-bulk-row">
+                                        <span class="setting-label" data-i18n="menu.runTime">运行时间</span>
+                                        <input
+                                            type="number"
+                                            class="setting-input"
+                                            id="global-time-limit"
+                                            min="1"
+                                            value="1000"
+                                        />
+                                        <span class="setting-unit">ms</span>
+                                        <button
+                                            class="bulk-apply-btn"
+                                            id="apply-time-limit-all-btn"
+                                            type="button"
+                                            title="将运行时间应用到全部样例"
+                                            data-i18n="menu.apply"
+                                        >
+                                            应用
+                                        </button>
+                                    </div>
+                                    <div class="setting-group global-bulk-row">
+                                        <span class="setting-label" data-i18n="tester.memoryLimit">内存</span>
+                                        <input
+                                            type="number"
+                                            class="setting-input"
+                                            id="global-memory-limit"
+                                            min="0"
+                                            step="0.1"
+                                            value="0"
+                                        />
+                                        <span class="setting-unit" data-i18n="tester.mb">MB</span>
+                                        <button
+                                            class="bulk-apply-btn"
+                                            id="apply-memory-limit-all-btn"
+                                            type="button"
+                                            title="将内存限制应用到全部样例"
+                                            data-i18n="menu.apply"
+                                        >
+                                            应用
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="global-settings-resizer"
+                            id="global-settings-resizer"
+                            role="separator"
+                            aria-orientation="horizontal"
+                            aria-controls="global-settings"
+                            tabindex="0"
+                        ></div>
+                        <div class="samples-content">
+                            <div class="no-file-message" id="no-file-message" style="display: none">
+                                <div class="message-icon" data-ui-icon="file"></div>
+                                <p data-i18n="tester.noSamples">请先打开一个C++文件</p>
+                                <p class="sub-text" data-i18n="tester.noSamples">
+                                    样例测试器需要一个活动的C++文件才能工作
+                                </p>
+                            </div>
+                            <div class="no-samples-message" id="no-samples-message">
+                                <div class="message-icon" data-ui-icon="sparkle"></div>
+                                <p data-i18n="tester.noSamples">还没有样例组</p>
+                                <p class="sub-text" data-i18n="tester.noSamples">点击上方的 + 按钮添加第一个样例组</p>
+                            </div>
+                            <div class="samples-list" id="samples-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="panel-content" id="compare-panel">
+                        <div class="panel-header">
+                            <span class="panel-title" data-i18n="compare.title">代码对拍器</span>
+                        </div>
+                        <div class="compare-content">
+                            <div class="no-compiler-message" id="no-compiler-message" style="display: none">
+                                <div class="message-icon" data-ui-icon="gear"></div>
+                                <p data-i18n="menu.setCompilerFirst">Please configure the compiler first</p>
+                                <p class="sub-text" data-i18n="menu.compilerNeeded">
+                                    The comparison tool needs a compiler. Go to settings to configure it.
+                                </p>
+                                <button
+                                    class="empty-state-button"
+                                    onclick="window.electronAPI?.openCompilerSettings?.()"
+                                    data-i18n="compare.openCompilerSettings"
+                                >
+                                    Open Compiler Settings
+                                </button>
+                            </div>
+
+                            <div class="compare-file-section" id="compare-file-section">
+                                <div class="compare-notice">
+                                    <div class="notice-icon" data-ui-icon="warning"></div>
+                                    <div class="notice-text">
+                                        <strong data-i18n="dialog.note">Note:</strong
+                                        ><span data-i18n="menu.importantNotice"
+                                            >Uses stdin/stdout by default. If your code uses freopen, configure the I/O
+                                            filenames below.</span
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="file-select-group">
+                                    <div class="file-select-item">
+                                        <div class="file-select-header">
+                                            <span class="file-select-label" data-i18n="menu.standardCode"
+                                                >Standard/Brute Force Code</span
+                                            >
+                                            <button
+                                                class="file-browse-btn"
+                                                id="std-code-browse"
+                                                data-i18n="menu.browse"
+                                            >
+                                                浏览
+                                            </button>
+                                        </div>
+                                        <div class="file-path-display" id="std-code-path" data-i18n="menu.noFile">
+                                            No file selected
+                                        </div>
+                                    </div>
+
+                                    <div class="file-select-item">
+                                        <div class="file-select-header">
+                                            <span class="file-select-label" data-i18n="menu.testCode"
+                                                >Code to Compare</span
+                                            >
+                                            <button
+                                                class="file-browse-btn"
+                                                id="test-code-browse"
+                                                data-i18n="menu.browse"
+                                            >
+                                                浏览
+                                            </button>
+                                        </div>
+                                        <div class="file-path-display" id="test-code-path" data-i18n="menu.noFile">
+                                            No file selected
+                                        </div>
+                                    </div>
+
+                                    <div class="file-select-item">
+                                        <div class="file-select-header">
+                                            <span class="file-select-label" data-i18n="menu.generator"
+                                                >Data Generator</span
+                                            >
+                                            <button
+                                                class="file-browse-btn"
+                                                id="generator-browse"
+                                                data-i18n="menu.browse"
+                                            >
+                                                浏览
+                                            </button>
+                                        </div>
+                                        <div class="file-path-display" id="generator-path" data-i18n="menu.noFile">
+                                            No file selected
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="compare-actions">
-                                <button class="compare-btn compare-start-btn" id="compare-start-btn" data-i18n="compare.start">
-                                    <svg width="14" height="14" viewBox="0 0 14 14">
-                                        <path d="M4 2l8 5-8 5V2z" fill="currentColor"/>
-                                    </svg>
-                                    Start Comparison
-                                </button>
-                                <button class="compare-btn compare-stop-btn" id="compare-stop-btn" disabled data-i18n="compare.stop">
-                                    <svg width="14" height="14" viewBox="0 0 14 14">
-                                        <rect x="3" y="3" width="8" height="8" fill="currentColor"/>
-                                    </svg>
-                                    Stop
-                                </button>
-                                <button class="compare-btn compare-reset-btn" id="compare-reset-btn" data-i18n="compare.reset">
-                                    <svg width="14" height="14" viewBox="0 0 14 14">
-                                        <path d="M7 2a5 5 0 0 1 5 5h-2a3 3 0 0 0-3-3V2zM2 7a5 5 0 0 1 5-5v2a3 3 0 0 0-3 3H2z" fill="currentColor"/>
-                                    </svg>
-                                    Reset
-                                </button>
-                            </div>
-
-                            <div class="compare-status" id="compare-status" style="display: none;">
-                                <div class="status-header">
-                                    <div class="status-title" data-i18n="compare.statusTitle">Comparison Status</div>
-                                    <div class="status-info">
-                                        <span id="current-test">Test 0</span>
-                                        <span class="status-separator">|</span>
-                                        <span id="status-text" data-i18n="compare.ready">Ready</span>
+                                <div class="compare-config-section">
+                                    <div class="config-item">
+                                        <label class="config-label" for="compare-count" data-i18n="menu.compareCount"
+                                            >Comparison Count:</label
+                                        >
+                                        <input
+                                            type="number"
+                                            class="config-input"
+                                            id="compare-count"
+                                            value="100"
+                                            min="1"
+                                            max="100000"
+                                        />
                                     </div>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="progress-fill"></div>
-                                </div>
-                            </div>
-
-                            <div class="compare-result" id="compare-result" style="display: none;">
-                                <div class="result-header">
-                                    <div>
-                                        <span class="result-title" id="error-title" data-i18n="compare.foundDiff">Difference Found</span>
-                                        <span class="result-subtitle" id="error-test-num"></span>
+                                    <div class="config-item">
+                                        <label
+                                            class="config-label"
+                                            for="compare-threads"
+                                            data-i18n="menu.parallelThreads"
+                                            >Parallel Threads:</label
+                                        >
+                                        <input
+                                            type="number"
+                                            class="config-input"
+                                            id="compare-threads"
+                                            value="1"
+                                            min="1"
+                                        />
+                                        <span
+                                            class="config-unit"
+                                            id="compare-threads-hint"
+                                            data-i18n="compare.threadHint"
+                                            >Max = CPU threads/2</span
+                                        >
                                     </div>
-                                    <button class="export-btn" id="export-btn" data-i18n="compare.export">Export Data</button>
-                                </div>
-                                
-                                <div class="result-diff">
-                                    <div class="diff-section">
-                                        <div class="diff-header diff-header-with-action">
-                                            <span id="input-diff-label" data-i18n="compare.inputData">Input Data</span>
-                                            <button class="export-btn diff-expand-btn" id="input-expand-btn" data-i18n="compare.expand">Expand</button>
+                                    <div class="config-item">
+                                        <label class="config-label" for="time-limit" data-i18n="menu.timeLimit"
+                                            >Time Limit:</label
+                                        >
+                                        <input
+                                            type="number"
+                                            class="config-input"
+                                            id="time-limit"
+                                            value="1000"
+                                            min="0"
+                                        />
+                                        <span class="config-unit">ms</span>
+                                    </div>
+                                    <div class="config-item compare-freopen-row">
+                                        <label class="config-label" data-i18n="menu.fileIO_label">File I/O:</label>
+                                        <div class="file-input-group compare-freopen-group">
+                                            <input
+                                                type="text"
+                                                class="config-input compare-freopen-input"
+                                                id="compare-freopen-input-file"
+                                                data-i18n-placeholder="menu.sampleInputPlaceholder"
+                                                placeholder="Input file name, e.g. sample.in"
+                                            />
+                                            <input
+                                                type="text"
+                                                class="config-input compare-freopen-input"
+                                                id="compare-freopen-output-file"
+                                                data-i18n-placeholder="menu.sampleOutputPlaceholder"
+                                                placeholder="Output file name, e.g. sample.out"
+                                            />
                                         </div>
-                                        <pre class="diff-content" id="input-diff"></pre>
                                     </div>
-                                    
-                                    <div class="diff-section">
-                                        <div class="diff-header diff-header-with-action">
-                                            <span id="std-output-diff-label" data-i18n="compare.errorStandardOutput">Standard Program Output</span>
-                                            <button class="export-btn diff-expand-btn" id="std-output-expand-btn" data-i18n="compare.expand">Expand</button>
+                                    <div class="config-item testlib-spj-row">
+                                        <label class="config-label testlib-label" data-i18n="menu.useTestlib_label">
+                                            <input type="checkbox" class="config-checkbox" id="compare-use-testlib" />
+                                            Use Testlib
+                                        </label>
+                                        <div class="spj-section">
+                                            <label class="config-label spj-label" data-i18n="compare.spjLabel"
+                                                >Special Judge</label
+                                            >
+                                            <div class="file-input-group spj-input">
+                                                <input
+                                                    type="text"
+                                                    class="config-input"
+                                                    id="compare-spj-path"
+                                                    data-i18n-placeholder="menu.spjPlaceholder"
+                                                    placeholder="Select SPJ file (optional)"
+                                                    readonly
+                                                />
+                                                <button
+                                                    class="file-browse-btn"
+                                                    id="compare-spj-browse"
+                                                    data-i18n="menu.browse"
+                                                >
+                                                    Browse
+                                                </button>
+                                            </div>
                                         </div>
-                                        <pre class="diff-content" id="std-output-diff"></pre>
                                     </div>
-                                    
-                                    <div class="diff-section">
-                                        <div class="diff-header diff-header-with-action">
-                                            <span id="test-output-diff-label" data-i18n="compare.errorTestOutput">Test Program Output</span>
-                                            <button class="export-btn diff-expand-btn" id="test-output-expand-btn" data-i18n="compare.expand">Expand</button>
+                                </div>
+
+                                <div class="compare-actions">
+                                    <button
+                                        class="compare-btn compare-start-btn"
+                                        id="compare-start-btn"
+                                        data-i18n="compare.start"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 14 14">
+                                            <path d="M4 2l8 5-8 5V2z" fill="currentColor" />
+                                        </svg>
+                                        Start Comparison
+                                    </button>
+                                    <button
+                                        class="compare-btn compare-stop-btn"
+                                        id="compare-stop-btn"
+                                        disabled
+                                        data-i18n="compare.stop"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 14 14">
+                                            <rect x="3" y="3" width="8" height="8" fill="currentColor" />
+                                        </svg>
+                                        Stop
+                                    </button>
+                                    <button
+                                        class="compare-btn compare-reset-btn"
+                                        id="compare-reset-btn"
+                                        data-i18n="compare.reset"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 14 14">
+                                            <path
+                                                d="M7 2a5 5 0 0 1 5 5h-2a3 3 0 0 0-3-3V2zM2 7a5 5 0 0 1 5-5v2a3 3 0 0 0-3 3H2z"
+                                                fill="currentColor"
+                                            />
+                                        </svg>
+                                        Reset
+                                    </button>
+                                </div>
+
+                                <div class="compare-status" id="compare-status" style="display: none">
+                                    <div class="status-header">
+                                        <div class="status-title" data-i18n="compare.statusTitle">
+                                            Comparison Status
                                         </div>
-                                        <pre class="diff-content" id="test-output-diff"></pre>
+                                        <div class="status-info">
+                                            <span id="current-test">Test 0</span>
+                                            <span class="status-separator">|</span>
+                                            <span id="status-text" data-i18n="compare.ready">Ready</span>
+                                        </div>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progress-fill"></div>
+                                    </div>
+                                </div>
+
+                                <div class="compare-result" id="compare-result" style="display: none">
+                                    <div class="result-header">
+                                        <div>
+                                            <span class="result-title" id="error-title" data-i18n="compare.foundDiff"
+                                                >Difference Found</span
+                                            >
+                                            <span class="result-subtitle" id="error-test-num"></span>
+                                        </div>
+                                        <button class="export-btn" id="export-btn" data-i18n="compare.export">
+                                            Export Data
+                                        </button>
+                                    </div>
+
+                                    <div class="result-diff">
+                                        <div class="diff-section">
+                                            <div class="diff-header diff-header-with-action">
+                                                <span id="input-diff-label" data-i18n="compare.inputData"
+                                                    >Input Data</span
+                                                >
+                                                <button
+                                                    class="export-btn diff-expand-btn"
+                                                    id="input-expand-btn"
+                                                    data-i18n="compare.expand"
+                                                >
+                                                    Expand
+                                                </button>
+                                            </div>
+                                            <pre class="diff-content" id="input-diff"></pre>
+                                        </div>
+
+                                        <div class="diff-section">
+                                            <div class="diff-header diff-header-with-action">
+                                                <span id="std-output-diff-label" data-i18n="compare.errorStandardOutput"
+                                                    >Standard Program Output</span
+                                                >
+                                                <button
+                                                    class="export-btn diff-expand-btn"
+                                                    id="std-output-expand-btn"
+                                                    data-i18n="compare.expand"
+                                                >
+                                                    Expand
+                                                </button>
+                                            </div>
+                                            <pre class="diff-content" id="std-output-diff"></pre>
+                                        </div>
+
+                                        <div class="diff-section">
+                                            <div class="diff-header diff-header-with-action">
+                                                <span id="test-output-diff-label" data-i18n="compare.errorTestOutput"
+                                                    >Test Program Output</span
+                                                >
+                                                <button
+                                                    class="export-btn diff-expand-btn"
+                                                    id="test-output-expand-btn"
+                                                    data-i18n="compare.expand"
+                                                >
+                                                    Expand
+                                                </button>
+                                            </div>
+                                            <pre class="diff-content" id="test-output-diff"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="compare-complete" id="compare-complete" style="display: none">
+                                    <div class="complete-icon">
+                                        <svg
+                                            width="32"
+                                            height="32"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="complete-text" data-i18n="compare.complete">Comparison Complete</div>
+                                    <div class="complete-info">
+                                        <span
+                                            >Completed <span id="completed-tests">0</span> tests, no differences
+                                            found</span
+                                        >
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                            <div class="compare-complete" id="compare-complete" style="display: none;">
-                                <div class="complete-icon">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
+            <div class="editor-container">
+                <div class="editor-layout">
+                    <div class="editor-terminal-container">
+                        <div class="editor-groups" id="editor-groups">
+                            <div class="editor-group" data-group-id="group-1">
+                                <div class="tab-bar" data-group-id="group-1"></div>
+                                <div class="tab-bar-actions" data-group-id="group-1">
+                                    <button
+                                        class="icon-btn tab-action-preview"
+                                        data-i18n-title="tabs.preview"
+                                        title="Markdown 预览"
+                                        tabindex="-1"
+                                        style="display: none"
+                                    >
+                                        <i class="codicon codicon-book" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        class="icon-btn tab-action-split"
+                                        data-i18n-title="tabs.split"
+                                        title="向右分屏"
+                                        tabindex="-1"
+                                    >
+                                        <i class="codicon codicon-split-horizontal" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        class="icon-btn tab-action-more"
+                                        data-i18n-title="tabs.more"
+                                        title="更多操作"
+                                        tabindex="-1"
+                                    >
+                                        <i class="codicon codicon-ellipsis" aria-hidden="true"></i>
+                                    </button>
                                 </div>
-                                <div class="complete-text" data-i18n="compare.complete">Comparison Complete</div>
-                                <div class="complete-info">
-                                    <span>Completed <span id="completed-tests">0</span> tests, no differences found</span>
-                                </div>
+                                <div class="editor-area" data-group-id="group-1" id="editor-area-group-1"></div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="editor-container">
-            <div class="editor-layout">
-                <div class="editor-terminal-container">
-                    <div class="editor-groups" id="editor-groups">
-                        <div class="editor-group" data-group-id="group-1">
-                            <div class="tab-bar" data-group-id="group-1">
-                            </div>
-                            <div class="tab-bar-actions" data-group-id="group-1">
-                                <button class="icon-btn tab-action-preview" data-i18n-title="tabs.preview" title="Markdown 预览" tabindex="-1" style="display:none">
-                                    <i class="codicon codicon-book" aria-hidden="true"></i>
+                        <div class="welcome-container" id="welcome-container"></div>
+                    </div>
+
+                    <aside class="integrated-terminal-panel collapsed" id="integrated-terminal-panel">
+                        <div
+                            class="integrated-terminal-resizer"
+                            id="integrated-terminal-resizer"
+                            title="拖动调整终端高度"
+                        ></div>
+                        <div class="integrated-terminal-header">
+                            <span class="integrated-terminal-title">终端</span>
+                            <div class="integrated-terminal-header-actions">
+                                <button class="icon-btn" id="integrated-terminal-new" title="新建终端" tabindex="-1">
+                                    <i class="codicon codicon-add" aria-hidden="true"></i>
                                 </button>
-                                <button class="icon-btn tab-action-split" data-i18n-title="tabs.split" title="向右分屏" tabindex="-1">
-                                    <i class="codicon codicon-split-horizontal" aria-hidden="true"></i>
-                                </button>
-                                <button class="icon-btn tab-action-more" data-i18n-title="tabs.more" title="更多操作" tabindex="-1">
-                                    <i class="codicon codicon-ellipsis" aria-hidden="true"></i>
+                                <button class="icon-btn" id="integrated-terminal-hide" title="隐藏终端" tabindex="-1">
+                                    <i class="codicon codicon-close" aria-hidden="true"></i>
                                 </button>
                             </div>
-                            <div class="editor-area" data-group-id="group-1" id="editor-area-group-1">
+                        </div>
+                        <div class="integrated-terminal-tabs" id="integrated-terminal-tabs"></div>
+                        <div class="integrated-terminal-body" id="integrated-terminal-body">
+                            <div class="integrated-terminal-empty" id="integrated-terminal-empty">
+                                点击“新建终端”开始使用内置终端
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="status-item cursor-position">行 1, 列 1</span>
+                <span class="status-item encoding">UTF-8</span>
+                <span class="status-item language">C++</span>
+                <span class="status-item lsp-status" id="lsp-status-item" title="语言服务器状态">
+                    <span class="lsp-status-icon">◌</span><span class="lsp-status-label">clangd</span>
+                </span>
+                <span
+                    class="status-item marker-summary"
+                    id="marker-summary-item"
+                    title="错误和警告"
+                    style="display: none"
+                >
+                    <span class="marker-errors" id="marker-errors-count"></span>
+                    <span class="marker-warnings" id="marker-warnings-count"></span>
+                </span>
+            </div>
+            <div class="status-right">
+                <span class="status-item"><span class="status-icon" data-ui-icon="check"></span>就绪</span>
+            </div>
+        </div>
+
+        <div id="quick-open-overlay" class="quick-open-overlay" aria-hidden="true">
+            <div class="quick-open-container" role="dialog" aria-modal="true">
+                <input
+                    id="quick-open-input"
+                    class="quick-open-input"
+                    type="text"
+                    placeholder="输入文件名以在工作区搜索... (Esc 关闭)"
+                    aria-label="快速打开：输入文件名"
+                />
+                <div id="quick-open-results" class="quick-open-results" role="listbox" aria-label="搜索结果"></div>
+            </div>
+        </div>
+
+        <div class="onboarding-overlay" id="onboarding-overlay" data-theme="dark" aria-hidden="true" hidden>
+            <div class="onboarding-background" id="onboarding-background" aria-hidden="true"></div>
+            <div class="onboarding-scrim" aria-hidden="true"></div>
+            <section class="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+                <div class="onboarding-brand">
+                    <img src="../../oicpp.ico" alt="" class="onboarding-logo" />
+                    <span>OICPP IDE</span>
+                </div>
+                <header class="onboarding-header">
+                    <div>
+                        <p class="onboarding-kicker" data-i18n="onboarding.kicker">
+                            A workspace made for problem solving
+                        </p>
+                        <h1 id="onboarding-title" data-i18n="onboarding.title">欢迎使用 OICPP IDE</h1>
+                        <p class="onboarding-description" data-i18n="onboarding.description">
+                            设置你的工作环境，所有更改都会即时预览。
+                        </p>
+                    </div>
+                    <span class="onboarding-step-count" id="onboarding-step-count" aria-live="polite">1 / 4</span>
+                </header>
+                <div class="onboarding-progress" aria-hidden="true">
+                    <span class="onboarding-progress-segment is-active"></span>
+                    <span class="onboarding-progress-segment"></span>
+                    <span class="onboarding-progress-segment"></span>
+                    <span class="onboarding-progress-segment"></span>
+                </div>
+
+                <div class="onboarding-step" data-onboarding-step="0">
+                    <div class="onboarding-welcome">
+                        <h2 data-i18n="onboarding.welcomeTitle">为编程竞赛准备好你的工作区</h2>
+                        <p data-i18n="onboarding.welcomeDescription">简洁、专注的 C++ 开发环境，设置完成后即可开始。</p>
+                        <div class="onboarding-feature-grid">
+                            <div class="onboarding-feature">
+                                <i class="codicon codicon-code" aria-hidden="true"></i>
+                                <span data-i18n="onboarding.featureEditor">VS Code 风格代码编辑</span>
+                            </div>
+                            <div class="onboarding-feature">
+                                <i class="codicon codicon-checklist" aria-hidden="true"></i>
+                                <span data-i18n="onboarding.featureSamples">快速运行样例测试</span>
+                            </div>
+                            <div class="onboarding-feature">
+                                <i class="codicon codicon-sync" aria-hidden="true"></i>
+                                <span data-i18n="onboarding.featureStress">自动化代码对拍</span>
+                            </div>
+                            <div class="onboarding-feature">
+                                <i class="codicon codicon-settings-gear" aria-hidden="true"></i>
+                                <span data-i18n="onboarding.featurePreferences">按你的习惯定制</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="welcome-container" id="welcome-container">
+                <div class="onboarding-step" data-onboarding-step="1" hidden>
+                    <div class="onboarding-field">
+                        <label for="onboarding-language" data-i18n="onboarding.language">界面语言</label>
+                        <select id="onboarding-language" class="onboarding-select">
+                            <option value="zh-cn">简体中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <fieldset class="onboarding-field">
+                        <legend data-i18n="onboarding.theme">选择主题</legend>
+                        <div class="onboarding-theme-options" role="group">
+                            <button
+                                class="onboarding-theme-choice is-selected"
+                                type="button"
+                                data-theme-choice="dark"
+                                aria-pressed="true"
+                            >
+                                <span class="onboarding-theme-preview theme-preview-dark"></span>
+                                <span data-i18n="onboarding.darkTheme">深色</span>
+                            </button>
+                            <button
+                                class="onboarding-theme-choice"
+                                type="button"
+                                data-theme-choice="light"
+                                aria-pressed="false"
+                            >
+                                <span class="onboarding-theme-preview theme-preview-light"></span>
+                                <span data-i18n="onboarding.lightTheme">浅色</span>
+                            </button>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="onboarding-step" data-onboarding-step="2" hidden>
+                    <div class="onboarding-setting-list">
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.useTabs">始终使用 Tab 缩进</strong>
+                                <small data-i18n="onboarding.useTabsDesc">编辑器和代码格式化统一使用制表符。</small>
+                            </span>
+                            <input id="onboarding-use-tabs" type="checkbox" checked />
+                        </label>
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.formatOnSave">保存时自动格式化</strong>
+                                <small data-i18n="onboarding.formatOnSaveDesc"
+                                    >保存 C/C++ 文件前自动应用格式化规则。</small
+                                >
+                            </span>
+                            <input id="onboarding-format-on-save" type="checkbox" checked />
+                        </label>
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.glassEffect">启用玻璃效果</strong>
+                                <small data-i18n="onboarding.glassEffectDesc">为编辑区域启用轻透磨砂效果。</small>
+                            </span>
+                            <input id="onboarding-glass-effect" type="checkbox" checked />
+                        </label>
+                    </div>
+                    <div class="onboarding-field onboarding-opacity-field">
+                        <label for="onboarding-opacity">
+                            <span data-i18n="onboarding.transparency">窗口透明度</span>
+                            <output id="onboarding-opacity-value">5%</output>
+                        </label>
+                        <input id="onboarding-opacity" type="range" min="0" max="0.8" step="0.01" value="0.05" />
                     </div>
                 </div>
 
-                <aside class="integrated-terminal-panel collapsed" id="integrated-terminal-panel">
-                    <div class="integrated-terminal-resizer" id="integrated-terminal-resizer" title="拖动调整终端高度"></div>
-                    <div class="integrated-terminal-header">
-                        <span class="integrated-terminal-title">终端</span>
-                        <div class="integrated-terminal-header-actions">
-                            <button class="icon-btn" id="integrated-terminal-new" title="新建终端" tabindex="-1"><i class="codicon codicon-add" aria-hidden="true"></i></button>
-                            <button class="icon-btn" id="integrated-terminal-hide" title="隐藏终端" tabindex="-1"><i class="codicon codicon-close" aria-hidden="true"></i></button>
-                        </div>
+                <div class="onboarding-step" data-onboarding-step="3" hidden>
+                    <div class="onboarding-field">
+                        <label for="onboarding-font-size">
+                            <span data-i18n="onboarding.fontSize">编辑器字号</span>
+                            <output id="onboarding-font-size-value">14px</output>
+                        </label>
+                        <input id="onboarding-font-size" type="range" min="12" max="24" step="1" value="14" />
                     </div>
-                    <div class="integrated-terminal-tabs" id="integrated-terminal-tabs"></div>
-                    <div class="integrated-terminal-body" id="integrated-terminal-body">
-                        <div class="integrated-terminal-empty" id="integrated-terminal-empty">点击“新建终端”开始使用内置终端</div>
+                    <div class="onboarding-field">
+                        <label for="onboarding-tab-size" data-i18n="onboarding.tabSize">缩进宽度</label>
+                        <select id="onboarding-tab-size" class="onboarding-select">
+                            <option value="2">2</option>
+                            <option value="4" selected>4</option>
+                            <option value="8">8</option>
+                        </select>
                     </div>
-                </aside>
-            </div>
-        </div>
-    </div>
-
-    <div class="status-bar">
-        <div class="status-left">
-            <span class="status-item cursor-position">行 1, 列 1</span>
-            <span class="status-item encoding">UTF-8</span>
-            <span class="status-item language">C++</span>
-            <span class="status-item lsp-status" id="lsp-status-item" title="语言服务器状态">
-                <span class="lsp-status-icon">◌</span><span class="lsp-status-label">clangd</span>
-            </span>
-            <span class="status-item marker-summary" id="marker-summary-item" title="错误和警告" style="display: none;">
-                <span class="marker-errors" id="marker-errors-count"></span>
-                <span class="marker-warnings" id="marker-warnings-count"></span>
-            </span>
-        </div>
-        <div class="status-right">
-            <span class="status-item"><span class="status-icon" data-ui-icon="check"></span>就绪</span>
-        </div>
-    </div>
-
-    <div id="quick-open-overlay" class="quick-open-overlay" aria-hidden="true">
-        <div class="quick-open-container" role="dialog" aria-modal="true">
-            <input id="quick-open-input" class="quick-open-input" type="text" placeholder="输入文件名以在工作区搜索... (Esc 关闭)" aria-label="快速打开：输入文件名">
-            <div id="quick-open-results" class="quick-open-results" role="listbox" aria-label="搜索结果">
-            </div>
-        </div>
-    </div>
-
-    <div class="onboarding-overlay" id="onboarding-overlay" data-theme="dark" aria-hidden="true" hidden>
-        <div class="onboarding-background" id="onboarding-background" aria-hidden="true"></div>
-        <div class="onboarding-scrim" aria-hidden="true"></div>
-        <section class="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-            <div class="onboarding-brand">
-                <img src="../../oicpp.ico" alt="" class="onboarding-logo">
-                <span>OICPP IDE</span>
-            </div>
-            <header class="onboarding-header">
-                <div>
-                    <p class="onboarding-kicker" data-i18n="onboarding.kicker">A workspace made for problem solving</p>
-                    <h1 id="onboarding-title" data-i18n="onboarding.title">欢迎使用 OICPP IDE</h1>
-                    <p class="onboarding-description" data-i18n="onboarding.description">设置你的工作环境，所有更改都会即时预览。</p>
-                </div>
-                <span class="onboarding-step-count" id="onboarding-step-count" aria-live="polite">1 / 3</span>
-            </header>
-            <div class="onboarding-progress" aria-hidden="true">
-                <span class="onboarding-progress-segment is-active"></span>
-                <span class="onboarding-progress-segment"></span>
-                <span class="onboarding-progress-segment"></span>
-            </div>
-
-            <div class="onboarding-step" data-onboarding-step="0">
-                <div class="onboarding-welcome">
-                    <h2 data-i18n="onboarding.welcomeTitle">为编程竞赛准备好你的工作区</h2>
-                    <p data-i18n="onboarding.welcomeDescription">简洁、专注的 C++ 开发环境，设置完成后即可开始。</p>
-                    <div class="onboarding-feature-grid">
-                        <div class="onboarding-feature">
-                            <i class="codicon codicon-code" aria-hidden="true"></i>
-                            <span data-i18n="onboarding.featureEditor">VS Code 风格代码编辑</span>
-                        </div>
-                        <div class="onboarding-feature">
-                            <i class="codicon codicon-checklist" aria-hidden="true"></i>
-                            <span data-i18n="onboarding.featureSamples">快速运行样例测试</span>
-                        </div>
-                        <div class="onboarding-feature">
-                            <i class="codicon codicon-sync" aria-hidden="true"></i>
-                            <span data-i18n="onboarding.featureStress">自动化代码对拍</span>
-                        </div>
-                        <div class="onboarding-feature">
-                            <i class="codicon codicon-settings-gear" aria-hidden="true"></i>
-                            <span data-i18n="onboarding.featurePreferences">按你的习惯定制</span>
-                        </div>
+                    <div class="onboarding-setting-list">
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.wordWrap">自动换行</strong>
+                                <small data-i18n="onboarding.wordWrapDesc">长代码行在编辑区域内折行显示。</small>
+                            </span>
+                            <input id="onboarding-word-wrap" type="checkbox" />
+                        </label>
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.autoCompletion">代码自动补全</strong>
+                                <small data-i18n="onboarding.autoCompletionDesc">输入代码时显示补全建议。</small>
+                            </span>
+                            <input id="onboarding-auto-completion" type="checkbox" checked />
+                        </label>
+                        <label class="onboarding-setting">
+                            <span class="onboarding-setting-copy">
+                                <strong data-i18n="onboarding.autoSave">自动保存</strong>
+                                <small data-i18n="onboarding.autoSaveDesc">编辑内容会定时保存到本地。</small>
+                            </span>
+                            <input id="onboarding-auto-save" type="checkbox" checked />
+                        </label>
                     </div>
                 </div>
-            </div>
 
-            <div class="onboarding-step" data-onboarding-step="1" hidden>
-                <div class="onboarding-field">
-                    <label for="onboarding-language" data-i18n="onboarding.language">界面语言</label>
-                    <select id="onboarding-language" class="onboarding-select">
-                        <option value="zh-cn">简体中文</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-                <fieldset class="onboarding-field">
-                    <legend data-i18n="onboarding.theme">选择主题</legend>
-                    <div class="onboarding-theme-options" role="group">
-                        <button class="onboarding-theme-choice is-selected" type="button" data-theme-choice="dark" aria-pressed="true">
-                            <span class="onboarding-theme-preview theme-preview-dark"></span>
-                            <span data-i18n="onboarding.darkTheme">深色</span>
+                <p class="onboarding-error" id="onboarding-error" role="alert" hidden></p>
+                <div class="onboarding-actions">
+                    <div class="onboarding-action-group">
+                        <button
+                            class="onboarding-back"
+                            id="onboarding-back"
+                            type="button"
+                            data-i18n="onboarding.back"
+                            hidden
+                        >
+                            上一步
                         </button>
-                        <button class="onboarding-theme-choice" type="button" data-theme-choice="light" aria-pressed="false">
-                            <span class="onboarding-theme-preview theme-preview-light"></span>
-                            <span data-i18n="onboarding.lightTheme">浅色</span>
+                        <button class="onboarding-next" id="onboarding-next" type="button" data-i18n="onboarding.start">
+                            开始设置
                         </button>
                     </div>
-                </fieldset>
-            </div>
-
-            <div class="onboarding-step" data-onboarding-step="2" hidden>
-                <div class="onboarding-setting-list">
-                    <label class="onboarding-setting">
-                        <span class="onboarding-setting-copy">
-                            <strong data-i18n="onboarding.useTabs">始终使用 Tab 缩进</strong>
-                            <small data-i18n="onboarding.useTabsDesc">编辑器和代码格式化统一使用制表符。</small>
-                        </span>
-                        <input id="onboarding-use-tabs" type="checkbox" checked>
-                    </label>
-                    <label class="onboarding-setting">
-                        <span class="onboarding-setting-copy">
-                            <strong data-i18n="onboarding.formatOnSave">保存时自动格式化</strong>
-                            <small data-i18n="onboarding.formatOnSaveDesc">保存 C/C++ 文件前自动应用格式化规则。</small>
-                        </span>
-                        <input id="onboarding-format-on-save" type="checkbox" checked>
-                    </label>
-                    <label class="onboarding-setting">
-                        <span class="onboarding-setting-copy">
-                            <strong data-i18n="onboarding.glassEffect">启用玻璃效果</strong>
-                            <small data-i18n="onboarding.glassEffectDesc">为编辑区域启用轻透磨砂效果。</small>
-                        </span>
-                        <input id="onboarding-glass-effect" type="checkbox" checked>
-                    </label>
                 </div>
-                <div class="onboarding-field onboarding-opacity-field">
-                    <label for="onboarding-opacity">
-                        <span data-i18n="onboarding.transparency">窗口透明度</span>
-                        <output id="onboarding-opacity-value">5%</output>
-                    </label>
-                    <input id="onboarding-opacity" type="range" min="0" max="0.8" step="0.01" value="0.05">
-                </div>
-            </div>
+            </section>
+        </div>
 
-            <p class="onboarding-error" id="onboarding-error" role="alert" hidden></p>
-            <div class="onboarding-actions">
-                <div class="onboarding-action-group">
-                    <button class="onboarding-back" id="onboarding-back" type="button" data-i18n="onboarding.back" hidden>上一步</button>
-                    <button class="onboarding-next" id="onboarding-next" type="button" data-i18n="onboarding.start">开始设置</button>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <script>
-        // 语言 worker（json/css/html/ts 等）的 worker 文件本身是 AMD 模块，直接作为
-        // getWorkerUrl 返回会被当成普通脚本加载而缺少 AMD loader，导致
-        // "define is not defined"。workerMain.js 是 Monaco 的自引导入口，会在
-        // worker 内自行加载 AMD loader 并根据消息加载对应的语言 worker 模块，
-        // 因此所有 worker 统一返回 workerMain.js。
-        window.MonacoEnvironment = {
-            getWorkerUrl: function (moduleId, label) {
-                return '../../node_modules/monaco-editor/min/vs/base/worker/workerMain.js';
-            }
-        };
-    </script>
-    <script src="../../node_modules/monaco-editor/min/vs/loader.js"></script>
-    <script src="js/onboarding.bundle.js"></script>
-    <script>
-        (function() {
-            window.__oicppAmdDefine = window.define;
-            window.__oicppAmdRequire = window.require;
-            window.define = undefined;
-        })();
-    </script>
-    <script src="../../node_modules/xterm/lib/xterm.js"></script>
-    <script src="../../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
-    <script src="../../node_modules/@xterm/addon-unicode11/lib/addon-unicode11.js"></script>
-    <script>
-        (function() {
-            if (window.__oicppAmdDefine) {
-                window.define = window.__oicppAmdDefine;
-            }
-            if (window.__oicppAmdRequire) {
-                window.require = window.__oicppAmdRequire;
-            }
-        })();
-    </script>
-    <script>
-        require.config({ 
-            paths: { 
-                vs: '../../node_modules/monaco-editor/min/vs' 
-            },
-            'vs/nls': {
-                availableLanguages: {
-                    '*': 'zh-cn'
+        <script>
+            // 语言 worker（json/css/html/ts 等）的 worker 文件本身是 AMD 模块，直接作为
+            // getWorkerUrl 返回会被当成普通脚本加载而缺少 AMD loader，导致
+            // "define is not defined"。workerMain.js 是 Monaco 的自引导入口，会在
+            // worker 内自行加载 AMD loader 并根据消息加载对应的语言 worker 模块，
+            // 因此所有 worker 统一返回 workerMain.js。
+            window.MonacoEnvironment = {
+                getWorkerUrl: function (moduleId, label) {
+                    return '../../node_modules/monaco-editor/min/vs/base/worker/workerMain.js';
+                },
+            };
+        </script>
+        <script src="../../node_modules/monaco-editor/min/vs/loader.js"></script>
+        <script src="js/onboarding.bundle.js"></script>
+        <script>
+            (function () {
+                window.__oicppAmdDefine = window.define;
+                window.__oicppAmdRequire = window.require;
+                window.define = undefined;
+            })();
+        </script>
+        <script src="../../node_modules/xterm/lib/xterm.js"></script>
+        <script src="../../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+        <script src="../../node_modules/@xterm/addon-unicode11/lib/addon-unicode11.js"></script>
+        <script>
+            (function () {
+                if (window.__oicppAmdDefine) {
+                    window.define = window.__oicppAmdDefine;
                 }
-            }
-        });
-        require(['vs/editor/editor.main'], function() {
-            logInfo('Monaco Editor 本地库加载完成');
-        });
-    </script>
-    
-    <script src="js/electron-helper.js"></script>
-    <script src="js/shared/output-normalize.js"></script>
-    <script src="js/ui/icons.js"></script>
-    <script src="js/app-window.js"></script>
-    <script src="../utils/font-detector.js"></script>
-    <script src="js/settings-init.js"></script>
-    <script src="js/dialog.js"></script>
-    <script src="js/folder-picker.js"></script>
-    <script src="js/compile-manager.js"></script>
-    <script src="js/formatters/cppFormatter.js"></script>
-    <script src="js/lsp-client.js"></script>
-    <script src="js/monaco-editor-manager.js"></script>
-    <script src="js/titlebar.js"></script>
-    <script src="js/browser-manager.js"></script>
-    <script src="js/sidebar/fileExplorer.js"></script>
-    <script src="js/sidebar/sampleTester.js"></script>
-    <script src="js/sidebar/debugPanel.js"></script>
-    <script src="js/sidebar/codeComparer.js"></script>
-    
-    <script src="js/sidebar.js"></script>
-    <script src="js/tabs.js"></script>
-    <script src="js/terminal-panel.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/quick-open.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/init.js"></script>
-</body>
+                if (window.__oicppAmdRequire) {
+                    window.require = window.__oicppAmdRequire;
+                }
+            })();
+        </script>
+        <script>
+            require.config({
+                paths: {
+                    vs: '../../node_modules/monaco-editor/min/vs',
+                },
+                'vs/nls': {
+                    availableLanguages: {
+                        '*': 'zh-cn',
+                    },
+                },
+            });
+            require(['vs/editor/editor.main'], function () {
+                logInfo('Monaco Editor 本地库加载完成');
+            });
+        </script>
+
+        <script src="js/electron-helper.js"></script>
+        <script src="js/shared/output-normalize.js"></script>
+        <script src="js/ui/icons.js"></script>
+        <script src="js/app-window.js"></script>
+        <script src="../utils/font-detector.js"></script>
+        <script src="js/settings-init.js"></script>
+        <script src="js/dialog.js"></script>
+        <script src="js/folder-picker.js"></script>
+        <script src="js/compile-manager.js"></script>
+        <script src="js/formatters/cppFormatter.js"></script>
+        <script src="js/lsp-client.js"></script>
+        <script src="js/monaco-editor-manager.js"></script>
+        <script src="js/titlebar.js"></script>
+        <script src="js/browser-manager.js"></script>
+        <script src="js/sidebar/fileExplorer.js"></script>
+        <script src="js/sidebar/sampleTester.js"></script>
+        <script src="js/sidebar/debugPanel.js"></script>
+        <script src="js/sidebar/codeComparer.js"></script>
+
+        <script src="js/sidebar.js"></script>
+        <script src="js/tabs.js"></script>
+        <script src="js/terminal-panel.js"></script>
+        <script src="js/main.js"></script>
+        <script src="js/quick-open.js"></script>
+        <script src="js/i18n.js"></script>
+        <script src="js/init.js"></script>
+    </body>
 </html>

@@ -28,16 +28,27 @@ body {
     --hover-soft-strong: color-mix(in srgb, var(--text-color) 13%, transparent);
 
     /* 阴影层级：面板 / 浮出层（菜单）/ 模态对话框 */
-    --panel-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+    --panel-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --flyout-shadow: 0 8px 28px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.18);
     --dialog-shadow: 0 16px 48px rgba(0, 0, 0, 0.38), 0 4px 14px rgba(0, 0, 0, 0.24);
 
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
     /* WinUI 质感：优先使用 Windows 11 系统字体；中文显式指定微软雅黑 UI */
-    font-family: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', -apple-system,
-        BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-        'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family:
+        'Segoe UI Variable Text',
+        'Segoe UI',
+        'Microsoft YaHei UI',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Roboto',
+        'Oxygen',
+        'Ubuntu',
+        'Cantarell',
+        'Fira Sans',
+        'Droid Sans',
+        'Helvetica Neue',
+        sans-serif;
 }
 
 /* ---------------------------------------------------------
@@ -45,7 +56,7 @@ body {
    --------------------------------------------------------- */
 body,
 body.theme-dark,
-body[data-theme="dark"] {
+body[data-theme='dark'] {
     --bg-color: #1b1b1b;
     --card-bg: #202020;
     --sidebar-bg: #1b1b1b;
@@ -73,8 +84,8 @@ body[data-theme="dark"] {
 }
 
 body.theme-light,
-body[data-theme="light"],
-body[data-editor-theme="light"] {
+body[data-theme='light'],
+body[data-editor-theme='light'] {
     --bg-color: #f8f8f8;
     --card-bg: #ffffff;
     --sidebar-bg: #f8f8f8;
@@ -99,12 +110,24 @@ body[data-editor-theme="light"] {
 }
 
 /* 具名主题仅微调面板间隙底色，保持各自气质 */
-body[data-theme="monokai"]         { --app-bg: #1c1d18; }
-body[data-theme="github-light"]    { --app-bg: #f0f3f6; }
-body[data-theme="github-dark"]     { --app-bg: #010409; }
-body[data-theme="solarized-light"] { --app-bg: #e9e1cb; }
-body[data-theme="solarized-dark"]  { --app-bg: #001d26; }
-body[data-theme="dracula"]         { --app-bg: #1a1b23; }
+body[data-theme='monokai'] {
+    --app-bg: #1c1d18;
+}
+body[data-theme='github-light'] {
+    --app-bg: #f0f3f6;
+}
+body[data-theme='github-dark'] {
+    --app-bg: #010409;
+}
+body[data-theme='solarized-light'] {
+    --app-bg: #e9e1cb;
+}
+body[data-theme='solarized-dark'] {
+    --app-bg: #001d26;
+}
+body[data-theme='dracula'] {
+    --app-bg: #1a1b23;
+}
 
 /* ---------------------------------------------------------
    2. 滚动条：悬浮式圆角胶囊
@@ -233,7 +256,10 @@ body .menu-dropdown {
     box-shadow: var(--flyout-shadow);
     transform-origin: top left;
     transform: translateY(-6px) scale(0.98);
-    transition: opacity 0.08s var(--ease-out), visibility 0s, transform 0.08s var(--ease-out);
+    transition:
+        opacity 0.08s var(--ease-out),
+        visibility 0s,
+        transform 0.08s var(--ease-out);
 }
 
 body .menu-item:hover .menu-dropdown,
@@ -308,7 +334,9 @@ body .titlebar-quickopen {
     border-radius: var(--radius-sm);
     background-color: var(--hover-soft);
     border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
-    transition: background-color 0.08s var(--ease-out), border-color 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        border-color 0.08s var(--ease-out);
 }
 
 body .titlebar-quickopen:hover {
@@ -362,7 +390,9 @@ body .sidebar-icon {
     height: 36px;
     margin: 0 auto;
     border-radius: var(--radius-md);
-    transition: color 0.08s var(--ease-out), background-color 0.08s var(--ease-out);
+    transition:
+        color 0.08s var(--ease-out),
+        background-color 0.08s var(--ease-out);
 }
 
 body .sidebar-icon:hover {
@@ -516,7 +546,9 @@ body .tab-close {
     height: 18px;
     border-radius: var(--radius-sm);
     font-size: 15px;
-    transition: background-color 0.12s var(--ease-out), color 0.12s var(--ease-out);
+    transition:
+        background-color 0.12s var(--ease-out),
+        color 0.12s var(--ease-out);
 }
 
 body .tab-close:hover {
@@ -540,7 +572,9 @@ body .welcome-section {
 
 body .welcome-button {
     border-radius: var(--radius-sm);
-    transition: background-color 0.08s var(--ease-out), border-color 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        border-color 0.08s var(--ease-out);
 }
 
 body .welcome-recent-item {
@@ -692,7 +726,9 @@ body .dialog-header {
 body .dialog-body input {
     border: 1px solid var(--input-border, var(--border-color));
     border-radius: var(--radius-sm);
-    transition: border-color 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
+    transition:
+        border-color 0.08s var(--ease-out),
+        box-shadow 0.08s var(--ease-out);
 }
 
 body .dialog-body input:focus {
@@ -711,7 +747,10 @@ body .dialog-btn {
     padding: 6px 16px;
     min-width: 64px;
     font-weight: 600;
-    transition: background-color 0.08s var(--ease-out), border-color 0.08s var(--ease-out), transform 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        border-color 0.08s var(--ease-out),
+        transform 0.08s var(--ease-out);
 }
 
 body .dialog-btn:active {
@@ -771,7 +810,7 @@ body .context-menu-item {
     transition: background-color 0.12s var(--ease-out);
 }
 
-body .context-menu-item[data-separator="true"] {
+body .context-menu-item[data-separator='true'] {
     margin: 5px 8px;
     border-radius: 0;
 }
@@ -786,15 +825,17 @@ body :is(.message, .message-toast) {
 /* ---------------------------------------------------------
    10. 输入控件与按钮（全局 WinUI 化）
    --------------------------------------------------------- */
-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+body input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
 body textarea,
 body select {
     border-radius: var(--radius-sm);
-    transition: border-color 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out),
+    transition:
+        border-color 0.08s var(--ease-out),
+        box-shadow 0.08s var(--ease-out),
         background-color 0.08s var(--ease-out);
 }
 
-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
+body input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
 body textarea:focus,
 body select:focus {
     outline: none;
@@ -802,19 +843,22 @@ body select:focus {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 25%, transparent);
 }
 
-body input[type="checkbox"],
-body input[type="radio"] {
+body input[type='checkbox'],
+body input[type='radio'] {
     accent-color: var(--primary-color);
 }
 
 body button {
-    transition: background-color 0.08s var(--ease-out), border-color 0.08s var(--ease-out),
-        box-shadow 0.08s var(--ease-out), color 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        border-color 0.08s var(--ease-out),
+        box-shadow 0.08s var(--ease-out),
+        color 0.08s var(--ease-out);
 }
 
-body [class*="-btn"],
-body [class*="btn-"],
-body [class*="button"] {
+body [class*='-btn'],
+body [class*='btn-'],
+body [class*='button'] {
     border-radius: var(--radius-sm);
 }
 
@@ -849,11 +893,30 @@ body .resize-handle {
 /* ---------------------------------------------------------
    11. 侧栏功能面板（样例测试器 / 对拍器 / 调试 / 编译输出 / 浏览器）
    --------------------------------------------------------- */
-body :is(.samples-summary, .sample-group, .analysis-card, .diff-section, .compare-file-section,
-    .compare-config-section, .compare-notice, .global-settings, .debug-section, .spj-file-display,
-    .file-path-display, .file-reference, .program-output, .spj-help-text, .status-badge,
-    .breakpoints-panel, .call-stack-panel, .variables-panel, .watch-variables-section,
-    .samples-content > div, .file-select-item) {
+body
+    :is(
+        .samples-summary,
+        .sample-group,
+        .analysis-card,
+        .diff-section,
+        .compare-file-section,
+        .compare-config-section,
+        .compare-notice,
+        .global-settings,
+        .debug-section,
+        .spj-file-display,
+        .file-path-display,
+        .file-reference,
+        .program-output,
+        .spj-help-text,
+        .status-badge,
+        .breakpoints-panel,
+        .call-stack-panel,
+        .variables-panel,
+        .watch-variables-section,
+        .samples-content > div,
+        .file-select-item
+    ) {
     border-radius: var(--radius-md);
 }
 
@@ -901,7 +964,9 @@ body .sidebar-item {
     border-radius: var(--radius-sm);
     padding: 9px 14px;
     margin: 1px 2px;
-    transition: background-color 0.08s var(--ease-out), color 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        color 0.08s var(--ease-out);
 }
 
 body .sidebar-item:hover {
@@ -962,7 +1027,8 @@ body .keybinding-row {
 /* ---------------------------------------------------------
    14. 毛玻璃模式适配（在圆角结构上恢复半透明表面）
    --------------------------------------------------------- */
-body.glass-effect-enabled:has(> .main-container) :is(.titlebar, .sidebar-icons, .sidebar-panel, .editor-container, .status-bar) {
+body.glass-effect-enabled:has(> .main-container)
+    :is(.titlebar, .sidebar-icons, .sidebar-panel, .editor-container, .status-bar) {
     background-color: var(--glass-surface, rgba(16, 19, 27, 0.42));
     -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
     backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
@@ -1139,14 +1205,18 @@ body .tree-item.selected .tree-item-content:hover {
 }
 
 /* Monaco 弹层：补全建议 / 悬浮文档 / 参数提示 / 重命名框 */
-body :is(.monaco-editor .suggest-widget, .monaco-editor .monaco-hover,
-    .monaco-editor .parameter-hints-widget, .monaco-editor .rename-box) {
+body
+    :is(
+        .monaco-editor .suggest-widget,
+        .monaco-editor .monaco-hover,
+        .monaco-editor .parameter-hints-widget,
+        .monaco-editor .rename-box
+    ) {
     border-radius: var(--radius-md);
     overflow: hidden;
 }
 
-body :is(.monaco-editor .suggest-widget, .monaco-editor .monaco-hover,
-    .monaco-editor .parameter-hints-widget) {
+body :is(.monaco-editor .suggest-widget, .monaco-editor .monaco-hover, .monaco-editor .parameter-hints-widget) {
     border: 1px solid var(--panel-border) !important;
     box-shadow: var(--flyout-shadow) !important;
 }
@@ -1206,8 +1276,14 @@ body :is(.analysis-badge, .analysis-badge.severity-warning, .analysis-badge.seve
     border-radius: var(--radius-pill);
 }
 
-body :is(.message-popup, .message-popup.message-info, .message-popup.message-success,
-    .message-popup.message-warning, .message-popup.message-error) {
+body
+    :is(
+        .message-popup,
+        .message-popup.message-info,
+        .message-popup.message-success,
+        .message-popup.message-warning,
+        .message-popup.message-error
+    ) {
     border-radius: var(--radius-md);
     box-shadow: var(--flyout-shadow);
 }
@@ -1269,8 +1345,12 @@ body .app-window-overlay.open {
 }
 
 @keyframes appWindowOverlayIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 body .app-window {
@@ -1284,14 +1364,22 @@ body .app-window {
     background-color: var(--glass-surface-strong, rgba(20, 23, 30, 0.86));
     -webkit-backdrop-filter: blur(28px) saturate(150%);
     backdrop-filter: blur(28px) saturate(150%);
-    box-shadow: var(--dialog-shadow), 0 0 0 1px rgba(0, 0, 0, 0.2);
+    box-shadow:
+        var(--dialog-shadow),
+        0 0 0 1px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     animation: appWindowIn 0.1s var(--ease-out);
 }
 
 @keyframes appWindowIn {
-    from { opacity: 0; transform: translateY(14px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 body .app-window-titlebar {
@@ -1325,7 +1413,9 @@ body .app-window-close {
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color 0.08s var(--ease-out), color 0.08s var(--ease-out);
+    transition:
+        background-color 0.08s var(--ease-out),
+        color 0.08s var(--ease-out);
 }
 
 body .app-window-close:hover {
@@ -1359,9 +1449,19 @@ body .app-window.dragging .app-window-frame {
    19. 全局动效层（所有控件与状态切换都有过渡）
    --------------------------------------------------------- */
 /* 框架面板：颜色/阴影随主题与状态平滑变化 */
-body :is(.titlebar, .sidebar-icons, .sidebar-panel, .editor-container, .status-bar,
-    .integrated-terminal-panel, .panel-header) {
-    transition: background-color 0.1s var(--ease-out), border-color 0.1s var(--ease-out),
+body
+    :is(
+        .titlebar,
+        .sidebar-icons,
+        .sidebar-panel,
+        .editor-container,
+        .status-bar,
+        .integrated-terminal-panel,
+        .panel-header
+    ) {
+    transition:
+        background-color 0.1s var(--ease-out),
+        border-color 0.1s var(--ease-out),
         box-shadow 0.1s var(--ease-out);
 }
 
@@ -1385,8 +1485,14 @@ body .panel-content.active {
 }
 
 @keyframes panelContentIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 标签页进入与激活微动效 */
@@ -1395,8 +1501,14 @@ body .tab {
 }
 
 @keyframes tabIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 活动栏指示条弹性出现 */
@@ -1405,8 +1517,14 @@ body .sidebar-icon.active::before {
 }
 
 @keyframes indicatorIn {
-    from { transform: translateY(-50%) scaleY(0.2); opacity: 0; }
-    to { transform: translateY(-50%) scaleY(1); opacity: 1; }
+    from {
+        transform: translateY(-50%) scaleY(0.2);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(-50%) scaleY(1);
+        opacity: 1;
+    }
 }
 
 /* 树节点进入（目录展开时子项依次淡入由浏览器批量处理） */
@@ -1415,8 +1533,14 @@ body .tree-item {
 }
 
 @keyframes treeItemIn {
-    from { opacity: 0; transform: translateX(-4px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* 按钮/图标按压反馈 */
@@ -1434,8 +1558,14 @@ body .quick-open-container {
 }
 
 @keyframes qoIn {
-    from { opacity: 0; transform: translateY(-10px) scale(0.985); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* 编译输出浮窗滑入 */
@@ -1444,8 +1574,14 @@ body .compile-output-window.show {
 }
 
 @keyframes coIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 终端面板展开动画 */
@@ -1454,8 +1590,14 @@ body .integrated-terminal-panel:not(.collapsed) {
 }
 
 @keyframes terminalIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 设置窗口/对话框已有独立入场动画；统一加退出预置类 */
@@ -1476,7 +1618,9 @@ body :is(.menu-dropdown-item, .context-menu-item):active {
 
 /* 尊重系统"减少动态效果"设置 */
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
@@ -1502,7 +1646,11 @@ body .sidebar-resizer::before {
     transform: translate(-50%, -50%);
     width: 4px;
     height: 22px;
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--text-color) 45%, transparent) 1px, transparent 1.3px);
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--text-color) 45%, transparent) 1px,
+        transparent 1.3px
+    );
     background-size: 4px 7px;
     background-position: center;
     opacity: 0.75;
@@ -1528,7 +1676,11 @@ body .editor-group-resizer {
 }
 
 body :is(.resize-handle, .editor-group-resizer)::after {
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--text-color) 40%, transparent) 1px, transparent 1.3px);
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--text-color) 40%, transparent) 1px,
+        transparent 1.3px
+    );
     background-size: 2px 7px;
     background-position: center;
     opacity: 0.7;
@@ -1553,7 +1705,11 @@ body .integrated-terminal-resizer::after {
     transform: translate(-50%, -50%);
     width: 22px;
     height: 4px;
-    background-image: radial-gradient(circle, color-mix(in srgb, var(--text-color) 40%, transparent) 1px, transparent 1.3px);
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--text-color) 40%, transparent) 1px,
+        transparent 1.3px
+    );
     background-size: 7px 4px;
     background-position: center;
     opacity: 0.7;

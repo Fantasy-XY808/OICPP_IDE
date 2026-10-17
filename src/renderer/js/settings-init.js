@@ -2,7 +2,7 @@
     'use strict';
     document.addEventListener('DOMContentLoaded', async function () {
         try {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
 
             // Initialize i18n for settings pages
             if (window.i18n && typeof window.i18n.init === 'function') {
@@ -82,7 +82,7 @@
                 if (validatedFont !== settings.font) {
                     fontFamily = validatedFont;
                     if (window.electronAPI && window.electronAPI.updateSettings) {
-                        window.electronAPI.updateSettings({ font: validatedFont }).catch(err => {
+                        window.electronAPI.updateSettings({ font: validatedFont }).catch((err) => {
                             logError('更新字体设置失败:', err);
                         });
                     }
@@ -90,13 +90,13 @@
             }
 
             const editorElements = document.querySelectorAll('.monaco-editor, .monaco-editor-container');
-            editorElements.forEach(element => {
+            editorElements.forEach((element) => {
                 if (settings.font) element.style.fontFamily = fontFamily;
                 if (settings.fontSize) element.style.fontSize = fontSize + 'px';
             });
 
             const breadcrumbEls = document.querySelectorAll('.folder-picker-breadcrumb');
-            breadcrumbEls.forEach(el => {
+            breadcrumbEls.forEach((el) => {
                 if (settings.fontSize) el.style.fontSize = fontSize + 'px';
                 if (settings.font) el.style.fontFamily = fontFamily;
             });
@@ -115,7 +115,7 @@
                         bgPath = 'file:///' + bgPath;
                     }
                 }
-                
+
                 document.body.style.backgroundImage = `url('${bgPath}')`;
                 document.body.style.backgroundSize = 'cover';
                 document.body.style.backgroundRepeat = 'no-repeat';
@@ -219,7 +219,7 @@
         }
 
         const event = new CustomEvent('settings-applied', {
-            detail: settings
+            detail: settings,
         });
         document.dispatchEvent(event);
     }

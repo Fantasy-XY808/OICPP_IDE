@@ -3,10 +3,10 @@ const { ipcRenderer } = require('electron');
 class TemplatesSettings {
     constructor() {
         this.settings = {
-            cppTemplate: ''
+            cppTemplate: '',
         };
-    this.snippets = [];
-        
+        this.snippets = [];
+
         this.init();
     }
 
@@ -29,13 +29,13 @@ class TemplatesSettings {
         const sidebarItems = document.querySelectorAll('.sidebar-item');
         const sections = document.querySelectorAll('.settings-section');
 
-        sidebarItems.forEach(item => {
+        sidebarItems.forEach((item) => {
             item.addEventListener('click', () => {
-                sidebarItems.forEach(i => i.classList.remove('active'));
+                sidebarItems.forEach((i) => i.classList.remove('active'));
                 item.classList.add('active');
 
-                sections.forEach(section => section.classList.remove('active'));
-                
+                sections.forEach((section) => section.classList.remove('active'));
+
                 const targetId = item.getAttribute('data-target');
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
@@ -69,14 +69,14 @@ class TemplatesSettings {
 
     applyTheme(theme) {
         logInfo('应用主题到代码模板设置页面:', theme);
-        
+
         document.body.setAttribute('data-theme', theme);
         document.documentElement.setAttribute('data-theme', theme);
     }
 
     setupEventListeners() {
         logInfo('设置事件监听器');
-        
+
         const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || '');
         const modKey = (e) => (isMac ? e.metaKey : e.ctrlKey);
 
@@ -86,21 +86,21 @@ class TemplatesSettings {
                 this.saveSettings();
             });
         }
-        
+
         const cancelBtn = document.getElementById('cancel-settings');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
                 this.closeWindow();
             });
         }
-        
+
         const resetBtn = document.getElementById('reset-settings');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 this.resetSettings();
             });
         }
-        
+
         const previewBtn = document.getElementById('preview-template');
         if (previewBtn) {
             previewBtn.addEventListener('click', () => {
@@ -156,14 +156,14 @@ class TemplatesSettings {
                 }
             });
         }
-        
+
         const closePreviewBtn = document.getElementById('close-preview');
         if (closePreviewBtn) {
             closePreviewBtn.addEventListener('click', () => {
                 this.closePreview();
             });
         }
-        
+
         const previewDialog = document.getElementById('preview-dialog');
         if (previewDialog) {
             previewDialog.addEventListener('click', (e) => {
@@ -172,27 +172,27 @@ class TemplatesSettings {
                 }
             });
         }
-        
+
         const cppTemplateTextarea = document.getElementById('cpp-template');
         if (cppTemplateTextarea) {
             cppTemplateTextarea.addEventListener('input', (e) => {
                 this.settings.cppTemplate = e.target.value;
                 logInfo('模板内容已更新');
             });
-            
+
             cppTemplateTextarea.addEventListener('keydown', (e) => {
                 // macOS 使用 Cmd+S，Windows/Linux 使用 Ctrl+S
                 if (modKey(e) && e.key === 's') {
                     e.preventDefault();
                     this.saveSettings();
                 }
-                
+
                 if (e.key === 'Tab') {
                     e.preventDefault();
                     const start = e.target.selectionStart;
                     const end = e.target.selectionEnd;
                     const value = e.target.value;
-                    
+
                     e.target.value = value.substring(0, start) + '    ' + value.substring(end);
                     e.target.selectionStart = e.target.selectionEnd = start + 4;
                 }
@@ -213,7 +213,6 @@ class TemplatesSettings {
         });
     }
 
-
     static get DEFAULT_CPP_TEMPLATE() {
         return [
             '#include <bits/stdc++.h>',
@@ -222,22 +221,25 @@ class TemplatesSettings {
             'int main() {',
             '    // 在此处编写你的代码',
             '    return 0;',
-            '}'
+            '}',
         ].join('\n');
     }
 
     static get DEFAULT_SNIPPETS() {
         return [
             { name: '快读快写', content: 'ios::sync_with_stdio(false);\ncin.tie(nullptr);' },
-            { name: '关闭流同步(main 内)', content: 'ios::sync_with_stdio(false);\ncin.tie(nullptr);\ncout << fixed << setprecision(6);' },
-            { name: '调试输出', content: '#ifdef LOCAL\nfreopen("debug.log", "w", stderr);\n#endif' }
+            {
+                name: '关闭流同步(main 内)',
+                content: 'ios::sync_with_stdio(false);\ncin.tie(nullptr);\ncout << fixed << setprecision(6);',
+            },
+            { name: '调试输出', content: '#ifdef LOCAL\nfreopen("debug.log", "w", stderr);\n#endif' },
         ];
     }
 
     async loadSettings() {
         try {
             logInfo('加载设置中...');
-            
+
             if (window.electronAPI && window.electronAPI.getAllSettings) {
                 const allSettings = await window.electronAPI.getAllSettings();
                 if (allSettings) {
@@ -258,7 +260,7 @@ class TemplatesSettings {
                 }
             } else {
                 logInfo('Electron API不可用，尝试使用ipcRenderer');
-                
+
                 const allSettings = await ipcRenderer.invoke('get-all-settings');
                 if (allSettings) {
                     if (allSettings.cppTemplate) {
@@ -270,7 +272,7 @@ class TemplatesSettings {
                     logInfo('从ipcRenderer获取设置成功');
                 }
             }
-            
+
             logInfo('模板设置加载完成:', this.settings);
         } catch (error) {
             logError('加载模板设置失败:', error);
@@ -280,7 +282,7 @@ class TemplatesSettings {
 
     updateUI() {
         logInfo('更新UI界面');
-        
+
         const cppTemplateTextarea = document.getElementById('cpp-template');
         if (cppTemplateTextarea) {
             cppTemplateTextarea.value = this.settings.cppTemplate;
@@ -294,43 +296,50 @@ class TemplatesSettings {
     async saveSettings() {
         try {
             logInfo('保存设置中...');
-            
+
             const cppTemplateTextarea = document.getElementById('cpp-template');
             if (!cppTemplateTextarea) {
                 throw new Error('找不到模板编辑器');
             }
-            
+
             const cppTemplate = cppTemplateTextarea.value.trim();
-            
+
             // 允许文件模板为空，只要有关键词代码片段即可保存
             if (!cppTemplate && (!this.snippets || this.snippets.length === 0)) {
                 this.showMessage('模板内容和代码片段不能同时为空，请至少填写一项', 'error');
                 return;
             }
-            
+
             const newSettings = {
                 cppTemplate: cppTemplate,
-                codeSnippets: this.snippets
+                codeSnippets: this.snippets,
             };
-            
+
             logInfo('准备保存的设置:', newSettings);
-            
+
             let result;
             if (window.electronAPI && window.electronAPI.updateSettings) {
                 result = await window.electronAPI.updateSettings(newSettings);
             } else {
                 result = await ipcRenderer.invoke('update-settings', newSettings);
             }
-            
+
             if (result && result.success) {
-                this.showMessage((window.i18n ? window.i18n.t('templates.saveSuccess') : '模板设置保存成功！'), 'success');
+                this.showMessage(
+                    window.i18n ? window.i18n.t('templates.saveSuccess') : '模板设置保存成功！',
+                    'success'
+                );
                 logInfo('设置保存成功');
             } else {
                 const errorMsg = result ? result.error : '未知错误';
-                this.showMessage((window.i18n ? window.i18n.t('templates.saveFail', {error: errorMsg}) : '保存设置失败：' + errorMsg), 'error');
+                this.showMessage(
+                    window.i18n
+                        ? window.i18n.t('templates.saveFail', { error: errorMsg })
+                        : '保存设置失败：' + errorMsg,
+                    'error'
+                );
                 logError('保存设置失败:', errorMsg);
             }
-            
         } catch (error) {
             logError('保存模板设置失败:', error);
             this.showMessage('保存设置失败：' + error.message, 'error');
@@ -340,28 +349,31 @@ class TemplatesSettings {
     async resetSettings() {
         try {
             logInfo('重置设置中...');
-            
+
             if (confirm('确定要重置模板为默认设置吗？这将丢失当前的自定义模板。')) {
                 const defaultTemplate = '';
                 this.settings.cppTemplate = defaultTemplate;
                 this.snippets = [];
-                
+
                 const cppTemplateTextarea = document.getElementById('cpp-template');
                 if (cppTemplateTextarea) {
                     cppTemplateTextarea.value = defaultTemplate;
                 }
-                
+
                 const newSettings = { cppTemplate: defaultTemplate, codeSnippets: [] };
-                
+
                 let result;
                 if (window.electronAPI && window.electronAPI.updateSettings) {
                     result = await window.electronAPI.updateSettings(newSettings);
                 } else {
                     result = await ipcRenderer.invoke('update-settings', newSettings);
                 }
-                
+
                 if (result && result.success) {
-                    this.showMessage((window.i18n ? window.i18n.t('templates.resetSuccess') : '模板与片段已重置为默认设置'), 'success');
+                    this.showMessage(
+                        window.i18n ? window.i18n.t('templates.resetSuccess') : '模板与片段已重置为默认设置',
+                        'success'
+                    );
                     logInfo('设置重置成功');
                 } else {
                     this.showMessage('重置设置失败：' + (result ? result.error : '未知错误'), 'error');
@@ -442,7 +454,7 @@ class TemplatesSettings {
             this.showMessage('片段已更新，点击保存写入设置', 'success');
         } else {
             // 添加模式：检查重复关键词
-            const idx = this.snippets.findIndex(s => (s.keyword || '').toLowerCase() === keyword.toLowerCase());
+            const idx = this.snippets.findIndex((s) => (s.keyword || '').toLowerCase() === keyword.toLowerCase());
             if (idx >= 0) {
                 this.snippets[idx] = { keyword, description, content };
                 this.showMessage('已覆盖同名片段，点击保存写入设置', 'success');
@@ -460,22 +472,29 @@ class TemplatesSettings {
         const list = document.getElementById('snippets-list');
         if (!list) return;
         if (!this.snippets || this.snippets.length === 0) {
-            list.innerHTML = '<div style="opacity:.8; font-size:12px; padding:6px;">' + (window.i18n ? window.i18n.t('templates.emptySnippetList') : 'No snippets yet. Click the Add button above to add a code snippet.') + '</div>';
+            list.innerHTML =
+                '<div style="opacity:.8; font-size:12px; padding:6px;">' +
+                (window.i18n
+                    ? window.i18n.t('templates.emptySnippetList')
+                    : 'No snippets yet. Click the Add button above to add a code snippet.') +
+                '</div>';
             return;
         }
-        const rows = this.snippets.map((s, i) => {
-            const k = this.escapeHtml(s.keyword || '');
-            const d = this.escapeHtml(s.description || '');
-            return `
+        const rows = this.snippets
+            .map((s, i) => {
+                const k = this.escapeHtml(s.keyword || '');
+                const d = this.escapeHtml(s.description || '');
+                return `
                 <div class="snippet-row" data-index="${i}" style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--settings-border);">
                     <div style="flex:0 0 160px; font-weight:600;">${k}</div>
                     <div style="flex:1; opacity:.85;">${d}</div>
                     <button class="preview-btn" data-action="edit" style="background:#6c757d;">编辑</button>
                     <button class="preview-btn" data-action="delete" style="background:#dc3545;">删除</button>
                 </div>`;
-        }).join('');
+            })
+            .join('');
         list.innerHTML = rows;
-        list.querySelectorAll('button[data-action]')?.forEach(btn => {
+        list.querySelectorAll('button[data-action]')?.forEach((btn) => {
             btn.addEventListener('click', (e) => {
                 const row = e.target.closest('.snippet-row');
                 const idx = parseInt(row?.dataset.index || '-1', 10);
@@ -502,20 +521,22 @@ class TemplatesSettings {
 
     showPreview() {
         logInfo('显示模板预览');
-        
+
         const cppTemplateTextarea = document.getElementById('cpp-template');
         if (!cppTemplateTextarea) {
             this.showMessage('找不到模板内容', 'error');
             return;
         }
-        
-        const templateContent = cppTemplateTextarea.value || (window.i18n ? window.i18n.t('templates.templateEmpty') : '// Template content is empty');
-        
+
+        const templateContent =
+            cppTemplateTextarea.value ||
+            (window.i18n ? window.i18n.t('templates.templateEmpty') : '// Template content is empty');
+
         const previewContent = document.getElementById('preview-content');
         if (previewContent) {
             previewContent.textContent = templateContent;
         }
-        
+
         const previewDialog = document.getElementById('preview-dialog');
         if (previewDialog) {
             previewDialog.style.display = 'block';
@@ -524,7 +545,7 @@ class TemplatesSettings {
 
     closePreview() {
         logInfo('关闭模板预览');
-        
+
         const previewDialog = document.getElementById('preview-dialog');
         if (previewDialog) {
             previewDialog.style.display = 'none';
@@ -533,12 +554,12 @@ class TemplatesSettings {
 
     showMessage(message, type = 'info') {
         logInfo(`显示消息: [${type}] ${message}`);
-        
+
         const existingToast = document.querySelector('.message-toast');
         if (existingToast) {
             existingToast.remove();
         }
-        
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-toast ${type}`;
         messageDiv.textContent = message;
@@ -550,11 +571,11 @@ class TemplatesSettings {
         } catch (_) {}
 
         document.body.appendChild(messageDiv);
-        
+
         requestAnimationFrame(() => {
             messageDiv.style.opacity = '1';
         });
-        
+
         setTimeout(() => {
             messageDiv.style.opacity = '0';
             setTimeout(() => {
@@ -567,7 +588,7 @@ class TemplatesSettings {
 
     closeWindow() {
         logInfo('关闭窗口');
-        
+
         if (window.close) {
             window.close();
         } else {
@@ -578,7 +599,7 @@ class TemplatesSettings {
 
 window.addEventListener('DOMContentLoaded', () => {
     logInfo('DOM加载完成，初始化模板设置');
-    
+
     try {
         new TemplatesSettings();
     } catch (error) {

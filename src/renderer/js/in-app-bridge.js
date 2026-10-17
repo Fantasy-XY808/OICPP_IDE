@@ -37,15 +37,23 @@
                 ['theme-light', 'theme-dark', 'light-theme', 'dark-theme'].forEach((cls) => {
                     if (parentBody.classList.contains(cls)) document.body.classList.add(cls);
                 });
-            } catch (err) { /* ignore */ }
+            } catch (err) {
+                /* ignore */
+            }
         });
 
         window.close = function () {
             try {
-                window.parent.dispatchEvent(new CustomEvent('oicpp:appwindow-close', {
-                    detail: { frame: window.frameElement }
-                }));
-            } catch (e) { /* ignore */ }
+                window.parent.dispatchEvent(
+                    new CustomEvent('oicpp:appwindow-close', {
+                        detail: { frame: window.frameElement },
+                    })
+                );
+            } catch (e) {
+                /* ignore */
+            }
         };
-    } catch (e) { /* 独立窗口或跨域时静默跳过 */ }
+    } catch (e) {
+        /* 独立窗口或跨域时静默跳过 */
+    }
 })();

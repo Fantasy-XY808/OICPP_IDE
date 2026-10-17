@@ -10,7 +10,11 @@
     const WINDOWS = {}; // id -> { root, win, options }
 
     function log() {
-        try { console.log('[app-window]', ...arguments); } catch (e) { /* ignore */ }
+        try {
+            console.log('[app-window]', ...arguments);
+        } catch (e) {
+            /* ignore */
+        }
     }
 
     function createDom(options) {
@@ -25,7 +29,8 @@
 
         const titlebar = document.createElement('div');
         titlebar.className = 'app-window-titlebar';
-        titlebar.innerHTML = '<span class="app-window-title"></span>' +
+        titlebar.innerHTML =
+            '<span class="app-window-title"></span>' +
             '<button class="app-window-close" tabindex="-1" aria-label="关闭">' +
             '<i class="codicon codicon-close"></i></button>';
         titlebar.querySelector('.app-window-title').textContent = options.title || '窗口';
@@ -85,7 +90,11 @@
     });
 
     function enableDrag(win, handle) {
-        let startX = 0, startY = 0, baseX = 0, baseY = 0, dragging = false;
+        let startX = 0,
+            startY = 0,
+            baseX = 0,
+            baseY = 0,
+            dragging = false;
 
         handle.addEventListener('mousedown', (e) => {
             if (e.target.closest('.app-window-close')) return;
@@ -100,8 +109,8 @@
         });
         window.addEventListener('mousemove', (e) => {
             if (!dragging) return;
-            win.style.left = (baseX + e.clientX - startX) + 'px';
-            win.style.top = (baseY + e.clientY - startY) + 'px';
+            win.style.left = baseX + e.clientX - startX + 'px';
+            win.style.top = baseY + e.clientY - startY + 'px';
             clampIntoViewport(win);
         });
         window.addEventListener('mouseup', () => {
@@ -156,7 +165,7 @@
                 },
                 focus() {
                     dom.overlay.classList.add('open');
-                }
+                },
             };
 
             WINDOWS[id] = { overlay: dom.overlay, win: dom.win, api: winApi, options: opts };
@@ -184,7 +193,7 @@
 
         isOpen(id) {
             return !!(WINDOWS[id] && WINDOWS[id].overlay.classList.contains('open'));
-        }
+        },
     };
 
     window.oicppAppWindow = api;

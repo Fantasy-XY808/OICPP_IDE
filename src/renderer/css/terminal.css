@@ -162,14 +162,14 @@ body.glass-effect-enabled .integrated-terminal-body {
 }
 
 body.theme-light .integrated-terminal-body,
-body[data-theme="light"] .integrated-terminal-body,
-body[data-editor-theme="light"] .integrated-terminal-body {
+body[data-theme='light'] .integrated-terminal-body,
+body[data-editor-theme='light'] .integrated-terminal-body {
     background: transparent;
 }
 
 body.theme-light .integrated-terminal-mount .xterm,
-body[data-theme="light"] .integrated-terminal-mount .xterm,
-body[data-editor-theme="light"] .integrated-terminal-mount .xterm {
+body[data-theme='light'] .integrated-terminal-mount .xterm,
+body[data-editor-theme='light'] .integrated-terminal-mount .xterm {
     background: transparent;
 }
 

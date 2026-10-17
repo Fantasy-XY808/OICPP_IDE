@@ -59,7 +59,7 @@ class BrowserManager {
      */
     createBrowserContainer({ groupId, uniqueKey, url }) {
         // 未指定 URL 时使用内置新标签页
-        const initialUrl = (url && url.trim()) ? url.trim() : this._newTabPage;
+        const initialUrl = url && url.trim() ? url.trim() : this._newTabPage;
         // 主容器
         const container = document.createElement('div');
         container.className = 'browser-container';
@@ -81,9 +81,7 @@ class BrowserManager {
         const webview = document.createElement('webview');
         webview.className = 'browser-webview';
         webview.setAttribute('partition', 'persist:oicpp-browser');
-        const browserUserAgent = navigator.userAgent
-            .replace(/\sElectron\/\S+/i, '')
-            .replace(/\soicpp-ide\/\S+/i, '');
+        const browserUserAgent = navigator.userAgent.replace(/\sElectron\/\S+/i, '').replace(/\soicpp-ide\/\S+/i, '');
         webview.setAttribute('useragent', browserUserAgent);
         // 允许 guest 打开新窗口（target="_blank" / window.open），
         // 否则 Electron 会在 webview 层拦截弹窗，setWindowOpenHandler 不会触发，
@@ -135,7 +133,7 @@ class BrowserManager {
             currentUrl: initialUrl,
             history: [],
             // 标记是否已显示过；首次显示时强制重载，确保 guest 以正确视口重新布局
-            _hasBeenShown: false
+            _hasBeenShown: false,
         };
         this.browserTabs.set(uniqueKey, state);
 
@@ -173,28 +171,40 @@ class BrowserManager {
         navButtons.className = 'browser-nav-buttons';
 
         // 后退
-        const backBtn = this._createNavButton('browser-nav-back', [
-            '<svg width="16" height="16" viewBox="0 0 16 16">',
-            '<path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-            '</svg>'
-        ].join(''), '后退');
+        const backBtn = this._createNavButton(
+            'browser-nav-back',
+            [
+                '<svg width="16" height="16" viewBox="0 0 16 16">',
+                '<path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+                '</svg>',
+            ].join(''),
+            '后退'
+        );
         navButtons.appendChild(backBtn);
 
         // 前进
-        const forwardBtn = this._createNavButton('browser-nav-forward', [
-            '<svg width="16" height="16" viewBox="0 0 16 16">',
-            '<path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-            '</svg>'
-        ].join(''), '前进');
+        const forwardBtn = this._createNavButton(
+            'browser-nav-forward',
+            [
+                '<svg width="16" height="16" viewBox="0 0 16 16">',
+                '<path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+                '</svg>',
+            ].join(''),
+            '前进'
+        );
         navButtons.appendChild(forwardBtn);
 
         // 刷新/停止
-        const refreshBtn = this._createNavButton('browser-nav-reload', [
-            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
-            '<polyline points="23 4 23 10 17 10"/>',
-            '<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
-            '</svg>'
-        ].join(''), '刷新');
+        const refreshBtn = this._createNavButton(
+            'browser-nav-reload',
+            [
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
+                '<polyline points="23 4 23 10 17 10"/>',
+                '<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+                '</svg>',
+            ].join(''),
+            '刷新'
+        );
         refreshBtn.dataset.action = 'reload';
         navButtons.appendChild(refreshBtn);
 
@@ -204,8 +214,11 @@ class BrowserManager {
         const urlInput = document.createElement('input');
         urlInput.type = 'text';
         urlInput.className = 'browser-url-input';
-        urlInput.setAttribute('placeholder', window.i18n ? window.i18n.t('browser.urlPlaceholder') : '输入网址或搜索...');
-        urlInput.value = initialUrl?.startsWith('data:text/html') ? '' : (initialUrl || '');
+        urlInput.setAttribute(
+            'placeholder',
+            window.i18n ? window.i18n.t('browser.urlPlaceholder') : '输入网址或搜索...'
+        );
+        urlInput.value = initialUrl?.startsWith('data:text/html') ? '' : initialUrl || '';
         urlInput.setAttribute('spellcheck', 'false');
         urlInput.setAttribute('autocomplete', 'off');
         navBar.appendChild(urlInput);
@@ -217,7 +230,7 @@ class BrowserManager {
             '<svg width="16" height="16" viewBox="0 0 16 16">',
             '<path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm1 2v8h8V4H4z" fill="currentColor"/>',
             '<path d="M7 7V5h2v2h2v2H9v2H7V9H5V7h2z" fill="currentColor"/>',
-            '</svg>'
+            '</svg>',
         ].join('');
         openNewTabBtn.title = window.i18n ? window.i18n.t('browser.openInNewTab') : '新建浏览器标签页';
         navBar.appendChild(openNewTabBtn);
@@ -286,7 +299,9 @@ class BrowserManager {
             state.isLoading = false;
             this._updateReloadButton(uniqueKey, false);
             navBar.classList.remove('loading');
-            try { updateLocation(webview.getURL()); } catch (_) {}
+            try {
+                updateLocation(webview.getURL());
+            } catch (_) {}
         });
         webview.addEventListener('did-navigate', (event) => updateLocation(event.url));
         webview.addEventListener('did-navigate-in-page', (event) => updateLocation(event.url));
@@ -323,7 +338,7 @@ class BrowserManager {
         // 使用 tabManager 打开新的浏览器标签
         window.tabManager.openBrowserTab({
             url: resolvedUrl,
-            groupId: groupId || window.tabManager.activeGroupId
+            groupId: groupId || window.tabManager.activeGroupId,
         });
     }
 
@@ -402,7 +417,9 @@ class BrowserManager {
     reload(uniqueKey) {
         const state = this.browserTabs.get(uniqueKey);
         if (state?.webview) {
-            try { state.webview.reload(); } catch (_) {}
+            try {
+                state.webview.reload();
+            } catch (_) {}
         }
     }
 
@@ -412,7 +429,9 @@ class BrowserManager {
     stopLoading(uniqueKey) {
         const state = this.browserTabs.get(uniqueKey);
         if (state?.webview) {
-            try { state.webview.stop(); } catch (_) {}
+            try {
+                state.webview.stop();
+            } catch (_) {}
         }
     }
 
@@ -446,7 +465,7 @@ class BrowserManager {
             reloadBtn.innerHTML = [
                 '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">',
                 '<rect x="6" y="6" width="12" height="12" rx="2"/>',
-                '</svg>'
+                '</svg>',
             ].join('');
             reloadBtn.title = window.i18n ? window.i18n.t('browser.stop') : '停止';
             reloadBtn.dataset.action = 'stop';
@@ -455,7 +474,7 @@ class BrowserManager {
                 '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
                 '<polyline points="23 4 23 10 17 10"/>',
                 '<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
-                '</svg>'
+                '</svg>',
             ].join('');
             reloadBtn.title = window.i18n ? window.i18n.t('browser.reload') : '刷新';
             reloadBtn.dataset.action = 'reload';
@@ -495,11 +514,15 @@ class BrowserManager {
         if (!state) return;
         try {
             if (state.webview && state.webview.parentNode) {
-                try { state.webview.stop(); } catch (_) {}
+                try {
+                    state.webview.stop();
+                } catch (_) {}
                 state.webview.parentNode.removeChild(state.webview);
             }
             if (state.resizeObserver) {
-                try { state.resizeObserver.disconnect(); } catch (_) {}
+                try {
+                    state.resizeObserver.disconnect();
+                } catch (_) {}
                 state.resizeObserver = null;
             }
             // 清理导航栏
@@ -556,7 +579,9 @@ class BrowserManager {
             // webview 在 display:none 的容器中初始化时会保留 Chromium 默认的
             // 300x150 guest 尺寸；显示后必须用实际像素尺寸触发 guest 重排。
             requestAnimationFrame(() => state.syncWebviewSize?.());
-            try { state.webview.focus(); } catch (_) {}
+            try {
+                state.webview.focus();
+            } catch (_) {}
 
             // 如果是因为 DOM 搬移需要恢复内容，或有内容丢失迹象，则重新加载
             const needsRestore = state._needsContentRestore;

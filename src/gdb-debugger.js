@@ -3,11 +3,7 @@ const path = require('path');
 const os = require('os');
 const EventEmitter = require('events');
 const fs = require('fs');
-const {
-    tokenizeGDBLocals,
-    parseGDBWatchValue,
-    tokenizeBacktrace
-} = require('./gdb-utils');
+const { tokenizeGDBLocals, parseGDBWatchValue, tokenizeBacktrace } = require('./gdb-utils');
 const GDB_PROMPT = 'oicpp_gdb:';
 const FULL_GDB_PROMPT = '>>>>>>' + GDB_PROMPT;
 const reThreadSwitch = /^\[Switching to thread .*\]#0[ \t]+(0x[A-Fa-f0-9]+) in (.*) from (.*)/;
@@ -76,11 +72,17 @@ class GDBDebugger extends EventEmitter {
             this.emit('running');
         }
         const line = entry.cmd + '\n';
-        try { global.logInfo?.('[GDB<<]', line.trim()); } catch (_) { }
+        try {
+            global.logInfo?.('[GDB<<]', line.trim());
+        } catch (_) {}
         this.gdbProcess.stdin.write(line);
     }
-    _send(cmd, opts = {}) { return this._queueCommand(cmd, opts); }
-    _sendContinue(cmd, opts = {}) { return this._queueCommand(cmd, { ...opts, isContinue: true }); }
+    _send(cmd, opts = {}) {
+        return this._queueCommand(cmd, opts);
+    }
+    _sendContinue(cmd, opts = {}) {
+        return this._queueCommand(cmd, { ...opts, isContinue: true });
+    }
     async start(executablePath, sourcePath, options = {}) {
         if (this.gdbProcess) await this.stop();
         this.programExited = false;
@@ -100,7 +102,9 @@ class GDBDebugger extends EventEmitter {
         this.gdbProcess.stderr.on('data', (d) => {
             const text = d.toString();
             if (text.includes('Failed to set controlling terminal')) return;
-            try { global.logWarn?.('[GDB-STDERR]', text); } catch (_) { }
+            try {
+                global.logWarn?.('[GDB-STDERR]', text);
+            } catch (_) {}
         });
         // Reject everything still queued when gdb dies. The stored reject was
         // never invoked anywhere, so a bad gdbPath (spawn ENOENT) or a crash left
@@ -110,32 +114,47 @@ class GDBDebugger extends EventEmitter {
             const current = this._currentCmd;
             this._currentCmd = null;
             if (current && current.reject) {
-                try { current.reject(new Error(reason)); } catch (_) { }
+                try {
+                    current.reject(new Error(reason));
+                } catch (_) {}
             }
             const queued = this._cmdQueue.splice(0, this._cmdQueue.length);
             for (const entry of queued) {
                 if (entry && entry.reject) {
-                    try { entry.reject(new Error(reason)); } catch (_) { }
+                    try {
+                        entry.reject(new Error(reason));
+                    } catch (_) {}
                 }
             }
             this._queueBusy = false;
         };
 
         this.gdbProcess.on('error', (err) => {
-            try { global.logError?.('[GDB-SPAWN-ERROR]', err?.message || String(err)); } catch (_) { }
+            try {
+                global.logError?.('[GDB-SPAWN-ERROR]', err?.message || String(err));
+            } catch (_) {}
             failAllPending(`gdb failed to start: ${(err && err.message) || err}`);
             this.isRunning = false;
             this.emit('error', err);
         });
         this.gdbProcess.on('exit', (code, signal) => {
-            if (this._buffer) { this._parseOutput(this._buffer); this._buffer = ''; }
-            this.isRunning = false; this.programExited = true;
-            this._programStopped = true; this._inferiorRunning = false;
+            if (this._buffer) {
+                this._parseOutput(this._buffer);
+                this._buffer = '';
+            }
+            this.isRunning = false;
+            this.programExited = true;
+            this._programStopped = true;
+            this._inferiorRunning = false;
             this.emit('exited', { code, signal });
             failAllPending(`gdb exited (${code === null ? signal : code}) with commands still pending`);
         });
         const runInit = async (cmd) => {
-            try { await this._send(cmd); } catch (e) { if (!relaxedInit) throw e; }
+            try {
+                await this._send(cmd);
+            } catch (e) {
+                if (!relaxedInit) throw e;
+            }
         };
         await runInit(`set prompt ${FULL_GDB_PROMPT}`);
         await runInit('show version');
@@ -156,7 +175,8 @@ class GDBDebugger extends EventEmitter {
             this._linuxTTYOptions = {
                 inferiorTTY: typeof options.inferiorTTY === 'string' ? options.inferiorTTY : undefined,
                 noNewConsole: !!options.noNewConsole,
-                consoleTerminalTemplate: typeof options.consoleTerminalTemplate === 'string' ? options.consoleTerminalTemplate : ''
+                consoleTerminalTemplate:
+                    typeof options.consoleTerminalTemplate === 'string' ? options.consoleTerminalTemplate : '',
             };
             await this._cleanupLinuxTTY();
             if (this._linuxTTYOptions.inferiorTTY) this._ttyPath = this._linuxTTYOptions.inferiorTTY;
@@ -169,12 +189,16 @@ class GDBDebugger extends EventEmitter {
         if (!this.gdbProcess) return;
         try {
             if (this._inferiorRunning) {
-                try { process.kill(this.gdbProcess.pid, 'SIGINT'); } catch (_) { }
-                await new Promise(r => setTimeout(r, 200));
+                try {
+                    process.kill(this.gdbProcess.pid, 'SIGINT');
+                } catch (_) {}
+                await new Promise((r) => setTimeout(r, 200));
             }
             await this._quitGDB();
-        } catch (_) { }
-        try { this.gdbProcess.kill(); } catch (_) { }
+        } catch (_) {}
+        try {
+            this.gdbProcess.kill();
+        } catch (_) {}
         this.gdbProcess = null;
         this.isRunning = false;
         this._programStopped = true;
@@ -189,7 +213,9 @@ class GDBDebugger extends EventEmitter {
         this._currentCmd = null;
         for (const entry of [current, ...orphaned]) {
             if (entry && entry.reject) {
-                try { entry.reject(new Error('debug session stopped')); } catch (_) { }
+                try {
+                    entry.reject(new Error('debug session stopped'));
+                } catch (_) {}
             }
         }
         await this._cleanupLinuxTTY();
@@ -199,8 +225,14 @@ class GDBDebugger extends EventEmitter {
     _quitGDB() {
         return new Promise((resolve) => {
             const p = this.gdbProcess;
-            if (!p) { resolve(); return; }
-            if (p.exitCode !== null || p.signalCode !== null) { resolve(); return; }
+            if (!p) {
+                resolve();
+                return;
+            }
+            if (p.exitCode !== null || p.signalCode !== null) {
+                resolve();
+                return;
+            }
             let done = false;
             const finish = () => {
                 if (done) return;
@@ -212,7 +244,11 @@ class GDBDebugger extends EventEmitter {
             const onExit = () => finish();
             const timer = setTimeout(finish, 1500);
             p.once('exit', onExit);
-            try { p.stdin.write('quit\n'); } catch (_) { finish(); }
+            try {
+                p.stdin.write('quit\n');
+            } catch (_) {
+                finish();
+            }
         });
     }
     async run() {
@@ -223,10 +259,12 @@ class GDBDebugger extends EventEmitter {
             try {
                 const tty = await this._ensureLinuxTTY();
                 if (tty && tty.ttyPath) await this._send(`set inferior-tty ${tty.ttyPath}`);
-            } catch (e) { global.logWarn?.('[GDB] TTY 失败', e); }
+            } catch (e) {
+                global.logWarn?.('[GDB] TTY 失败', e);
+            }
         }
         this._isStarted = true;
-        this._sendContinue('run').catch(e => global.logWarn?.('[GDB] run 失败:', e?.message || e));
+        this._sendContinue('run').catch((e) => global.logWarn?.('[GDB] run 失败:', e?.message || e));
         if ((process.platform === 'linux' || process.platform === 'darwin') && this._ttyPath) {
             this.emit('inferior-started', { pid: 0, ttyPath: this._ttyPath });
         }
@@ -236,25 +274,25 @@ class GDBDebugger extends EventEmitter {
         if (this._inferiorRunning) throw new Error('The program is already running');
         if (!this._isStarted) return this.run();
         this._manualBreakOnEntry = false;
-        this._sendContinue('cont').catch(e => global.logWarn?.('[GDB] cont 失败:', e?.message || e));
+        this._sendContinue('cont').catch((e) => global.logWarn?.('[GDB] cont 失败:', e?.message || e));
     }
     async stepOver() {
         if (this.programExited) throw new Error('Program has exited');
         if (this._inferiorRunning) throw new Error('The program is already running');
         this._manualBreakOnEntry = false;
-        this._sendContinue('next').catch(e => global.logWarn?.('[GDB] next 失败:', e?.message || e));
+        this._sendContinue('next').catch((e) => global.logWarn?.('[GDB] next 失败:', e?.message || e));
     }
     async stepInto() {
         if (this.programExited) throw new Error('Program has exited');
         if (this._inferiorRunning) throw new Error('The program is already running');
         this._manualBreakOnEntry = false;
-        this._sendContinue('step').catch(e => global.logWarn?.('[GDB] step 失败:', e?.message || e));
+        this._sendContinue('step').catch((e) => global.logWarn?.('[GDB] step 失败:', e?.message || e));
     }
     async stepOut() {
         if (this.programExited) throw new Error('Program has exited');
         if (this._inferiorRunning) throw new Error('The program is already running');
         this._manualBreakOnEntry = false;
-        this._sendContinue('finish').catch(e => global.logWarn?.('[GDB] finish 失败:', e?.message || e));
+        this._sendContinue('finish').catch((e) => global.logWarn?.('[GDB] finish 失败:', e?.message || e));
     }
     async setBreakpoint(file, line) {
         const loc = `${this._escapePath(file)}:${line}`;
@@ -268,7 +306,12 @@ class GDBDebugger extends EventEmitter {
         }
         const mp = /Breakpoint (\d+)[ \t]\("(.+):(\d+)"\)[ \t]pending\./.exec(output || '');
         if (mp) {
-            const bp = { number: parseInt(mp[1], 10), file: this._normalizePath(mp[2]), line: parseInt(mp[3], 10), pending: true };
+            const bp = {
+                number: parseInt(mp[1], 10),
+                file: this._normalizePath(mp[2]),
+                line: parseInt(mp[3], 10),
+                pending: true,
+            };
             this._breakpoints.push(bp);
             this.emit('breakpoint-set', bp);
             return bp;
@@ -277,11 +320,18 @@ class GDBDebugger extends EventEmitter {
     }
     async removeBreakpoint(number) {
         await this._send(`delete breakpoints ${number}`);
-        this._breakpoints = this._breakpoints.filter(b => b.number !== number);
+        this._breakpoints = this._breakpoints.filter((b) => b.number !== number);
         this.emit('breakpoint-removed', { number });
     }
-    async addWatchVariable(expr) { this._watchExpressions.add(expr); await this.updateVariables(); }
-    async removeWatchVariable(expr) { this._watchExpressions.delete(expr); delete this._variables.watches[expr]; this.emit('variables-updated', this._variables); }
+    async addWatchVariable(expr) {
+        this._watchExpressions.add(expr);
+        await this.updateVariables();
+    }
+    async removeWatchVariable(expr) {
+        this._watchExpressions.delete(expr);
+        delete this._variables.watches[expr];
+        this.emit('variables-updated', this._variables);
+    }
     async updateVariables() {
         if (!this.isRunning || this._inferiorRunning || this.programExited) return;
         let needsRetry = false;
@@ -296,7 +346,10 @@ class GDBDebugger extends EventEmitter {
                     this._variables.local[item.name] = e;
                 }
             }
-        } catch (e) { global.logWarn?.('[GDB] 局部变量失败', e); needsRetry = true; }
+        } catch (e) {
+            global.logWarn?.('[GDB] 局部变量失败', e);
+            needsRetry = true;
+        }
         if (!this.isRunning || this._inferiorRunning || this.programExited) return;
         try {
             const out = await this._send('info args');
@@ -307,35 +360,56 @@ class GDBDebugger extends EventEmitter {
                     this._variables.local[item.name] = e;
                 }
             }
-        } catch (e) { global.logWarn?.('[GDB] 参数失败', e); needsRetry = true; }
+        } catch (e) {
+            global.logWarn?.('[GDB] 参数失败', e);
+            needsRetry = true;
+        }
         if (!this.isRunning || this._inferiorRunning || this.programExited) return;
         this._variables.watches = {};
         for (const expr of this._watchExpressions) {
             try {
                 let typeStr = '';
-                try { const t = await this._send(`whatis ${expr}`); if (t && t.startsWith('type = ')) typeStr = t.substring(7).trim(); } catch (_) { }
+                try {
+                    const t = await this._send(`whatis ${expr}`);
+                    if (t && t.startsWith('type = ')) typeStr = t.substring(7).trim();
+                } catch (_) {}
                 const out = await this._send(`output ${expr}`);
                 const e = { name: expr, value: out || '', type: typeStr, children: [] };
                 parseGDBWatchValue(e, out || '');
                 this._variables.watches[expr] = e;
-            } catch (_) { this._variables.watches[expr] = { name: expr, value: '<error>', children: [] }; }
+            } catch (_) {
+                this._variables.watches[expr] = { name: expr, value: '<error>', children: [] };
+            }
         }
         this.emit('variables-updated', this._variables);
-        if (needsRetry) setTimeout(() => { if (this.isRunning && !this._inferiorRunning && !this.programExited) this.updateVariables().catch(() => { }); }, 500);
+        if (needsRetry)
+            setTimeout(() => {
+                if (this.isRunning && !this._inferiorRunning && !this.programExited)
+                    this.updateVariables().catch(() => {});
+            }, 500);
     }
     async updateCallStack() {
         if (!this.isRunning || this._inferiorRunning || this.programExited) return;
         try {
             const out = await this._send('bt 30');
-            this._callStack = tokenizeBacktrace(out || '').map(f => ({
-                function: f.function || '??', file: this._normalizePath(f.file),
-                line: f.line, level: f.level, address: f.address
+            this._callStack = tokenizeBacktrace(out || '').map((f) => ({
+                function: f.function || '??',
+                file: this._normalizePath(f.file),
+                line: f.line,
+                level: f.level,
+                address: f.address,
             }));
             this.emit('callstack-updated', this._callStack);
-        } catch (e) { global.logWarn?.('[GDB] 堆栈失败', e); }
+        } catch (e) {
+            global.logWarn?.('[GDB] 堆栈失败', e);
+        }
     }
-    getVariables() { return this._variables; }
-    getCallStack() { return this._callStack; }
+    getVariables() {
+        return this._variables;
+    }
+    getCallStack() {
+        return this._callStack;
+    }
     async expandVariable(name, options = {}) {
         let root = null;
         const scope = options.scope || 'local';
@@ -349,19 +423,40 @@ class GDBDebugger extends EventEmitter {
         }
         if (!root) throw new Error(`Variable ${name} not found`);
         if ((!options.path || options.path.length === 0) && (!root.children || root.children.length === 0)) {
-            try { const out = await this._send(`output ${name}`); parseGDBWatchValue(root, out || ''); } catch (e) { global.logWarn?.(`[GDB] 无法获取 ${name} 子项`, e); }
+            try {
+                const out = await this._send(`output ${name}`);
+                parseGDBWatchValue(root, out || '');
+            } catch (e) {
+                global.logWarn?.(`[GDB] 无法获取 ${name} 子项`, e);
+            }
         }
         let current = root;
-        if (options.path) for (const p of options.path) { const idx = Number(p); if (current.children && current.children[idx]) current = current.children[idx]; else break; }
+        if (options.path)
+            for (const p of options.path) {
+                const idx = Number(p);
+                if (current.children && current.children[idx]) current = current.children[idx];
+                else break;
+            }
         return { name, scope, path: options.path, data: current };
     }
-    async collapseVariable() { return {}; }
+    async collapseVariable() {
+        return {};
+    }
     async sendInput(input) {
         if (!this.gdbProcess || !this.gdbProcess.stdin || !this._inferiorRunning) return false;
-        try { const t = String(input ?? '').replace(/\r/g, '\n'); if (t) { this.gdbProcess.stdin.write(t); return true; } } catch (_) { }
+        try {
+            const t = String(input ?? '').replace(/\r/g, '\n');
+            if (t) {
+                this.gdbProcess.stdin.write(t);
+                return true;
+            }
+        } catch (_) {}
         return false;
     }
-    _onData(chunk) { this._buffer += chunk; this._parseBuffer(); }
+    _onData(chunk) {
+        this._buffer += chunk;
+        this._parseBuffer();
+    }
     _parseBuffer() {
         // 关键：仅当缓冲区末尾出现「完整且其后无内容」的提示符时，才认定为真正的 GDB 提示符。
         // 这样可避免被调试程序自身输出中恰好包含 oicpp_gdb: / >>>>oicpp_gdb: 的文本干扰。
@@ -371,7 +466,10 @@ class GDBDebugger extends EventEmitter {
             const found = this._buffer.indexOf(FULL_GDB_PROMPT, searchFrom);
             if (found === -1) break;
             const after = this._buffer.substring(found + FULL_GDB_PROMPT.length);
-            if (after.trim() === '') { idx = found; break; }
+            if (after.trim() === '') {
+                idx = found;
+                break;
+            }
             searchFrom = found + 1;
         }
         if (idx === -1) {
@@ -412,7 +510,7 @@ class GDBDebugger extends EventEmitter {
     // 判断某一行是否属于「必须交给 _parseOutput 处理」的 GDB 控制消息。
     _isCriticalControlLine(line) {
         if (!line) return false;
-        if (line.charCodeAt(0) === 0x1A) return true; // -fullname 的源文件行标记
+        if (line.charCodeAt(0) === 0x1a) return true; // -fullname 的源文件行标记
         const t = line.trim();
         if (!t) return false;
         if (reInferiorExited.test(t) || reInferiorExitedWithCode.test(t)) return true;
@@ -430,12 +528,15 @@ class GDBDebugger extends EventEmitter {
         const cmd = this._currentCmd;
         const wasContinueCmd = !!(cmd && cmd.isContinue);
         if (cmd) {
-            this._cmdQueue.shift(); this._currentCmd = null;
-            const result = cmd.parser && output ? cmd.parser(output) : (output || '');
+            this._cmdQueue.shift();
+            this._currentCmd = null;
+            const result = cmd.parser && output ? cmd.parser(output) : output || '';
             if (cmd.resolve) cmd.resolve(result);
         }
         if (!output) return;
-        try { global.logInfo?.('[GDB>>]', output.substring(0, 500)); } catch (_) { }
+        try {
+            global.logInfo?.('[GDB>>]', output.substring(0, 500));
+        } catch (_) {}
         this._detectChildPid(output);
         const lines = output.split('\n');
         const targetLines = [];
@@ -443,29 +544,55 @@ class GDBDebugger extends EventEmitter {
             const line = lines[i];
             if (line.startsWith('>>>>>>') || line === GDB_PROMPT) continue;
             if (line.startsWith('GNU gdb')) continue;
-            if (line.startsWith('Error creating process') || line.startsWith('Program exited') ||
-                line.startsWith('Program terminated with signal') || line.startsWith('During startup program exited') ||
-                line.includes('program is not being run') || line.includes('Target detached') ||
-                reInferiorExited.test(line) || reInferiorExitedWithCode.test(line)) {
-                this._programStopped = true; this._isStarted = false;
-                this._inferiorRunning = false; this._queueBusy = false;
-                let ec; const mc = reInferiorExitedWithCode.exec(line); if (mc) ec = parseInt(mc[1], 10);
+            if (
+                line.startsWith('Error creating process') ||
+                line.startsWith('Program exited') ||
+                line.startsWith('Program terminated with signal') ||
+                line.startsWith('During startup program exited') ||
+                line.includes('program is not being run') ||
+                line.includes('Target detached') ||
+                reInferiorExited.test(line) ||
+                reInferiorExitedWithCode.test(line)
+            ) {
+                this._programStopped = true;
+                this._isStarted = false;
+                this._inferiorRunning = false;
+                this._queueBusy = false;
+                let ec;
+                const mc = reInferiorExitedWithCode.exec(line);
+                if (mc) ec = parseInt(mc[1], 10);
                 this.emit('program-exited', { exitCode: ec });
                 continue;
             }
             if (line.includes('(no debugging symbols found)')) continue;
             if (line.startsWith('Program received signal SIG')) {
-                this._programStopped = true; this._queueBusy = false; this._inferiorRunning = false;
-                if (!line.startsWith('Program received signal SIGINT') && !line.startsWith('Program received signal SIGTRAP') && !line.startsWith('Program received signal SIGSTOP'))
+                this._programStopped = true;
+                this._queueBusy = false;
+                this._inferiorRunning = false;
+                if (
+                    !line.startsWith('Program received signal SIGINT') &&
+                    !line.startsWith('Program received signal SIGTRAP') &&
+                    !line.startsWith('Program received signal SIGSTOP')
+                )
                     this.emit('signal-received', { signal: line });
                 continue;
             }
             if (line.startsWith('Error ') || line.startsWith('No such') || line.startsWith('Cannot evaluate')) continue;
-            if (line.startsWith('Cannot find bounds of current function') || line.startsWith('No stack')) { this._programStopped = true; this._inferiorRunning = false; continue; }
-            if (line.startsWith('Pending breakpoint ')) { this._handlePendingBreakpoint(line, lines, i); continue; }
+            if (line.startsWith('Cannot find bounds of current function') || line.startsWith('No stack')) {
+                this._programStopped = true;
+                this._inferiorRunning = false;
+                continue;
+            }
+            if (line.startsWith('Pending breakpoint ')) {
+                this._handlePendingBreakpoint(line, lines, i);
+                continue;
+            }
             if (line.startsWith('Breakpoint ') && rePendingFound1.test(line)) continue;
             if (line.startsWith('Temporary breakpoint') && reTempBreakFound.test(line)) continue;
-            if (line.length > 0 && line.charCodeAt(0) === 0x1A) { this._handleMainBreakpoint(line); continue; }
+            if (line.length > 0 && line.charCodeAt(0) === 0x1a) {
+                this._handleMainBreakpoint(line);
+                continue;
+            }
             if (this._handleOtherBreakInfo(line)) continue;
             if (this._isGDBInternalNoise(line)) continue;
             if (line.trim()) targetLines.push(line);
@@ -473,23 +600,35 @@ class GDBDebugger extends EventEmitter {
 
         if (targetLines.length > 0 && wasContinueCmd) this._emitTargetOutput(targetLines.join('\n'));
         if (this._cmdQueue.length === 0 && !this._programStopped && !this._cursor.changed) {
-            this._programStopped = true; this._inferiorRunning = false;
+            this._programStopped = true;
+            this._inferiorRunning = false;
         }
         if (this._cursor.changed) {
-            this._programStopped = true; this._inferiorRunning = false; this._queueBusy = false;
+            this._programStopped = true;
+            this._inferiorRunning = false;
+            this._queueBusy = false;
             this.emit('stopped', {
                 reason: this._cursor.line >= 0 ? 'breakpoint-hit' : 'signal-received',
                 file: this._normalizePath(this._cursor.file),
-                line: this._cursor.line, function: this._cursor.function, address: this._cursor.address
+                line: this._cursor.line,
+                function: this._cursor.function,
+                address: this._cursor.address,
             });
             this._cursor.changed = false;
-        } else if (this._programStopped) { this._inferiorRunning = false; }
+        } else if (this._programStopped) {
+            this._inferiorRunning = false;
+        }
         if (this._programStopped) this._runQueue();
     }
     _detectChildPid(output) {
         if (process.platform === 'win32') {
             const m = reChildPid2.exec(output);
-            if (m) { const p = parseInt(m[0].substring(m[0].lastIndexOf(' ') + 1).split('.')[0], 10); if (p > 0) { this.emit('child-pid', p); } }
+            if (m) {
+                const p = parseInt(m[0].substring(m[0].lastIndexOf(' ') + 1).split('.')[0], 10);
+                if (p > 0) {
+                    this.emit('child-pid', p);
+                }
+            }
         } else {
             const m = reChildPid1.exec(output);
             if (m) {
@@ -508,44 +647,110 @@ class GDBDebugger extends EventEmitter {
         const m = reBreak.exec(line.replace(/^\x1a+/, ''));
         if (m) {
             this._manualBreakOnEntry = false;
-            this._cursor.file = process.platform === 'win32' ? (m[1] || '') + (m[2] || '') : (m[2] || '');
-            this._cursor.line = parseInt(m[3], 10); this._cursor.address = m[4]; this._cursor.changed = true;
-        } else { this._cursor.changed = true; }
+            this._cursor.file = process.platform === 'win32' ? (m[1] || '') + (m[2] || '') : m[2] || '';
+            this._cursor.line = parseInt(m[3], 10);
+            this._cursor.address = m[4];
+            this._cursor.changed = true;
+        } else {
+            this._cursor.changed = true;
+        }
     }
     _handleOtherBreakInfo(line) {
         let m;
         if ((m = reBreak2.exec(line)) || (m = reThreadSwitch.exec(line))) {
-            this._cursor.address = m[1]; this._cursor.function = m[2]; this._cursor.file = m[3]; this._cursor.line = -1; this._cursor.changed = true; return true;
+            this._cursor.address = m[1];
+            this._cursor.function = m[2];
+            this._cursor.file = m[3];
+            this._cursor.line = -1;
+            this._cursor.changed = true;
+            return true;
         }
         if ((m = reThreadSwitch2.exec(line))) {
-            this._cursor.address = m[1]; this._cursor.function = m[2]; this._cursor.file = m[3]; this._cursor.line = -1; this._cursor.changed = true; return true;
+            this._cursor.address = m[1];
+            this._cursor.function = m[2];
+            this._cursor.file = m[3];
+            this._cursor.line = -1;
+            this._cursor.changed = true;
+            return true;
         }
-        if ((m = reBreak3.exec(line))) { this._cursor.address = m[1]; this._cursor.function = m[2]; this._cursor.file = ''; this._cursor.line = -1; this._cursor.changed = true; return true; }
-        if ((m = reCatchThrow.exec(line))) { this._cursor.address = m[2]; this._cursor.function = m[3]; this._cursor.file = m[4]; this._cursor.line = -1; this._cursor.changed = true; return true; }
-        if ((m = reCatchThrowNoFile.exec(line))) { this._cursor.address = m[2]; this._cursor.function = m[3]; this._cursor.file = ''; this._cursor.line = -1; this._cursor.changed = true; return true; }
+        if ((m = reBreak3.exec(line))) {
+            this._cursor.address = m[1];
+            this._cursor.function = m[2];
+            this._cursor.file = '';
+            this._cursor.line = -1;
+            this._cursor.changed = true;
+            return true;
+        }
+        if ((m = reCatchThrow.exec(line))) {
+            this._cursor.address = m[2];
+            this._cursor.function = m[3];
+            this._cursor.file = m[4];
+            this._cursor.line = -1;
+            this._cursor.changed = true;
+            return true;
+        }
+        if ((m = reCatchThrowNoFile.exec(line))) {
+            this._cursor.address = m[2];
+            this._cursor.function = m[3];
+            this._cursor.file = '';
+            this._cursor.line = -1;
+            this._cursor.changed = true;
+            return true;
+        }
         return false;
     }
     _handlePendingBreakpoint(line, lines, idx) {
         const rePF = process.platform === 'win32' ? rePendingFoundWin : rePendingFoundUnix;
-        const m = rePF.exec(line); if (!m) return;
-        let nbp = ''; for (let j = idx + 1; j < lines.length; j++) { if (!lines[j].startsWith('[')) { nbp = lines[j]; break; } }
+        const m = rePF.exec(line);
+        if (!m) return;
+        let nbp = '';
+        for (let j = idx + 1; j < lines.length; j++) {
+            if (!lines[j].startsWith('[')) {
+                nbp = lines[j];
+                break;
+            }
+        }
         if (nbp && rePendingFound1.test(nbp)) {
-            const nm = rePendingFound1.exec(nbp); const ni = parseInt(nm[1], 10);
+            const nm = rePendingFound1.exec(nbp);
+            const ni = parseInt(nm[1], 10);
             let f, ls;
-            if (process.platform === 'win32') { f = m[1] + m[2]; ls = m[3]; } else { f = m[1]; ls = m[2]; }
+            if (process.platform === 'win32') {
+                f = m[1] + m[2];
+                ls = m[3];
+            } else {
+                f = m[1];
+                ls = m[2];
+            }
             const nl = parseInt(ls, 10);
-            const bp = this._breakpoints.find(b => this._normalizePath(b.file) === this._normalizePath(f) && b.line === nl);
-            if (bp) { bp.number = ni; bp.pending = false; this.emit('breakpoint-resolved', bp); }
+            const bp = this._breakpoints.find(
+                (b) => this._normalizePath(b.file) === this._normalizePath(f) && b.line === nl
+            );
+            if (bp) {
+                bp.number = ni;
+                bp.pending = false;
+                this.emit('breakpoint-resolved', bp);
+            }
         }
     }
-    _emitTargetOutput(text) { const c = String(text || '').replace(/^>+/, '').trim(); if (c) this.emit('target-output', c); }
+    _emitTargetOutput(text) {
+        const c = String(text || '')
+            .replace(/^>+/, '')
+            .trim();
+        if (c) this.emit('target-output', c);
+    }
     _escapePath(p) {
         const t = this._toDebuggerPath(p);
         return os.platform() === 'win32' ? t.replace(/\\/g, '/') : t;
     }
     _normalizePath(p) {
         if (!p) return p || '';
-        if (os.platform() === 'win32') { try { const r = fs.realpathSync.native ? fs.realpathSync.native(p) : fs.realpathSync(p); if (r) return r; } catch (_) { } return path.normalize(p); }
+        if (os.platform() === 'win32') {
+            try {
+                const r = fs.realpathSync.native ? fs.realpathSync.native(p) : fs.realpathSync(p);
+                if (r) return r;
+            } catch (_) {}
+            return path.normalize(p);
+        }
         return p;
     }
     _toDebuggerPath(p) {
@@ -553,7 +758,10 @@ class GDBDebugger extends EventEmitter {
         if (os.platform() !== 'win32') return p;
         const n = path.normalize(p);
         if (!/[^\x00-\x7F]/.test(n)) return n;
-        try { const s = this._getShortPath(n); if (s && s !== n) return s; } catch (_) { }
+        try {
+            const s = this._getShortPath(n);
+            if (s && s !== n) return s;
+        } catch (_) {}
         return n;
     }
     _getShortPath(p) {
@@ -561,42 +769,75 @@ class GDBDebugger extends EventEmitter {
         let sp = p;
         try {
             const cmd = process.env.ComSpec || 'cmd.exe';
-            const r = spawnSync(cmd, ['/c', `for %I in ("${p.replace(/"/g, '""')}") do @echo %~sI`], { encoding: 'utf8', windowsHide: true, timeout: 2500 });
-            const o = (r && r.stdout) ? String(r.stdout).trim() : '';
+            const r = spawnSync(cmd, ['/c', `for %I in ("${p.replace(/"/g, '""')}") do @echo %~sI`], {
+                encoding: 'utf8',
+                windowsHide: true,
+                timeout: 2500,
+            });
+            const o = r && r.stdout ? String(r.stdout).trim() : '';
             if (o) sp = o;
-        } catch (_) { }
+        } catch (_) {}
         this._shortPathCache.set(p, sp);
         return sp;
     }
     async _cleanupLinuxTTY() {
-        if (this._ttyProcessPid) { try { process.kill(this._ttyProcessPid, 'SIGTERM'); } catch (_) { } }
-        if (this._ttyProcess) { try { this._ttyProcess.kill(); } catch (_) { } }
-        if (this._ttyShellPid) { try { process.kill(this._ttyShellPid, 'SIGTERM'); } catch (_) { } }
-        this._ttyProcess = null; this._ttyProcessPid = 0; this._ttyPath = null; this._ttyShellPid = null;
+        if (this._ttyProcessPid) {
+            try {
+                process.kill(this._ttyProcessPid, 'SIGTERM');
+            } catch (_) {}
+        }
+        if (this._ttyProcess) {
+            try {
+                this._ttyProcess.kill();
+            } catch (_) {}
+        }
+        if (this._ttyShellPid) {
+            try {
+                process.kill(this._ttyShellPid, 'SIGTERM');
+            } catch (_) {}
+        }
+        this._ttyProcess = null;
+        this._ttyProcessPid = 0;
+        this._ttyPath = null;
+        this._ttyShellPid = null;
     }
     async _ensureLinuxTTY() {
         if (this._ttyPath) return { ttyPath: this._ttyPath };
         if (this._linuxTTYOptions.noNewConsole) return null;
         if (this._linuxTTYOptions.inferiorTTY) return { ttyPath: this._linuxTTYOptions.inferiorTTY };
         if (!(process.env.DISPLAY || process.env.WAYLAND_DISPLAY || process.env.MIR_SOCKET)) return null;
-        const tmpl = String(this._linuxTTYOptions.consoleTerminalTemplate || 'xterm -T \'$TITLE\' -e').trim() || 'xterm -T \'$TITLE\' -e';
+        const tmpl =
+            String(this._linuxTTYOptions.consoleTerminalTemplate || "xterm -T '$TITLE' -e").trim() ||
+            "xterm -T '$TITLE' -e";
         const token = 80000000 + Math.floor(Math.random() * 100000);
         const sleepCmd = `sleep ${token}`;
         let cmd = tmpl.replace(/\$TITLE/g, "'Program Console'");
         cmd = cmd.includes('$SCRIPT') ? cmd.replace(/\$SCRIPT/g, sleepCmd) : `${cmd} ${sleepCmd}`;
         try {
-            this._ttyProcess = spawn('/bin/sh', ['-c', cmd], { detached: true, stdio: 'ignore', env: { ...process.env } });
-            this._ttyProcessPid = this._ttyProcess.pid || 0; this._ttyProcess.unref();
-        } catch (e) { return null; }
+            this._ttyProcess = spawn('/bin/sh', ['-c', cmd], {
+                detached: true,
+                stdio: 'ignore',
+                env: { ...process.env },
+            });
+            this._ttyProcessPid = this._ttyProcess.pid || 0;
+            this._ttyProcess.unref();
+        } catch (e) {
+            return null;
+        }
         for (let i = 0; i < 100; i++) {
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise((r) => setTimeout(r, 200));
             let po = '';
-            try { const ps = spawnSync('ps', ['x', '-o', 'tty,pid,command'], { encoding: 'utf8', timeout: 2500 }); if (ps && ps.status === 0) po = String(ps.stdout || ''); } catch (_) { }
+            try {
+                const ps = spawnSync('ps', ['x', '-o', 'tty,pid,command'], { encoding: 'utf8', timeout: 2500 });
+                if (ps && ps.status === 0) po = String(ps.stdout || '');
+            } catch (_) {}
             if (!po) continue;
             for (const pl of po.split(/\r?\n/)) {
                 if (!pl || !pl.includes(sleepCmd) || pl.includes('ps x -o tty,pid,command')) continue;
-                const m = pl.trim().match(/^(\S+)\s+(\d+)\s+(.+)$/); if (!m) continue;
-                const tr = m[1]; const pid = parseInt(m[2], 10);
+                const m = pl.trim().match(/^(\S+)\s+(\d+)\s+(.+)$/);
+                if (!m) continue;
+                const tr = m[1];
+                const pid = parseInt(m[2], 10);
                 if (!Number.isInteger(pid) || pid <= 0) continue;
                 if (this._ttyProcessPid > 0 && pid === this._ttyProcessPid) continue;
                 if (!tr || tr === '?' || tr === '-') continue;
@@ -605,8 +846,12 @@ class GDBDebugger extends EventEmitter {
                 return { ttyPath: this._ttyPath };
             }
         }
-        try { if (this._ttyProcessPid > 0) process.kill(this._ttyProcessPid, 'SIGTERM'); } catch (_) { }
-        this._ttyProcessPid = 0; this._ttyShellPid = null; this._ttyPath = null;
+        try {
+            if (this._ttyProcessPid > 0) process.kill(this._ttyProcessPid, 'SIGTERM');
+        } catch (_) {}
+        this._ttyProcessPid = 0;
+        this._ttyShellPid = null;
+        this._ttyPath = null;
         return null;
     }
 

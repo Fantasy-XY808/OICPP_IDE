@@ -39,11 +39,15 @@ class LspClientBridge {
                 const uri = params.uri || '';
                 const diagnostics = Array.isArray(params.diagnostics) ? params.diagnostics : [];
                 this._diagnosticListeners.forEach((listener) => {
-                    try { listener(uri, diagnostics); } catch (_) {}
+                    try {
+                        listener(uri, diagnostics);
+                    } catch (_) {}
                 });
             }
             this._notificationListeners.forEach((listener) => {
-                try { listener(payload); } catch (_) {}
+                try {
+                    listener(payload);
+                } catch (_) {}
             });
         });
     }
@@ -78,11 +82,13 @@ class LspClientBridge {
                 clangdArgs: Array.isArray(options.clangdArgs) ? options.clangdArgs : [],
                 fallbackFlags: Array.isArray(options.fallbackFlags) ? options.fallbackFlags : [],
                 compilerPath: options.compilerPath || '',
-                rootUri: options.rootUri || ''
+                rootUri: options.rootUri || '',
             });
 
             if (!startResult || startResult.ok !== true) {
-                const errMsg = startResult?.error || (window.i18n ? window.i18n.t('lsp.restartFailUnknown') : 'clangd 重启失败（未知原因）');
+                const errMsg =
+                    startResult?.error ||
+                    (window.i18n ? window.i18n.t('lsp.restartFailUnknown') : 'clangd 重启失败（未知原因）');
                 logError('[LSP] clangd 重启失败:', errMsg);
                 throw new Error('clangd restart failed: ' + errMsg);
             }
@@ -110,9 +116,7 @@ class LspClientBridge {
         }
 
         const rootUri = options.rootUri || '';
-        const workspaceFolders = rootUri
-            ? [{ uri: rootUri, name: options.workspaceName || 'workspace' }]
-            : [];
+        const workspaceFolders = rootUri ? [{ uri: rootUri, name: options.workspaceName || 'workspace' }] : [];
 
         logInfo('[LSP] 正在启动 clangd LSP 客户端...');
         logInfo('[LSP] 工作区根目录:', options.workspaceRoot || '(无)');
@@ -129,12 +133,14 @@ class LspClientBridge {
             clangdArgs: Array.isArray(options.clangdArgs) ? options.clangdArgs : [],
             fallbackFlags: Array.isArray(options.fallbackFlags) ? options.fallbackFlags : [],
             compilerPath: options.compilerPath || '',
-            rootUri
+            rootUri,
         });
 
         // 检查 clangd 启动结果
         if (!startResult || startResult.ok !== true) {
-            const errMsg = startResult?.error || (window.i18n ? window.i18n.t('lsp.startFailUnknown') : 'clangd 启动失败（未知原因）');
+            const errMsg =
+                startResult?.error ||
+                (window.i18n ? window.i18n.t('lsp.startFailUnknown') : 'clangd 启动失败（未知原因）');
             logError('[LSP] clangd 启动失败:', errMsg);
             throw new Error('clangd start failed: ' + errMsg);
         }
@@ -148,22 +154,24 @@ class LspClientBridge {
         // 使用主进程返回的 fallbackFlags（已包含编译器 include 路径）
         const effectiveFallbackFlags = Array.isArray(startResult.fallbackFlags)
             ? startResult.fallbackFlags
-            : (Array.isArray(options.fallbackFlags) ? options.fallbackFlags : []);
+            : Array.isArray(options.fallbackFlags)
+              ? options.fallbackFlags
+              : [];
 
         return await this._finishStartup(startResult, options, api, effectiveFallbackFlags);
     }
 
     async _finishStartup(startResult, options = {}, api = window.electronAPI, effectiveFallbackFlags = null) {
         const rootUri = options.rootUri || '';
-        const workspaceFolders = rootUri
-            ? [{ uri: rootUri, name: options.workspaceName || 'workspace' }]
-            : [];
+        const workspaceFolders = rootUri ? [{ uri: rootUri, name: options.workspaceName || 'workspace' }] : [];
 
         const fallbackFlags = Array.isArray(effectiveFallbackFlags)
             ? effectiveFallbackFlags
-            : (Array.isArray(startResult?.fallbackFlags)
-                ? startResult.fallbackFlags
-                : (Array.isArray(options.fallbackFlags) ? options.fallbackFlags : []));
+            : Array.isArray(startResult?.fallbackFlags)
+              ? startResult.fallbackFlags
+              : Array.isArray(options.fallbackFlags)
+                ? options.fallbackFlags
+                : [];
 
         logInfo('[LSP] 发送 initialize 请求...');
 
@@ -176,54 +184,57 @@ class LspClientBridge {
                     synchronization: {
                         didSave: true,
                         willSave: false,
-                        willSaveWaitUntil: false
+                        willSaveWaitUntil: false,
                     },
                     completion: {
                         completionItem: {
                             snippetSupport: true,
                             insertReplaceSupport: true,
                             resolveSupport: {
-                                properties: ['detail', 'documentation', 'additionalTextEdits']
-                            }
+                                properties: ['detail', 'documentation', 'additionalTextEdits'],
+                            },
                         },
                         contextSupport: true,
-                        dynamicRegistration: false
+                        dynamicRegistration: false,
                     },
                     hover: {
-                        contentFormat: ['markdown', 'plaintext']
+                        contentFormat: ['markdown', 'plaintext'],
                     },
                     signatureHelp: {
                         signatureInformation: {
                             documentationFormat: ['markdown', 'plaintext'],
                             parameterInformation: {
-                                labelOffsetSupport: true
-                            }
-                        }
+                                labelOffsetSupport: true,
+                            },
+                        },
                     },
                     definition: {
-                        linkSupport: true
+                        linkSupport: true,
                     },
                     documentSymbol: {
                         hierarchicalDocumentSymbolSupport: true,
                         symbolKind: {
-                            valueSet: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]
-                        }
+                            valueSet: [
+                                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                                25, 26,
+                            ],
+                        },
                     },
                     references: {},
                     semanticTokens: {
                         requests: { full: true },
                         tokenTypes: [],
                         tokenModifiers: [],
-                        formats: ['relative']
-                    }
+                        formats: ['relative'],
+                    },
                 },
                 workspace: {
-                    workspaceFolders: true
-                }
+                    workspaceFolders: true,
+                },
             },
             initializationOptions: {
-                fallbackFlags
-            }
+                fallbackFlags,
+            },
         };
 
         const initResult = await api.lspRequest('initialize', initializeParams);
@@ -233,7 +244,13 @@ class LspClientBridge {
         const serverInfo = initResult?.serverInfo || {};
         logInfo('[LSP] 初始化完成, 服务器:', serverInfo.name || 'clangd', '版本:', serverInfo.version || '?');
         if (this._semanticTokensLegend) {
-            logInfo('[LSP] 语义令牌支持: ' + (this._semanticTokensLegend.tokenTypes?.length || 0) + ' 种类型, ' + (this._semanticTokensLegend.tokenModifiers?.length || 0) + ' 种修饰符');
+            logInfo(
+                '[LSP] 语义令牌支持: ' +
+                    (this._semanticTokensLegend.tokenTypes?.length || 0) +
+                    ' 种类型, ' +
+                    (this._semanticTokensLegend.tokenModifiers?.length || 0) +
+                    ' 种修饰符'
+            );
         }
 
         await api.lspNotify('initialized', {});
@@ -241,7 +258,9 @@ class LspClientBridge {
         logInfo('[LSP] clangd LSP 客户端就绪');
 
         this._readyListeners.forEach((listener) => {
-            try { listener(this); } catch (_) {}
+            try {
+                listener(this);
+            } catch (_) {}
         });
         return initResult;
     }
@@ -271,7 +290,9 @@ class LspClientBridge {
         if (typeof listener !== 'function') return () => {};
         this._readyListeners.add(listener);
         if (this._ready) {
-            try { listener(this); } catch (_) {}
+            try {
+                listener(this);
+            } catch (_) {}
         }
         return () => this._readyListeners.delete(listener);
     }

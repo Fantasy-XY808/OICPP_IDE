@@ -13,24 +13,21 @@ const nsiText = nsiBytes.toString('utf8');
 const UTF8_BOM = [0xef, 0xbb, 0xbf];
 
 const workflowsDir = path.join(repoRoot, '.github', 'workflows');
-const workflowFiles = fs.readdirSync(workflowsDir)
-    .filter(name => name.endsWith('.yml'))
-    .map(name => path.join(workflowsDir, name));
+const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((name) => name.endsWith('.yml'))
+    .map((name) => path.join(workflowsDir, name));
 
 test('installer.nsi starts with a UTF-8 BOM', () => {
     // NSIS decides whether a script is UTF-8 purely from this BOM. Without it,
     // makensis decodes the script through the machine ANSI codepage and every
     // Chinese literal ships as mojibake in the installer UI.
-    assert.deepEqual(
-        [...nsiBytes.slice(0, 3)],
-        UTF8_BOM,
-        'installer.nsi lost its UTF-8 BOM'
-    );
+    assert.deepEqual([...nsiBytes.slice(0, 3)], UTF8_BOM, 'installer.nsi lost its UTF-8 BOM');
 });
 
 test('installer.nsi decodes as clean UTF-8', () => {
     assert.ok(!nsiText.includes('\uFFFD'), 'installer.nsi contains U+FFFD replacement characters');
-    assert.ok(nsiText.charCodeAt(0) === 0xFEFF, 'BOM should survive decoding as U+FEFF');
+    assert.ok(nsiText.charCodeAt(0) === 0xfeff, 'BOM should survive decoding as U+FEFF');
 });
 
 test('installer.nsi still carries its Chinese UI literals', () => {

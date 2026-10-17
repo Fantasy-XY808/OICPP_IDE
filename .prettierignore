@@ -1,0 +1,9 @@
+node_modules/
+examples/
+build/
+dist/
+out/
+package-lock.json
+src/build-info.json
+src/renderer/assets/
+src/renderer/js/onboarding.bundle.js

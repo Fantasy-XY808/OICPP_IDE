@@ -19,29 +19,43 @@ class OICPPApp {
             glassEffectEnabled: true,
             windowOpacity: 0.95,
             autoSave: true,
-            autoSaveInterval: 1000
+            autoSaveInterval: 1000,
         };
         this.editorManager = null;
         this.initialized = false;
         this.accountLoggedIn = false;
         this.accountInfo = null;
         this._accountIpcBound = false;
-    this.isDebugging = false;
-    this._autoContinueOnStart = false;
-    this._debugSessionId = 0;
-    this._debugExited = false;
-    this._debugTerminalId = null;
-    this._debugTerminalBridgeEnabled = false;
-    this._debugSessionTerminalId = null;
+        this.isDebugging = false;
+        this._autoContinueOnStart = false;
+        this._debugSessionId = 0;
+        this._debugExited = false;
+        this._debugTerminalId = null;
+        this._debugTerminalBridgeEnabled = false;
+        this._debugSessionTerminalId = null;
         this.terminalPanel = null;
         this.autoSaveController = {
             timerId: null,
             enabled: true,
             debounceMs: 1000,
             running: false,
-            pendingFile: null
+            pendingFile: null,
         };
-    this.supportedDropTextExtensions = new Set(['cpp', 'c', 'cc', 'cxx', 'h', 'hpp', 'hh', 'txt', 'in', 'out', 'ans', 'md', 'json']);
+        this.supportedDropTextExtensions = new Set([
+            'cpp',
+            'c',
+            'cc',
+            'cxx',
+            'h',
+            'hpp',
+            'hh',
+            'txt',
+            'in',
+            'out',
+            'ans',
+            'md',
+            'json',
+        ]);
         this._isWindowsPlatform = undefined;
         this._isMacPlatform = undefined;
     }
@@ -61,24 +75,24 @@ class OICPPApp {
                 logError('MonacoEditorManager 类未定义');
                 return;
             }
-            
+
             this.compilerManager = new CompilerManager();
             window.compilerManager = this.compilerManager;
-            
+
             let attempts = 0;
             while (attempts < 100) {
                 if (this.editorManager.isInitialized) {
                     logInfo('编辑器管理器初始化完成');
                     break;
                 }
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await new Promise((resolve) => setTimeout(resolve, 50));
                 attempts++;
             }
-            
+
             if (attempts >= 100) {
                 logWarn('编辑器管理器初始化超时，继续其他初始化...');
             }
-            
+
             this.setupEventListeners();
             this.updatePlatformSpecificMenu();
             this.setupIPC();
@@ -91,7 +105,7 @@ class OICPPApp {
             this.autoConfigureCompilerSilently();
             if (typeof IntegratedTerminalPanel !== 'undefined') {
                 this.terminalPanel = new IntegratedTerminalPanel({
-                    getApp: () => this
+                    getApp: () => this,
                 });
                 await this.terminalPanel.init();
             }
@@ -112,7 +126,7 @@ class OICPPApp {
 
             // 监听 Monaco 标记变化，实时更新状态栏
             this._setupMarkerChangeListener();
-            
+
             logInfo('OICPP App 初始化完成');
         } catch (error) {
             logError('OICPP App 初始化失败', error);
@@ -186,10 +200,13 @@ class OICPPApp {
         });
 
         // Use capture phase so global shortcuts are still handled even if Monaco stops bubbling.
-        document.addEventListener('keydown', (e) => {
-            this.handleKeyDown(e);
-        }, true);
-
+        document.addEventListener(
+            'keydown',
+            (e) => {
+                this.handleKeyDown(e);
+            },
+            true
+        );
 
         document.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -201,15 +218,16 @@ class OICPPApp {
         });
 
         document.addEventListener('contextmenu', (e) => {
-            const isInEditor = e.target.closest('.monaco-editor') || 
-                              e.target.closest('.monaco-editor-container') ||
-                              e.target.classList.contains('monaco-editor') ||
-                              e.target.classList.contains('monaco-editor-container');
-            
+            const isInEditor =
+                e.target.closest('.monaco-editor') ||
+                e.target.closest('.monaco-editor-container') ||
+                e.target.classList.contains('monaco-editor') ||
+                e.target.classList.contains('monaco-editor-container');
+
             if (isInEditor) {
                 return;
             }
-            
+
             e.preventDefault();
             this.showContextMenu(e);
         });
@@ -223,11 +241,10 @@ class OICPPApp {
 
     setupMenuBarEvents() {
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('menu-dropdown-item') || 
-                e.target.closest('.menu-dropdown-item')) {
-                
-                const menuItem = e.target.classList.contains('menu-dropdown-item') ? 
-                    e.target : e.target.closest('.menu-dropdown-item');
+            if (e.target.classList.contains('menu-dropdown-item') || e.target.closest('.menu-dropdown-item')) {
+                const menuItem = e.target.classList.contains('menu-dropdown-item')
+                    ? e.target
+                    : e.target.closest('.menu-dropdown-item');
                 if (!menuItem) {
                     return;
                 }
@@ -237,7 +254,7 @@ class OICPPApp {
                     const blockedAction = menuItem.dataset.action;
                     return;
                 }
-                
+
                 const action = menuItem.dataset.action;
                 if (action) {
                     this.handleMenuAction(action);
@@ -261,11 +278,11 @@ class OICPPApp {
         let menuCloseTimer = null;
 
         const closeAllMenus = () => {
-            document.querySelectorAll('.menu-item.active').forEach(item => {
+            document.querySelectorAll('.menu-item.active').forEach((item) => {
                 item.classList.remove('active');
             });
             // Clear the old location too, so a stale pin can never survive.
-            document.querySelectorAll('.menu-dropdown.active').forEach(menu => {
+            document.querySelectorAll('.menu-dropdown.active').forEach((menu) => {
                 menu.classList.remove('active');
             });
         };
@@ -321,7 +338,7 @@ class OICPPApp {
 
     async handleMenuAction(action) {
         logInfo('菜单动作:', action);
-        
+
         switch (action) {
             case 'new-file':
                 this.createNewCppFile();
@@ -452,7 +469,7 @@ class OICPPApp {
             const username = this.accountInfo?.username || this.accountInfo?.name || this.accountInfo?.uid || '';
             logInfo('[Account] 获取登录状态:', {
                 loggedIn: this.accountLoggedIn,
-                user: username
+                user: username,
             });
         } catch (error) {
             logWarn('获取登录状态失败:', error?.message || error);
@@ -517,7 +534,14 @@ class OICPPApp {
                 this.showMessage(result.message, 'warning');
             }
         } catch (error) {
-            this.showMessage(this.t('message.loginStartFailed', { error: error?.message || error }, `Failed to start login: ${error?.message || error}`), 'error');
+            this.showMessage(
+                this.t(
+                    'message.loginStartFailed',
+                    { error: error?.message || error },
+                    `Failed to start login: ${error?.message || error}`
+                ),
+                'error'
+            );
         }
     }
 
@@ -544,12 +568,15 @@ class OICPPApp {
                 this.showMessage(this.t('message.logoutSuccess', null, 'Logged out'), 'success');
             }
         } catch (error) {
-            this.showMessage(this.t('message.logoutFailed', { error: error?.message || error }, `Failed to log out: ${error?.message || error}`), 'error');
+            this.showMessage(
+                this.t(
+                    'message.logoutFailed',
+                    { error: error?.message || error },
+                    `Failed to log out: ${error?.message || error}`
+                ),
+                'error'
+            );
         }
-    }
-
-    openFolder() {
-        window.electronAPI.openFolder();
     }
 
     updatePlatformSpecificMenu() {
@@ -626,10 +653,12 @@ class OICPPApp {
                 logInfo(`收到设置变化通知: ${settingsType}`, newSettings);
                 this.applySettings(settingsType, newSettings);
                 if (newSettings && Object.prototype.hasOwnProperty.call(newSettings, 'codeSnippets')) {
-                    try { window.monacoEditorManager?.refreshUserSnippets?.(); } catch (_) {}
+                    try {
+                        window.monacoEditorManager?.refreshUserSnippets?.();
+                    } catch (_) {}
                 }
             });
-            
+
             if (window.electronAPI.onThemeChanged) {
                 window.electronAPI.onThemeChanged((theme) => {
                     logInfo('收到主题变更通知:', theme);
@@ -643,18 +672,28 @@ class OICPPApp {
                 logInfo('收到设置重置通知:', allSettings);
                 this.settings = allSettings;
                 this.applySettings();
-                try { window.monacoEditorManager?.refreshUserSnippets?.(); } catch (_) {}
+                try {
+                    window.monacoEditorManager?.refreshUserSnippets?.();
+                } catch (_) {}
             });
 
             window.electronAPI.onSettingsImported((allSettings) => {
                 logInfo('收到设置导入通知:', allSettings);
                 this.settings = allSettings;
                 this.applySettings();
-                try { window.monacoEditorManager?.refreshUserSnippets?.(); } catch (_) {}
+                try {
+                    window.monacoEditorManager?.refreshUserSnippets?.();
+                } catch (_) {}
             });
 
             window.electronAPI.onFileOpened((event, data) => {
-                try { logInfo('[渲染进程] 收到 file-opened:', { fileName: data?.fileName, filePath: data?.filePath, contentBytes: (data?.content || '').length }); } catch (_) {}
+                try {
+                    logInfo('[渲染进程] 收到 file-opened:', {
+                        fileName: data?.fileName,
+                        filePath: data?.filePath,
+                        contentBytes: (data?.content || '').length,
+                    });
+                } catch (_) {}
                 if (data && data.filePath !== undefined && data.content !== undefined) {
                     this.openFile(data.filePath, data.content);
                 } else if (typeof data === 'string') {
@@ -663,7 +702,9 @@ class OICPPApp {
             });
 
             window.electronAPI.onFileSaved((filePath, error) => {
-                try { logInfo('[渲染进程] 收到 file-saved:', { filePath, error }); } catch (_) {}
+                try {
+                    logInfo('[渲染进程] 收到 file-saved:', { filePath, error });
+                } catch (_) {}
                 if (error) {
                     this.showMessage(this.t('message.saveFailed', { error }, `Save failed: ${error}`), 'error');
                 }
@@ -680,7 +721,7 @@ class OICPPApp {
                     return;
                 }
 
-                const fileName = data.fileName || (data.path.split(/[\\/]/).pop() || 'untitled.cpp');
+                const fileName = data.fileName || data.path.split(/[\\/]/).pop() || 'untitled.cpp';
                 const content = data.content ?? '';
                 const openOptions = { filePath: data.path };
                 if (data.viewType) {
@@ -720,10 +761,12 @@ class OICPPApp {
                 this.applySettings('editor', previewSettings);
             });
 
-            window.electronAPI.onSettingsApplied((finalSettings) => {;
+            window.electronAPI.onSettingsApplied((finalSettings) => {
                 this.applySettings('editor', finalSettings);
                 this.forceRefreshEditor(); // 强制刷新以应用字体等
-                try { window.monacoEditorManager?.refreshUserSnippets?.(); } catch (_) {}
+                try {
+                    window.monacoEditorManager?.refreshUserSnippets?.();
+                } catch (_) {}
             });
 
             if (typeof window.electronAPI.onAppToast === 'function') {
@@ -771,14 +814,13 @@ class OICPPApp {
                 logWarn('electronAPI不可用，使用默认设置');
             }
             this.applySettings();
-            
+
             if (this.compilerManager) {
                 this.compilerManager.updateSettings({
                     compilerPath: this.settings.compilerPath || '',
-                    compilerArgs: this.settings.compilerArgs || '-std=c++14 -O2 -static'
+                    compilerArgs: this.settings.compilerArgs || '-std=c++14 -O2 -static',
                 });
             }
-            
         } catch (error) {
             logError('加载设置失败:', error);
             this.applySettings();
@@ -790,8 +832,11 @@ class OICPPApp {
         if (newSettings) {
             this.settings = { ...this.settings, ...newSettings };
         }
-        
-        if (window.monacoEditorManager && typeof window.monacoEditorManager.loadKeybindingsFromSettings === 'function') {
+
+        if (
+            window.monacoEditorManager &&
+            typeof window.monacoEditorManager.loadKeybindingsFromSettings === 'function'
+        ) {
             try {
                 window.monacoEditorManager.loadKeybindingsFromSettings(this.settings);
             } catch (err) {
@@ -800,24 +845,31 @@ class OICPPApp {
         }
 
         this.updateEditorSettings();
-        
+
         this.applyTheme(this.settings.theme);
         this.applyGlassEffectSetting();
         this.applyBackgroundImageSetting();
-        
+
         if (newSettings && (newSettings.fontSize !== undefined || newSettings.font !== undefined)) {
             this.forceRefreshEditor();
         }
-        
-        if (this.compilerManager && (newSettings?.compilerPath !== undefined || newSettings?.compilerArgs !== undefined || !settingsType)) {
+
+        if (
+            this.compilerManager &&
+            (newSettings?.compilerPath !== undefined || newSettings?.compilerArgs !== undefined || !settingsType)
+        ) {
             this.compilerManager.updateSettings({
                 compilerPath: this.settings.compilerPath || '',
-                compilerArgs: this.settings.compilerArgs || '-std=c++14 -O2 -static'
+                compilerArgs: this.settings.compilerArgs || '-std=c++14 -O2 -static',
             });
-        }     
+        }
 
         const currentCompilerPath = this.settings.compilerPath || '';
-        if (newSettings && Object.prototype.hasOwnProperty.call(newSettings, 'compilerPath') && previousCompilerPath !== currentCompilerPath) {
+        if (
+            newSettings &&
+            Object.prototype.hasOwnProperty.call(newSettings, 'compilerPath') &&
+            previousCompilerPath !== currentCompilerPath
+        ) {
             logInfo('[LSP] 编译器路径发生更改，正在重启LSP:', previousCompilerPath, '->', currentCompilerPath);
             try {
                 const restartPromise = window.monacoEditorManager?.restartLspWithCompiler?.(currentCompilerPath);
@@ -879,7 +931,7 @@ class OICPPApp {
             openTerminal: 'Ctrl+`',
             toggleWrap: 'Alt+Z',
             toggleSidebar: 'Ctrl+B',
-            runAllSamples: this.isMacPlatform() ? 'Ctrl+Shift+F11' : 'Ctrl+F11'
+            runAllSamples: this.isMacPlatform() ? 'Ctrl+Shift+F11' : 'Ctrl+F11',
         };
     }
 
@@ -899,7 +951,7 @@ class OICPPApp {
             { action: 'compile', key: 'compileCode' },
             { action: 'run', key: 'runCode' },
             { action: 'compile-run', key: 'compileAndRun' },
-            { action: 'debug', key: 'toggleDebug' }
+            { action: 'debug', key: 'toggleDebug' },
         ];
 
         mappings.forEach((item) => {
@@ -910,7 +962,7 @@ class OICPPApp {
             node.textContent = this.resolveShortcutLabel(item.key);
         });
     }
-    
+
     configureAutoSave() {
         if (!this.autoSaveController) {
             this.autoSaveController = {
@@ -918,7 +970,7 @@ class OICPPApp {
                 enabled: true,
                 debounceMs: 1000,
                 running: false,
-                pendingFile: null
+                pendingFile: null,
             };
         }
 
@@ -1008,7 +1060,7 @@ class OICPPApp {
             if (window.__oicppDiscardClose) {
                 return 0;
             }
-        } catch (_) { }
+        } catch (_) {}
         if (!window.tabManager || typeof window.tabManager.autoSaveModifiedTabs !== 'function') {
             return 0;
         }
@@ -1027,16 +1079,16 @@ class OICPPApp {
                 const settings = {
                     fontSize: this.settings.fontSize,
                     font: this.settings.font,
-                    theme: this.settings.theme
+                    theme: this.settings.theme,
                 };
                 window.monacoEditorManager.updateAllEditorsSettings(settings);
             }
-            
+
             if (window.tabManager && window.tabManager.updateAllEditorsSettings) {
                 const settings = {
                     fontSize: this.settings.fontSize,
                     font: this.settings.font,
-                    theme: this.settings.theme
+                    theme: this.settings.theme,
                 };
                 window.tabManager.updateAllEditorsSettings(settings);
             }
@@ -1077,11 +1129,11 @@ class OICPPApp {
         }
 
         const event = new CustomEvent('theme-changed', {
-            detail: { theme: resolvedTheme, tone }
+            detail: { theme: resolvedTheme, tone },
         });
         document.dispatchEvent(event);
     }
-    
+
     applyThemeSettings() {
         this.applyTheme(this.settings.theme);
         this.applyGlassEffectSetting();
@@ -1106,9 +1158,8 @@ class OICPPApp {
             return;
         }
 
-        const rawBackgroundImage = typeof this.settings?.backgroundImage === 'string'
-            ? this.settings.backgroundImage.trim()
-            : '';
+        const rawBackgroundImage =
+            typeof this.settings?.backgroundImage === 'string' ? this.settings.backgroundImage.trim() : '';
 
         const styleElementId = 'custom-bg-style';
 
@@ -1226,7 +1277,7 @@ class OICPPApp {
             }
         `;
     }
-    
+
     notifyThemeChange(theme) {
         logInfo('通知主题变更:', theme);
     }
@@ -1252,12 +1303,12 @@ class OICPPApp {
             '.welcome-recent-item',
             '.sidebar',
             '.file-item',
-            '.folder-item'
+            '.folder-item',
         ];
 
-        componentsToUpdate.forEach(selector => {
+        componentsToUpdate.forEach((selector) => {
             const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
+            elements.forEach((element) => {
                 element.style.display = 'none';
                 void element.offsetHeight;
                 element.style.display = '';
@@ -1280,9 +1331,9 @@ class OICPPApp {
             clangFormatRaw: this.settings.clangFormatRaw || '',
             wordWrap: this.settings.wordWrap || false,
             foldingEnabled: this.settings.foldingEnabled !== false,
-            stickyScrollEnabled: this.settings.stickyScrollEnabled !== false
+            stickyScrollEnabled: this.settings.stickyScrollEnabled !== false,
         };
-        
+
         if (window.monacoEditorManager && typeof window.monacoEditorManager.updateAllEditorsSettings === 'function') {
             try {
                 window.monacoEditorManager.updateAllEditorsSettings(editorSettings);
@@ -1299,10 +1350,10 @@ class OICPPApp {
         }
         this.updateEditorCSSVariables(editorSettings);
     }
-    
+
     updateEditorCSSVariables(settings) {
         const root = document.documentElement;
-        
+
         if (settings.font) {
             root.style.setProperty('--editor-font-family', settings.font);
         }
@@ -1330,18 +1381,20 @@ class OICPPApp {
             activeElement?.closest?.('#integrated-terminal-panel') ||
             activeElement?.closest?.('.xterm')
         );
-        const isInEditor = e.target.closest('.monaco-editor') || 
-                          e.target.closest('.monaco-editor-container') ||
-                          e.target.classList.contains('monaco-editor') ||
-                          e.target.classList.contains('monaco-editor-container');
+        const isInEditor =
+            e.target.closest('.monaco-editor') ||
+            e.target.closest('.monaco-editor-container') ||
+            e.target.classList.contains('monaco-editor') ||
+            e.target.classList.contains('monaco-editor-container');
         const matches = (action) => {
             return this.editorManager && typeof this.editorManager.doesEventMatchShortcut === 'function'
                 ? this.editorManager.doesEventMatchShortcut(e, action)
                 : false;
         };
-        const isInputLike = this.editorManager && typeof this.editorManager.isInputLikeTarget === 'function'
-            ? this.editorManager.isInputLikeTarget(e.target)
-            : false;
+        const isInputLike =
+            this.editorManager && typeof this.editorManager.isInputLikeTarget === 'function'
+                ? this.editorManager.isInputLikeTarget(e.target)
+                : false;
         const handle = (fn) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1352,7 +1405,7 @@ class OICPPApp {
             // Keep terminal-native key handling (history, completion, readline shortcuts).
             return;
         }
-        
+
         if (isInEditor) {
             if ((e.ctrlKey || e.metaKey) && !e.altKey) {
                 if (e.shiftKey && key === 'n') {
@@ -1376,7 +1429,10 @@ class OICPPApp {
                 }
             }
 
-            if (matches('toggleDebug')) return handle(() => { this.isDebugging ? this.handleDebugContinue() : this.startDebug(); });
+            if (matches('toggleDebug'))
+                return handle(() => {
+                    this.isDebugging ? this.handleDebugContinue() : this.startDebug();
+                });
             if (matches('debugContinue') && this.isDebugging) return handle(() => this.handleDebugContinue());
             if (matches('debugStepOver') && this.isDebugging) return handle(() => this.handleDebugStepOver());
             if (matches('debugStepInto') && this.isDebugging) return handle(() => this.handleDebugStepInto());
@@ -1386,11 +1442,12 @@ class OICPPApp {
             if (matches('compileCode')) return handle(() => this.compileCode());
             if (matches('runAllSamples')) return handle(() => this.runAllSamples());
             if (matches('openTerminal')) return handle(() => this.openIntegratedTerminal());
-            if (matches('toggleWrap')) return handle(() => {
-                if (this.editorManager && typeof this.editorManager.toggleWordWrap === 'function') {
-                    this.editorManager.toggleWordWrap();
-                }
-            });
+            if (matches('toggleWrap'))
+                return handle(() => {
+                    if (this.editorManager && typeof this.editorManager.toggleWordWrap === 'function') {
+                        this.editorManager.toggleWordWrap();
+                    }
+                });
             if (matches('toggleSidebar')) return handle(() => this.toggleSidebarAction());
 
             if (e.shiftKey && e.altKey && e.key === 'F') {
@@ -1400,7 +1457,7 @@ class OICPPApp {
             }
             return;
         }
-        
+
         if (e.ctrlKey && key === 'z') {
             const target = e.target;
             const currentEditor = this.editorManager ? this.editorManager.currentEditor : null;
@@ -1408,20 +1465,20 @@ class OICPPApp {
                 tagName: target?.tagName || null,
                 id: target?.id || null,
                 className: typeof target?.className === 'string' ? target.className : null,
-                role: typeof target?.getAttribute === 'function' ? (target.getAttribute('role') || null) : null,
-                isContentEditable: !!target?.isContentEditable
+                role: typeof target?.getAttribute === 'function' ? target.getAttribute('role') || null : null,
+                isContentEditable: !!target?.isContentEditable,
             };
             const currentEditorInfo = {
                 exists: !!currentEditor,
                 hasGetValue: typeof currentEditor?.getValue === 'function',
                 hasGetFilePath: typeof currentEditor?.getFilePath === 'function',
-                filePath: typeof currentEditor?.getFilePath === 'function' ? (currentEditor.getFilePath() || null) : null
+                filePath: typeof currentEditor?.getFilePath === 'function' ? currentEditor.getFilePath() || null : null,
             };
             logInfo(`全局Ctrl+Z事件被检测到，目标元素:`, targetInfo);
             logInfo(`当前活跃编辑器:`, currentEditorInfo);
             logInfo(`当前标签页ID:`, this.editorManager ? this.editorManager.currentTabId : '无');
         }
-        
+
         if ((e.ctrlKey || e.metaKey) && !e.altKey) {
             if (e.shiftKey && key === 'n') {
                 e.preventDefault();
@@ -1445,7 +1502,10 @@ class OICPPApp {
         }
 
         if (!isInputLike) {
-            if (matches('toggleDebug')) return handle(() => { this.isDebugging ? this.handleDebugContinue() : this.startDebug(); });
+            if (matches('toggleDebug'))
+                return handle(() => {
+                    this.isDebugging ? this.handleDebugContinue() : this.startDebug();
+                });
             if (matches('debugContinue') && this.isDebugging) return handle(() => this.handleDebugContinue());
             if (matches('debugStepOver') && this.isDebugging) return handle(() => this.handleDebugStepOver());
             if (matches('debugStepInto') && this.isDebugging) return handle(() => this.handleDebugStepInto());
@@ -1455,11 +1515,12 @@ class OICPPApp {
             if (matches('compileCode')) return handle(() => this.compileCode());
             if (matches('runAllSamples')) return handle(() => this.runAllSamples());
             if (matches('openTerminal')) return handle(() => this.openIntegratedTerminal());
-            if (matches('toggleWrap')) return handle(() => {
-                if (this.editorManager && typeof this.editorManager.toggleWordWrap === 'function') {
-                    this.editorManager.toggleWordWrap();
-                }
-            });
+            if (matches('toggleWrap'))
+                return handle(() => {
+                    if (this.editorManager && typeof this.editorManager.toggleWordWrap === 'function') {
+                        this.editorManager.toggleWordWrap();
+                    }
+                });
             if (matches('toggleSidebar')) return handle(() => this.toggleSidebarAction());
         }
     }
@@ -1494,11 +1555,9 @@ class OICPPApp {
             return;
         }
 
-
         let fileName = null;
-        const overrideName = typeof options?.fileName === 'string' && options.fileName.trim()
-            ? options.fileName.trim()
-            : null;
+        const overrideName =
+            typeof options?.fileName === 'string' && options.fileName.trim() ? options.fileName.trim() : null;
 
         if (overrideName) {
             fileName = overrideName;
@@ -1520,17 +1579,15 @@ class OICPPApp {
             return;
         }
 
-        const base64Override = typeof options?.base64Data === 'string' && options.base64Data.trim()
-            ? options.base64Data.trim()
-            : null;
+        const base64Override =
+            typeof options?.base64Data === 'string' && options.base64Data.trim() ? options.base64Data.trim() : null;
 
         const tabManager = window.tabManager;
         const preferredGroupId = options?.groupId || null;
         const activeGroupId = preferredGroupId || tabManager?.activeGroupId || tabManager?.groupOrder?.[0] || 'group-1';
 
-        const overrideRawPath = typeof options?.filePath === 'string' && options.filePath.trim()
-            ? options.filePath.trim()
-            : null;
+        const overrideRawPath =
+            typeof options?.filePath === 'string' && options.filePath.trim() ? options.filePath.trim() : null;
         const normalizedOverridePath = overrideRawPath ? this.normalizeFilePathCandidate(overrideRawPath) : null;
         const fileRawPath = typeof file?.path === 'string' && file.path.trim() ? file.path.trim() : null;
         const normalizedFilePath = fileRawPath ? this.normalizeFilePathCandidate(fileRawPath) : null;
@@ -1606,7 +1663,7 @@ class OICPPApp {
                     groupId: activeGroupId,
                     viewType: 'pdf',
                     isTempFile,
-                    pdfBase64: base64Data || null
+                    pdfBase64: base64Data || null,
                 });
                 logInfo('已打开拖拽的 PDF 文件:', fileName);
                 return;
@@ -1628,7 +1685,7 @@ class OICPPApp {
 
             await tabManager.openFile(fileName, content ?? '', false, {
                 filePath: normalizedPath || null,
-                groupId: activeGroupId
+                groupId: activeGroupId,
             });
             logInfo('已打开拖拽的文件:', fileName);
             return;
@@ -1679,9 +1736,7 @@ class OICPPApp {
             return { filePath: sanitized || existingPath, isTempFile: false, base64Data: null };
         }
 
-        let inlineBase64 = typeof base64Override === 'string' && base64Override.trim()
-            ? base64Override.trim()
-            : null;
+        let inlineBase64 = typeof base64Override === 'string' && base64Override.trim() ? base64Override.trim() : null;
 
         if (inlineBase64) {
             const persisted = await this.tryPersistPdfToTemp(fileName, inlineBase64);
@@ -1696,7 +1751,11 @@ class OICPPApp {
                 if (inlineBase64) {
                     const persisted = await this.tryPersistPdfToTemp(fileName, inlineBase64);
                     if (persisted?.filePath) {
-                        return { filePath: persisted.filePath, isTempFile: Boolean(persisted.isTempFile), base64Data: null };
+                        return {
+                            filePath: persisted.filePath,
+                            isTempFile: Boolean(persisted.isTempFile),
+                            base64Data: null,
+                        };
                     }
                 }
             } catch (error) {
@@ -1787,7 +1846,10 @@ class OICPPApp {
             return '';
         }
 
-        if ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith('\'') && normalized.endsWith('\''))) {
+        if (
+            (normalized.startsWith('"') && normalized.endsWith('"')) ||
+            (normalized.startsWith("'") && normalized.endsWith("'"))
+        ) {
             normalized = normalized.slice(1, -1);
         }
 
@@ -1890,7 +1952,7 @@ class OICPPApp {
 
     async createNewCppFile() {
         logInfo('创建新的C++文件');
-        const fileExplorer = window.sidebarManager?.panels?.files;      
+        const fileExplorer = window.sidebarManager?.panels?.files;
         if (!fileExplorer || !fileExplorer.hasWorkspace) {
             logWarn('没有打开的工作区，无法创建新文件');
             if (window.dialogManager) {
@@ -1898,7 +1960,7 @@ class OICPPApp {
             }
             return;
         }
-        
+
         if (fileExplorer.createNewFile) {
             await fileExplorer.createNewFile();
         } else {
@@ -1943,23 +2005,39 @@ class OICPPApp {
             if (window.tabManager && typeof window.tabManager.openFile === 'function') {
                 await window.tabManager.openFile(fileName, content, false, {
                     filePath: tempPath,
-                    isTempFile: true
+                    isTempFile: true,
                 });
             } else if (this.editorManager && typeof this.editorManager.openFile === 'function') {
                 this.editorManager.openFile(fileName, content);
             }
 
-            this.showMessage(this.t('message.tempFileCreated', null, 'Temporary file created. It will be deleted when the IDE exits.'), 'success');
+            this.showMessage(
+                this.t(
+                    'message.tempFileCreated',
+                    null,
+                    'Temporary file created. It will be deleted when the IDE exits.'
+                ),
+                'success'
+            );
         } catch (error) {
             logError('新建临时文件失败:', error);
-            this.showMessage(this.t('message.tempFileCreateFailed', { error: error?.message || error }, `Failed to create temporary file: ${error?.message || error}`), 'error');
+            this.showMessage(
+                this.t(
+                    'message.tempFileCreateFailed',
+                    { error: error?.message || error },
+                    `Failed to create temporary file: ${error?.message || error}`
+                ),
+                'error'
+            );
         }
     }
 
     openFile(filePath, content) {
         if (typeof filePath === 'string' && typeof content === 'string') {
-            try { logInfo('[渲染进程] 直接打开指定文件内容（不弹窗）:', { filePath, contentBytes: content.length }); } catch (_) {}
-            const fileName = (filePath.split(/[\\\/]/).pop()) || filePath;
+            try {
+                logInfo('[渲染进程] 直接打开指定文件内容（不弹窗）:', { filePath, contentBytes: content.length });
+            } catch (_) {}
+            const fileName = filePath.split(/[\\\/]/).pop() || filePath;
             if (window.tabManager) {
                 window.tabManager.openFile(fileName, content, false, filePath);
             } else if (this.editorManager) {
@@ -1993,12 +2071,14 @@ class OICPPApp {
     }
 
     openFolder() {
-    const isLinux = (window.process && window.process.platform === 'linux');
-    if (isLinux && window.folderPicker) {
-            window.folderPicker.show({ startPath: this.settings.lastOpen || '/' }).then(sel => {
+        const isLinux = window.process && window.process.platform === 'linux';
+        if (isLinux && window.folderPicker) {
+            window.folderPicker.show({ startPath: this.settings.lastOpen || '/' }).then((sel) => {
                 if (sel) {
                     if (window.electronAPI) {
-            window.electronAPI.openRecentFile ? window.electronAPI.openRecentFile(sel) : this.onFolderOpened(sel);
+                        window.electronAPI.openRecentFile
+                            ? window.electronAPI.openRecentFile(sel)
+                            : this.onFolderOpened(sel);
                     } else {
                         this.onFolderOpened(sel);
                     }
@@ -2042,12 +2122,15 @@ class OICPPApp {
 
     async openIntegratedTerminal(options = {}) {
         if (!this.terminalPanel) {
-            this.showMessage(this.t('message.terminalUninitialized', null, 'The integrated terminal is not initialized'), 'error');
+            this.showMessage(
+                this.t('message.terminalUninitialized', null, 'The integrated terminal is not initialized'),
+                'error'
+            );
             return;
         }
         return await this.terminalPanel.open({
             createIfNone: true,
-            forceCreate: !!options.forceCreate
+            forceCreate: !!options.forceCreate,
         });
     }
 
@@ -2131,11 +2214,11 @@ class OICPPApp {
                 if (window.electronAPI && typeof window.electronAPI.writeTerminal === 'function') {
                     window.electronAPI.writeTerminal(terminalId, '\n');
                 }
-            } catch (_) { }
+            } catch (_) {}
             // 同时直接写入 xterm.js 显示层，确保用户能看到换行
             try {
                 this.terminalPanel.writeTerminalOutput(terminalId, '\r\n');
-            } catch (_) { }
+            } catch (_) {}
         }
 
         this._debugTerminalBridgeEnabled = false;
@@ -2201,15 +2284,14 @@ class OICPPApp {
                     logInfo(`[调试] 已获取内置终端TTY: ${tty} (terminalId=${terminalId})`);
                     return tty;
                 }
-            } catch (_) {
-            }
+            } catch (_) {}
 
             await new Promise((resolve) => setTimeout(resolve, 120));
         }
 
         logWarn('[调试] 获取内置终端TTY失败:', {
             terminalId,
-            lastResult
+            lastResult,
         });
 
         return null;
@@ -2222,9 +2304,10 @@ class OICPPApp {
     async saveFile() {
         if (this.editorManager && this.editorManager.currentEditor) {
             const content = this.editorManager.currentEditor.getValue();
-            const filePath = this.editorManager.currentEditor.getFilePath ? 
-                            this.editorManager.currentEditor.getFilePath() : null;
-            
+            const filePath = this.editorManager.currentEditor.getFilePath
+                ? this.editorManager.currentEditor.getFilePath()
+                : null;
+
             logInfo('保存文件 - 文件路径:', filePath, '内容长度:', content ? content.length : 'undefined');
             if (window.electronAPI) {
                 if (filePath) {
@@ -2252,7 +2335,9 @@ class OICPPApp {
                                 ed.filePath = newPath;
                                 ed.getFilePath = () => ed.filePath;
                             } catch (_) {}
-                            try { window.tabManager?.updateTabPathBySource(null, newPath); } catch (_) {}
+                            try {
+                                window.tabManager?.updateTabPathBySource(null, newPath);
+                            } catch (_) {}
                             if (window.tabManager) {
                                 if (window.tabManager.markTabAsSavedByUniqueKey) {
                                     window.tabManager.markTabAsSavedByUniqueKey(newPath.replace(/\\/g, '/'));
@@ -2292,7 +2377,6 @@ class OICPPApp {
     }
 
     async saveCurrentFile() {
-
         if (this.editorManager && this.editorManager.currentEditor) {
             // 保存时自动格式化（可在编辑器设置中开关）
             if (this.settings && this.settings.formatOnSave) {
@@ -2306,9 +2390,10 @@ class OICPPApp {
                 }
             }
             const content = this.editorManager.getCurrentContent();
-            const filePath = this.editorManager.currentEditor.getFilePath ? 
-                            this.editorManager.currentEditor.getFilePath() : null;
-            
+            const filePath = this.editorManager.currentEditor.getFilePath
+                ? this.editorManager.currentEditor.getFilePath()
+                : null;
+
             if (window.electronAPI && filePath && content !== null) {
                 try {
                     await window.electronAPI.saveFile(filePath, content);
@@ -2325,10 +2410,10 @@ class OICPPApp {
                 }
             } else {
                 const event = new CustomEvent('saveFile', {
-                    detail: { 
+                    detail: {
                         content: content,
-                        filePath: filePath
-                    }
+                        filePath: filePath,
+                    },
                 });
                 document.dispatchEvent(event);
             }
@@ -2347,11 +2432,23 @@ class OICPPApp {
         const menu = document.createElement('div');
         menu.className = 'context-menu tab-actions-menu';
         const items = [
-            { label: '关闭标签页', action: () => { const k = group?.activeTabKey || tm.activeTabKey; if (k) tm.closeTabByUniqueKey(k); } },
+            {
+                label: '关闭标签页',
+                action: () => {
+                    const k = group?.activeTabKey || tm.activeTabKey;
+                    if (k) tm.closeTabByUniqueKey(k);
+                },
+            },
             { label: '关闭其他标签页', action: () => tm.closeOtherTabs() },
             { label: '关闭全部标签页', action: () => tm.closeAllTabs() },
             { separator: true },
-            { label: '向右分屏', action: () => { const k = group?.activeTabKey || tm.activeTabKey; if (k) tm.handleSplitDrop(k, groupId); } }
+            {
+                label: '向右分屏',
+                action: () => {
+                    const k = group?.activeTabKey || tm.activeTabKey;
+                    if (k) tm.handleSplitDrop(k, groupId);
+                },
+            },
         ];
         for (const item of items) {
             const el = document.createElement('div');
@@ -2361,7 +2458,10 @@ class OICPPApp {
             } else {
                 el.className = 'context-menu-item';
                 el.textContent = item.label;
-                el.addEventListener('click', () => { menu.remove(); item.action(); });
+                el.addEventListener('click', () => {
+                    menu.remove();
+                    item.action();
+                });
             }
             menu.appendChild(el);
         }
@@ -2369,11 +2469,12 @@ class OICPPApp {
 
         const rect = anchorBtn.getBoundingClientRect();
         menu.style.left = Math.min(rect.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8) + 'px';
-        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.top = rect.bottom + 4 + 'px';
     }
 
     // 侧栏/终端切换动作（供全局快捷键与 Monaco 命令共用）
-    toggleSidebarAction() {        if (window.sidebarManager && typeof window.sidebarManager.toggleSidebar === 'function') {
+    toggleSidebarAction() {
+        if (window.sidebarManager && typeof window.sidebarManager.toggleSidebar === 'function') {
             window.sidebarManager.toggleSidebar();
         }
     }
@@ -2390,9 +2491,7 @@ class OICPPApp {
     async autoConfigureCompilerSilently() {
         try {
             if (!window.electronAPI || !window.electronAPI.detectCompilers) return;
-            const settings = window.electronAPI.getAllSettings
-                ? await window.electronAPI.getAllSettings()
-                : null;
+            const settings = window.electronAPI.getAllSettings ? await window.electronAPI.getAllSettings() : null;
             if (settings && settings.compilerPath) {
                 logInfo('[自包含] 编译器已配置:', settings.compilerPath);
                 return;
@@ -2404,7 +2503,7 @@ class OICPPApp {
             }
             const best = found[0]; // 内置编译器排首位
             const result = await window.electronAPI.updateSettings({
-                compilerPath: best.path
+                compilerPath: best.path,
             });
             if (result && result.success) {
                 this.settings = Object.assign({}, this.settings, { compilerPath: best.path });
@@ -2425,7 +2524,7 @@ class OICPPApp {
                 title: this.t('menu.compilerSettings', null, '编译器设置'),
                 src: 'settings/compiler.html',
                 width: 820,
-                height: 640
+                height: 640,
             });
             return;
         }
@@ -2434,7 +2533,7 @@ class OICPPApp {
         } else if (typeof require !== 'undefined') {
             try {
                 const { ipcRenderer } = require('electron');
-                ipcRenderer.invoke('open-compiler-settings').catch(error => {
+                ipcRenderer.invoke('open-compiler-settings').catch((error) => {
                     logError('打开编译器设置失败:', error);
                 });
             } catch (error) {
@@ -2453,7 +2552,7 @@ class OICPPApp {
                 title: this.t('menu.editorSettings', null, '编辑器设置'),
                 src: 'settings/editor.html',
                 width: 900,
-                height: 680
+                height: 680,
             });
             return;
         }
@@ -2479,7 +2578,7 @@ class OICPPApp {
                 title: this.t('menu.templateSettings', null, '模板设置'),
                 src: 'settings/templates.html',
                 width: 860,
-                height: 640
+                height: 640,
             });
             return;
         }
@@ -2501,9 +2600,9 @@ class OICPPApp {
         if (window.sidebarManager) {
             window.sidebarManager.showPanel('debug');
         }
-        
+
         this.initializeDebugFeatures();
-        
+
         setTimeout(() => {
             this.handleDebugStart();
         }, 100);
@@ -2513,9 +2612,9 @@ class OICPPApp {
         if (!window.debugUIInitialized) {
             window.debugUIInitialized = true;
         }
-        
+
         this.setupDebugEventListeners();
-        
+
         this.setupDebugIPC();
     }
 
@@ -2530,12 +2629,12 @@ class OICPPApp {
 
     setupSimplifiedDebugUI() {
         logInfo('设置简化版调试UI');
-        
+
         const waitingMessages = document.querySelectorAll('.waiting-debug-message');
-        waitingMessages.forEach(msg => {
+        waitingMessages.forEach((msg) => {
             msg.textContent = '调试器就绪，等待开始调试...';
         });
-        
+
         this.setupDebugEventListeners();
     }
 
@@ -2544,9 +2643,9 @@ class OICPPApp {
             logInfo('DebugUI已存在，跳过简化版事件监听器设置');
             return;
         }
-        
+
         logInfo('设置简化版调试事件监听器');
-        
+
         const startBtn = document.getElementById('debug-start');
         if (startBtn && !startBtn.hasAttribute('data-debug-listener')) {
             startBtn.addEventListener('click', () => {
@@ -2560,7 +2659,7 @@ class OICPPApp {
             'debug-step-over': () => this.handleDebugStepOver(),
             'debug-step-into': () => this.handleDebugStepInto(),
             'debug-step-out': () => this.handleDebugStepOut(),
-            'debug-stop': () => this.handleDebugStop()
+            'debug-stop': () => this.handleDebugStop(),
         };
 
         Object.entries(debugControls).forEach(([id, handler]) => {
@@ -2580,38 +2679,40 @@ class OICPPApp {
 
         try {
             const { ipcRenderer } = require('electron');
-            
+
             if (!window.debugIPCInitialized) {
-            ipcRenderer.on('debug-started', (event, data) => {
-                logInfo('[前端] 收到debug-started事件:', data);
-                this.onDebugStarted(data);
-            });
-            ipcRenderer.on('debug-stopped', (event, data) => {
-                logInfo('[前端] 收到debug-stopped事件:', data);
-                this.onDebugStopped(data);
-            });
-            ipcRenderer.on('debug-running', (event) => {
-                logInfo('[前端] 收到debug-running事件');
-                this.onDebugRunning();
-                try { window.monacoEditorManager?.clearAllExecHighlights?.(); } catch (_) {}
-            });
+                ipcRenderer.on('debug-started', (event, data) => {
+                    logInfo('[前端] 收到debug-started事件:', data);
+                    this.onDebugStarted(data);
+                });
+                ipcRenderer.on('debug-stopped', (event, data) => {
+                    logInfo('[前端] 收到debug-stopped事件:', data);
+                    this.onDebugStopped(data);
+                });
+                ipcRenderer.on('debug-running', (event) => {
+                    logInfo('[前端] 收到debug-running事件');
+                    this.onDebugRunning();
+                    try {
+                        window.monacoEditorManager?.clearAllExecHighlights?.();
+                    } catch (_) {}
+                });
 
-            ipcRenderer.on('debug-program-exited', (event, data) => {
-                this.onProgramExited(data);
-            });
+                ipcRenderer.on('debug-program-exited', (event, data) => {
+                    this.onProgramExited(data);
+                });
 
-            ipcRenderer.on('debug-ready-waiting', (event, data) => {
-                this.onDebugReadyWaiting(data);
-            });
+                ipcRenderer.on('debug-ready-waiting', (event, data) => {
+                    this.onDebugReadyWaiting(data);
+                });
 
-            ipcRenderer.removeAllListeners('debug-breakpoint-hit');
-            ipcRenderer.on('debug-breakpoint-hit', (event, data) => {
-                this.onBreakpointHit(data);
-            });
+                ipcRenderer.removeAllListeners('debug-breakpoint-hit');
+                ipcRenderer.on('debug-breakpoint-hit', (event, data) => {
+                    this.onBreakpointHit(data);
+                });
 
-            ipcRenderer.on('debug-error', (event, error) => {
-                this.onDebugError(error);
-            });
+                ipcRenderer.on('debug-error', (event, error) => {
+                    this.onDebugError(error);
+                });
 
                 ipcRenderer.on('debug-variables-updated', (event, variables) => {
                     this.onVariablesUpdated(variables);
@@ -2622,13 +2723,10 @@ class OICPPApp {
                 });
 
                 ipcRenderer.on('debug-terminal-output', (_event, payload) => {
-                    const text = typeof payload === 'string'
-                        ? payload
-                        : String(payload?.data ?? '');
+                    const text = typeof payload === 'string' ? payload : String(payload?.data ?? '');
                     if (!text) return;
                     this.appendDebugTerminalOutput(text);
                 });
-
 
                 ipcRenderer.on('goto-source-location', async (event, frame) => {
                     try {
@@ -2655,42 +2753,66 @@ class OICPPApp {
 
     async handleDebugStart() {
         logInfo('开始调试会话');
-        
+
         try {
             this.showMessage(this.t('debug.checkingEnvironment', null, 'Checking debug environment...'), 'info');
             const gdbStatus = await this.checkGDBAvailability();
-            
+
             if (!gdbStatus.available) {
                 this.showMessage(gdbStatus.message, 'error');
                 this.showDebugStatus(gdbStatus.message);
                 return;
             }
-            
+
             logInfo('调试环境检查通过:', gdbStatus.message);
         } catch (error) {
             logError('调试环境检查失败:', error);
-            this.showMessage(this.t('debug.environmentCheckFailed', null, 'Unable to check the debug environment. Make sure the debugger is installed correctly.'), 'error');
+            this.showMessage(
+                this.t(
+                    'debug.environmentCheckFailed',
+                    null,
+                    'Unable to check the debug environment. Make sure the debugger is installed correctly.'
+                ),
+                'error'
+            );
             return;
         }
-        
+
         const currentFile = this.getCurrentFilePath();
         logInfo('当前文件路径:', currentFile);
-        
+
         if (!currentFile) {
-            this.showMessage(this.t('debug.noDebugFile', null, 'No file is open for debugging. Open a C++ source file first.'), 'warning');
+            this.showMessage(
+                this.t('debug.noDebugFile', null, 'No file is open for debugging. Open a C++ source file first.'),
+                'warning'
+            );
             return;
         }
 
         if (!currentFile.match(/\.(cpp|cc|cxx|c)$/i)) {
-            this.showMessage(this.t('debug.debugCppOnly', null, 'Open a C++ source file to debug. The current file is not a C++ source file.'), 'warning');
+            this.showMessage(
+                this.t(
+                    'debug.debugCppOnly',
+                    null,
+                    'Open a C++ source file to debug. The current file is not a C++ source file.'
+                ),
+                'warning'
+            );
             return;
         }
 
         this.showMessage(this.t('debug.compilingForDebug', null, 'Compiling code for debugging...'), 'info');
-        
+
         try {
             if (!this.compilerManager) {
-                this.showMessage(this.t('debug.compilerUnavailable', null, 'The compiler is not initialized and cannot be used for debugging'), 'error');
+                this.showMessage(
+                    this.t(
+                        'debug.compilerUnavailable',
+                        null,
+                        'The compiler is not initialized and cannot be used for debugging'
+                    ),
+                    'error'
+                );
                 return;
             }
 
@@ -2704,7 +2826,7 @@ class OICPPApp {
             if (debugRunMode === 'integrated-terminal') {
                 try {
                     this.compilerManager?.hideOutput?.();
-                } catch (_) { }
+                } catch (_) {}
                 const openedTerminalId = await this.openIntegratedTerminal({ forceCreate: true });
                 terminalId = openedTerminalId || this.terminalPanel?.activeId || '';
                 this._debugSessionTerminalId = terminalId || null;
@@ -2742,11 +2864,11 @@ class OICPPApp {
                         activeTerminalId: this.terminalPanel?.activeId || null,
                         resolvedTerminalId: terminalId,
                         inferiorTTY,
-                        useInputBridge
+                        useInputBridge,
                     });
                 }
             }
-            
+
             const isWin = navigator.platform.toLowerCase().includes('win');
             let executablePath = currentFile.replace(/\.(cpp|cc|cxx|c)$/i, isWin ? '.exe' : '');
             if (!isWin && executablePath.endsWith('.exe')) {
@@ -2754,19 +2876,21 @@ class OICPPApp {
                 executablePath = noExt;
             }
             logInfo('检查可执行文件:', executablePath);
-            
+
             this._autoContinueOnStart = true;
             this.startDebugSession(currentFile, {
                 runMode: debugRunMode,
                 useInputBridge,
                 terminalId: terminalId || '',
-                ...(inferiorTTY ? { inferiorTTY } : {})
+                ...(inferiorTTY ? { inferiorTTY } : {}),
             });
-            
         } catch (error) {
             this.unbindDebugTerminalBridge();
             logError('启动调试准备失败:', error);
-            this.showMessage(`${this.t('debug.startFailed', null, 'Failed to start debugging')}: ${this.stringifyError(error)}`, 'warning');
+            this.showMessage(
+                `${this.t('debug.startFailed', null, 'Failed to start debugging')}: ${this.stringifyError(error)}`,
+                'warning'
+            );
         }
     }
 
@@ -2798,12 +2922,12 @@ class OICPPApp {
     async compileBeforeDebug() {
         return new Promise((resolve, reject) => {
             logInfo('开始为调试编译代码...');
-            
+
             if (!this.compilerManager) {
                 reject(new Error('编译器未初始化'));
                 return;
             }
-            
+
             if (!this.settings.compilerPath) {
                 if (process.platform !== 'win32') {
                     try {
@@ -2811,7 +2935,10 @@ class OICPPApp {
                         if (process.platform === 'darwin' && fs.existsSync('/usr/bin/clang++')) {
                             this.settings.compilerPath = '/usr/bin/clang++';
                             logInfo('[调试编译] macOS 自动使用 /usr/bin/clang++');
-                        } else if (process.platform === 'darwin' && fs.existsSync('/opt/homebrew/opt/llvm/bin/clang++')) {
+                        } else if (
+                            process.platform === 'darwin' &&
+                            fs.existsSync('/opt/homebrew/opt/llvm/bin/clang++')
+                        ) {
                             this.settings.compilerPath = '/opt/homebrew/opt/llvm/bin/clang++';
                             logInfo('[调试编译] macOS 自动使用 /opt/homebrew/opt/llvm/bin/clang++');
                         } else if (fs.existsSync('/usr/bin/g++')) {
@@ -2824,22 +2951,27 @@ class OICPPApp {
                     } catch (_) {}
                 }
                 if (!this.settings.compilerPath) {
-                    this.showMessage(this.t('message.setCompilerFirst', null, 'Please configure the compiler first'), 'warning');
-                    try { require('electron').ipcRenderer.send('menu-open-settings'); } catch(_) {}
+                    this.showMessage(
+                        this.t('message.setCompilerFirst', null, 'Please configure the compiler first'),
+                        'warning'
+                    );
+                    try {
+                        require('electron').ipcRenderer.send('menu-open-settings');
+                    } catch (_) {}
                     reject(new Error('请先设置编译器路径'));
                     return;
                 }
             }
-            
+
             let resolved = false;
-            
+
             const handleCompileResult = (success, error = null) => {
                 if (resolved) return;
                 resolved = true;
-                
+
                 window.removeEventListener('compile-success', handleSuccess);
                 window.removeEventListener('compile-error', handleError);
-                
+
                 if (success) {
                     logInfo('编译成功，准备启动调试');
                     resolve();
@@ -2849,20 +2981,20 @@ class OICPPApp {
                     reject(new Error(msg || '编译失败'));
                 }
             };
-            
+
             const handleSuccess = (event) => {
                 logInfo('收到编译成功事件:', event.detail);
                 handleCompileResult(true);
             };
-            
+
             const handleError = (event) => {
                 logInfo('收到编译失败事件:', event.detail);
                 handleCompileResult(false, event.detail);
             };
-            
+
             window.addEventListener('compile-success', handleSuccess);
             window.addEventListener('compile-error', handleError);
-            
+
             logInfo('调用编译管理器编译当前文件（调试模式）');
             try {
                 this.compilerManager.compileCurrentFile({ forDebug: true });
@@ -2870,7 +3002,7 @@ class OICPPApp {
                 handleCompileResult(false, error.message);
                 return;
             }
-            
+
             setTimeout(() => {
                 if (!resolved) {
                     handleCompileResult(false, '编译超时');
@@ -2884,35 +3016,43 @@ class OICPPApp {
             try {
                 const { ipcRenderer } = require('electron');
                 logInfo('发送start-debug IPC消息，文件:', currentFile);
-                
+
                 const breakpoints = this.getBreakpoints();
                 logInfo('当前断点:', breakpoints);
 
                 const runMode = options?.runMode || this.resolveRunModeForCurrentPlatform();
-                const inferiorTTY = typeof options?.inferiorTTY === 'string'
-                    ? options.inferiorTTY.trim()
-                    : '';
+                const inferiorTTY = typeof options?.inferiorTTY === 'string' ? options.inferiorTTY.trim() : '';
                 const useInputBridge = !!options?.useInputBridge;
-                
+
                 ipcRenderer.send('start-debug', currentFile, {
                     breakpoints: breakpoints,
                     runMode,
                     useInputBridge,
                     terminalId: options?.terminalId || '',
-                    ...(inferiorTTY ? { inferiorTTY } : {})
+                    ...(inferiorTTY ? { inferiorTTY } : {}),
                 });
-                
+
                 this.updateDebugControlsState(true);
                 const startingMessage = this.t('debug.startingSession', null, 'Starting debug session...');
                 this.showMessage(startingMessage, 'info');
                 this.updateDebugStatus(startingMessage);
             } catch (error) {
                 logError('启动调试失败:', error);
-                this.showMessage(`${this.t('debug.startFailed', null, 'Failed to start debugging')}: ${this.stringifyError(error)}`, 'error');
+                this.showMessage(
+                    `${this.t('debug.startFailed', null, 'Failed to start debugging')}: ${this.stringifyError(error)}`,
+                    'error'
+                );
             }
         } else {
             logError('require函数不可用，无法调用IPC');
-            this.showMessage(this.t('debug.apiUnavailable', null, 'Debugging could not be initialized because the system API is unavailable'), 'error');
+            this.showMessage(
+                this.t(
+                    'debug.apiUnavailable',
+                    null,
+                    'Debugging could not be initialized because the system API is unavailable'
+                ),
+                'error'
+            );
         }
     }
 
@@ -2936,19 +3076,24 @@ class OICPPApp {
                 return currentEditor.filePath;
             }
         }
-        
+
         if (this.editor && this.currentFile) {
             return this.currentFile;
         }
-        
+
         return null;
     }
 
-
     updateDebugControlsState(_isDebugging) {
         const ids = [
-            'debug-start', 'debug-continue', 'debug-step-over', 'debug-step-into',
-            'debug-step-out', 'debug-stop', 'debug-add-watch', 'debug-refresh-vars'
+            'debug-start',
+            'debug-continue',
+            'debug-step-over',
+            'debug-step-into',
+            'debug-step-out',
+            'debug-stop',
+            'debug-add-watch',
+            'debug-refresh-vars',
         ];
         ids.forEach((id) => {
             const btn = document.getElementById(id);
@@ -2959,14 +3104,14 @@ class OICPPApp {
     onDebugStarted(data) {
         logInfo('[前端] 调试已启动:', data);
         this.updateDebugControlsState(true);
-    this.isDebugging = true;
-    this._debugSessionId++;
-    this._debugExited = false;
-        
+        this.isDebugging = true;
+        this._debugSessionId++;
+        this._debugExited = false;
+
         this.updateAllDebugPanels(this.t('debug.sessionStarted', null, 'Debug session started; program loaded'));
-        
+
         this.updateDebugStatus('调试器已启动，程序准备运行');
-    this.showDebugInfo(`调试会话已启动
+        this.showDebugInfo(`调试会话已启动
         
 程序已加载: ${data.executable || data.sourceFile}
 状态: 等待运行或断点命中
@@ -2990,9 +3135,13 @@ class OICPPApp {
             this.unbindDebugTerminalBridge();
             this.updateDebugControlsState(false);
             this.updateDebugStatus(`程序运行完成，退出码: ${data.exitCode ?? data.code ?? 0}`);
-            this.showDebugInfo(`程序运行完成，退出码: ${data.exitCode ?? data.code ?? 0}\n\n程序输出应该在终端窗口中显示。`);
+            this.showDebugInfo(
+                `程序运行完成，退出码: ${data.exitCode ?? data.code ?? 0}\n\n程序输出应该在终端窗口中显示。`
+            );
             this.showWaitingMessages();
-            try { window.monacoEditorManager?.clearAllExecHighlights?.(); } catch (_) {}
+            try {
+                window.monacoEditorManager?.clearAllExecHighlights?.();
+            } catch (_) {}
             return;
         }
 
@@ -3004,7 +3153,9 @@ class OICPPApp {
             this.updateDebugStatus('调试已停止');
             this.showDebugInfo('调试已停止。');
             this.showWaitingMessages();
-            try { window.monacoEditorManager?.clearAllExecHighlights?.(); } catch (_) {}
+            try {
+                window.monacoEditorManager?.clearAllExecHighlights?.();
+            } catch (_) {}
             return;
         }
 
@@ -3021,24 +3172,31 @@ class OICPPApp {
         const fileName = file ? String(file).split(/[\\/]/).pop() : '';
         const where = fileName && line ? ` 在 ${fileName}:${line}` : '';
 
-        const prettyReason = reason.includes('breakpoint') ? '断点处暂停'
-                             : reason.includes('end-stepping-range') ? '单步结束已暂停'
-                             : reason.includes('signal') ? '收到信号已暂停'
-                             : '程序已暂停';
+        const prettyReason = reason.includes('breakpoint')
+            ? '断点处暂停'
+            : reason.includes('end-stepping-range')
+              ? '单步结束已暂停'
+              : reason.includes('signal')
+                ? '收到信号已暂停'
+                : '程序已暂停';
 
         this.updateDebugStatus(`${prettyReason}${where}`);
         this.showDebugInfo(`${prettyReason}${where}\n\n您可以继续执行(F6)或步过(F7)/步入(F8)/步出(Shift+F8)。`);
 
         if (file && line) {
-            try { this.highlightCurrentLine(file, line); } catch (_) {}
+            try {
+                this.highlightCurrentLine(file, line);
+            } catch (_) {}
         }
     }
 
     onDebugRunning() {
         logInfo('[前端] 程序正在运行');
         this.updateDebugStatus('程序正在运行...');
-        this.showDebugInfo('程序正在运行，请等待程序执行或命中断点\n\n如果程序需要输入，请在控制台或弹出的终端窗口中输入');
-        
+        this.showDebugInfo(
+            '程序正在运行，请等待程序执行或命中断点\n\n如果程序需要输入，请在控制台或弹出的终端窗口中输入'
+        );
+
         this.clearContinueButtonHighlight();
     }
 
@@ -3056,15 +3214,15 @@ class OICPPApp {
         logInfo('[前端] 程序已退出:', data);
         this.updateDebugStatus(`程序执行完成，退出码: ${data.exitCode}`);
         this.showDebugInfo(`程序执行完成，退出码: ${data.exitCode}`);
-    this.unbindDebugTerminalBridge();
-    this.isDebugging = false;
+        this.unbindDebugTerminalBridge();
+        this.isDebugging = false;
     }
 
     onDebugReadyWaiting(data) {
         logInfo('[前端] 调试器就绪等待:', data);
         this.updateDebugStatus('调试器已就绪，等待启动程序');
-        
-    const message = `调试器已成功启动并准备就绪！
+
+        const message = `调试器已成功启动并准备就绪！
 
 ${data.message || '程序已加载，等待开始执行'}
 
@@ -3074,15 +3232,17 @@ ${data.message || '程序已加载，等待开始执行'}
 - 如果没有断点，程序会正常运行到结束
 
 当前状态: ${data.hasBreakpoints ? '已设置断点' : '未设置断点'}`;
-        
+
         this.showDebugInfo(message);
-        
+
         this.highlightContinueButton();
 
         if (this._autoContinueOnStart) {
             this._autoContinueOnStart = false;
             setTimeout(() => {
-                try { this.handleDebugContinue(); } catch (_) {}
+                try {
+                    this.handleDebugContinue();
+                } catch (_) {}
             }, 200);
         }
     }
@@ -3091,12 +3251,12 @@ ${data.message || '程序已加载，等待开始执行'}
         const continueBtn = document.getElementById('debug-continue');
         if (continueBtn) {
             this.addPulseAnimation();
-            
+
             continueBtn.style.animation = 'debug-pulse 2s infinite';
             continueBtn.style.background = '#0078d4';
             continueBtn.style.transform = 'scale(1.05)';
             continueBtn.title = '点击开始运行程序 (F6)';
-            
+
             setTimeout(() => {
                 continueBtn.style.animation = '';
                 continueBtn.style.background = '';
@@ -3132,7 +3292,7 @@ ${data.message || '程序已加载，等待开始执行'}
 
     updateAllDebugPanels(message) {
         const containers = ['local-variables', 'global-variables', 'watch-variables', 'call-stack'];
-        containers.forEach(id => {
+        containers.forEach((id) => {
             const container = document.getElementById(id);
             if (container) {
                 container.innerHTML = `<div class="debug-panel-message" style="padding: 8px; color: #cccccc; font-size: 12px;">${message}</div>`;
@@ -3145,7 +3305,11 @@ ${data.message || '程序已加载，等待开始执行'}
     onDebugError(error) {
         const msg = this.stringifyError(error) || '';
         const lower = msg.toLowerCase();
-    if (/running|not\s*stopped|already\s*running|already\s*started|target\s+is\s+executing|debugger\s+not\s+running|调试器未运行/.test(lower)) {
+        if (
+            /running|not\s*stopped|already\s*running|already\s*started|target\s+is\s+executing|debugger\s+not\s+running|调试器未运行/.test(
+                lower
+            )
+        ) {
             logInfo('收到良性调试提示:', msg);
             this.updateDebugStatus('程序正在运行...');
             return;
@@ -3184,8 +3348,10 @@ ${data.message || '程序已加载，等待开始执行'}
     onBreakpointHit(breakpoint) {
         logInfo('[前端] 断点命中');
         try {
-            const overlays = Array.from(document.querySelectorAll('.settings-dialog-overlay, .about-dialog-overlay, .update-dialog-overlay'));
-            overlays.forEach(el => {
+            const overlays = Array.from(
+                document.querySelectorAll('.settings-dialog-overlay, .about-dialog-overlay, .update-dialog-overlay')
+            );
+            overlays.forEach((el) => {
                 const hasDialog = !!el.querySelector('.settings-dialog, .about-dialog, .update-dialog');
                 if (!hasDialog) el.remove();
             });
@@ -3193,8 +3359,8 @@ ${data.message || '程序已加载，等待开始执行'}
 
         const fileName = breakpoint.file ? breakpoint.file.split(/[\\/]/).pop() : '未知文件';
         this.updateDebugStatus(`断点命中: ${fileName}:${breakpoint.line} (${breakpoint.function || '未知函数'})`);
-        
-    const debugInfo = `断点命中！
+
+        const debugInfo = `断点命中！
 
 文件: ${fileName}
 行号: ${breakpoint.line}
@@ -3205,14 +3371,14 @@ ${data.message || '程序已加载，等待开始执行'}
 - 使用F6继续执行
 - 使用F7单步执行
 - 使用F8步入函数`;
-        
+
         this.showDebugInfo(debugInfo);
-        
+
         this.clearWaitingMessages();
-        
+
         this.highlightCurrentLine(breakpoint.file, breakpoint.line);
         try {
-            document.querySelectorAll('.message-toast').forEach(n => n.style.pointerEvents = 'none');
+            document.querySelectorAll('.message-toast').forEach((n) => (n.style.pointerEvents = 'none'));
         } catch (_) {}
     }
 
@@ -3231,7 +3397,7 @@ ${data.message || '程序已加载，等待开始执行'}
 
     clearWaitingMessages() {
         const containers = ['local-variables', 'global-variables', 'watch-variables', 'call-stack'];
-        containers.forEach(id => {
+        containers.forEach((id) => {
             const container = document.getElementById(id);
             if (container) {
                 const waitingMsg = container.querySelector('.waiting-debug-message');
@@ -3244,7 +3410,7 @@ ${data.message || '程序已加载，等待开始执行'}
 
     showWaitingMessages() {
         const containers = ['local-variables', 'global-variables', 'watch-variables', 'call-stack'];
-        containers.forEach(id => {
+        containers.forEach((id) => {
             const container = document.getElementById(id);
             if (container) {
                 container.innerHTML = '<div class="waiting-debug-message">等待开始调试...</div>';
@@ -3257,7 +3423,7 @@ ${data.message || '程序已加载，等待开始执行'}
         if (statusElement) {
             statusElement.textContent = message;
         }
-        
+
         logInfo('[调试状态]', message);
     }
 
@@ -3280,7 +3446,7 @@ ${data.message || '程序已加载，等待开始执行'}
                 `;
                 container.insertBefore(infoElement, container.firstChild);
             }
-            
+
             infoElement.innerHTML = `
                 <h4 style="margin: 0 0 8px 0; color: #4fc3f7;">调试状态</h4>
                 <p style="margin: 0; white-space: pre-line;">${message}</p>
@@ -3295,11 +3461,11 @@ ${data.message || '程序已加载，等待开始执行'}
         if (variables.local) {
             this.renderVariables('local-variables', variables.local, 'local');
         }
-        
+
         if (variables.global) {
             this.renderVariables('global-variables', variables.global, 'global');
         }
-        
+
         if (variables.watches) {
             this.renderVariables('watch-variables', variables.watches, 'watch');
         }
@@ -3313,7 +3479,7 @@ ${data.message || '程序已加载，等待开始执行'}
         if (!container) return;
 
         container.innerHTML = '';
-        
+
         if (Object.keys(variables).length === 0) {
             container.innerHTML = '<div class="no-debug-message">没有变量</div>';
             return;
@@ -3328,9 +3494,9 @@ ${data.message || '程序已加载，等待开始执行'}
     createVariableElement(name, data, scope) {
         const element = document.createElement('div');
         element.className = 'variable-item';
-        
+
         const hasChildren = data.children && data.children.length > 0;
-        
+
         element.innerHTML = `
             <div class="variable-header">
                 ${hasChildren ? '<span class="expand-toggle">▶</span>' : '<span class="expand-spacer"></span>'}
@@ -3339,25 +3505,25 @@ ${data.message || '程序已加载，等待开始执行'}
                 ${scope === 'watch' ? '<button class="remove-watch-btn" title="移除监视">×</button>' : ''}
             </div>
         `;
-        
+
         return element;
     }
 
     formatVariableValue(data) {
         if (!data.value) return '';
-        
+
         let displayValue = data.value.toString();
-        
+
         if (data.isContainer || data.isArray) {
             const count = data.elementCount !== null ? data.elementCount : '?';
             const type = data.isArray ? '数组' : '容器';
             displayValue = `${type}[${count}] ${displayValue}`;
         }
-        
+
         if (displayValue.length > 50) {
             displayValue = displayValue.substring(0, 47) + '...';
         }
-        
+
         return displayValue;
     }
 
@@ -3374,7 +3540,7 @@ ${data.message || '程序已加载，等待开始执行'}
         }
 
         container.innerHTML = '';
-        
+
         callStack.forEach((frame, index) => {
             const frameElement = document.createElement('div');
             frameElement.className = 'callstack-item';
@@ -3388,7 +3554,7 @@ ${data.message || '程序已加载，等待开始执行'}
                     ${frame.line ? `<span class="frame-line">:${frame.line}</span>` : ''}
                 </div>
             `;
-            
+
             container.appendChild(frameElement);
         });
     }
@@ -3426,7 +3592,11 @@ ${data.message || '程序已加载，等待开始执行'}
             if (typeof err.message === 'string') return err.message;
             return JSON.stringify(err);
         } catch (_) {
-            try { return String(err); } catch { return '未知错误'; }
+            try {
+                return String(err);
+            } catch {
+                return '未知错误';
+            }
         }
     }
 
@@ -3473,7 +3643,10 @@ ${data.message || '程序已加载，等待开始执行'}
             if (typeof require !== 'undefined') {
                 const { ipcRenderer } = require('electron');
                 ipcRenderer.send('debug-add-watch', variableName.trim());
-                this.showMessage(this.t('debug.watchAdded', { name: variableName.trim() }, `Watch added: ${variableName.trim()}`), 'info');
+                this.showMessage(
+                    this.t('debug.watchAdded', { name: variableName.trim() }, `Watch added: ${variableName.trim()}`),
+                    'info'
+                );
             }
         }
     }
@@ -3488,7 +3661,7 @@ ${data.message || '程序已加载，等待开始执行'}
     toggleCategory(header) {
         const arrow = header.querySelector('.expand-arrow');
         const content = header.nextElementSibling;
-        
+
         if (content && arrow) {
             if (content.style.display === 'none') {
                 content.style.display = 'block';
@@ -3538,9 +3711,9 @@ ${data.message || '程序已加载，等待开始执行'}
             </div>
         `;
         document.body.appendChild(dialog);
-        
+
         this.setFeedbackDialogIcon();
-        
+
         this.setupFeedbackDialogListeners(dialog);
     }
 
@@ -3550,15 +3723,24 @@ ${data.message || '程序已加载，等待开始执行'}
             return;
         }
 
-        if (typeof window.electronAPI.listClientLogs !== 'function' || typeof window.electronAPI.uploadClientLog !== 'function') {
-            this.showMessage(this.t('feedback.logUnsupported', null, 'This version does not support log upload'), 'error');
+        if (
+            typeof window.electronAPI.listClientLogs !== 'function' ||
+            typeof window.electronAPI.uploadClientLog !== 'function'
+        ) {
+            this.showMessage(
+                this.t('feedback.logUnsupported', null, 'This version does not support log upload'),
+                'error'
+            );
             return;
         }
 
         try {
             const listResult = await window.electronAPI.listClientLogs();
             if (!listResult || listResult.success !== true) {
-                this.showMessage(listResult?.message || this.t('feedback.logListFailed', null, 'Failed to read the log list'), 'error');
+                this.showMessage(
+                    listResult?.message || this.t('feedback.logListFailed', null, 'Failed to read the log list'),
+                    'error'
+                );
                 return;
             }
 
@@ -3571,7 +3753,14 @@ ${data.message || '程序已加载，等待开始执行'}
             this.showUploadLogPickerDialog(logs);
         } catch (error) {
             logError('上传日志失败:', error);
-            this.showMessage(this.t('feedback.logUploadFailed', { error: error?.message || error }, `Log upload failed: ${error?.message || error}`), 'error');
+            this.showMessage(
+                this.t(
+                    'feedback.logUploadFailed',
+                    { error: error?.message || error },
+                    `Log upload failed: ${error?.message || error}`
+                ),
+                'error'
+            );
         }
     }
 
@@ -3594,27 +3783,30 @@ ${data.message || '程序已加载，等待开始执行'}
             return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
         };
 
-        const escapeHtml = (value) => String(value || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-
-        const rows = logs.map((item, index) => {
-            const safeName = String(item?.name || `Log ${index + 1}`)
+        const escapeHtml = (value) =>
+            String(value || '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-            const safePath = escapeHtml(item?.path || '');
-            return `
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+        const rows = logs
+            .map((item, index) => {
+                const safeName = String(item?.name || `Log ${index + 1}`)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                const safePath = escapeHtml(item?.path || '');
+                return `
                 <button class="log-picker-item" data-log-path="${safePath}">
                     <div class="log-picker-item-name">${safeName}</div>
                     <div class="log-picker-item-meta">${formatTime(item?.mtimeMs)} · ${formatBytes(item?.size)}</div>
                 </button>
             `;
-        }).join('');
+            })
+            .join('');
 
         dialog.innerHTML = `
             <div class="about-dialog log-picker-dialog">
@@ -3661,7 +3853,10 @@ ${data.message || '程序已加载，等待开始执行'}
                     this.showMessage(t('feedback.uploadingLog', null, 'Uploading log, please wait...'), 'info');
                     const result = await window.electronAPI.uploadClientLog(logPath);
                     if (!result || result.success !== true) {
-                        this.showMessage(result?.message || t('feedback.logUploadFailed', { error: '' }, 'Log upload failed'), 'error');
+                        this.showMessage(
+                            result?.message || t('feedback.logUploadFailed', { error: '' }, 'Log upload failed'),
+                            'error'
+                        );
                         return;
                     }
 
@@ -3669,7 +3864,14 @@ ${data.message || '程序已加载，等待开始执行'}
                     this.showTraceCodeDialog(result.traceCode || '', result.uploadedAt || '');
                 } catch (error) {
                     logError('上传日志失败:', error);
-                    this.showMessage(t('feedback.logUploadFailed', { error: error?.message || error }, `Log upload failed: ${error?.message || error}`), 'error');
+                    this.showMessage(
+                        t(
+                            'feedback.logUploadFailed',
+                            { error: error?.message || error },
+                            `Log upload failed: ${error?.message || error}`
+                        ),
+                        'error'
+                    );
                 }
             });
         });
@@ -3680,7 +3882,8 @@ ${data.message || '程序已加载，等待开始执行'}
         const dialog = document.createElement('div');
         dialog.className = 'about-dialog-overlay';
 
-        const safeTraceCode = String(traceCode || '').trim() || t('feedback.traceCodeMissing', null, 'No trace code returned');
+        const safeTraceCode =
+            String(traceCode || '').trim() || t('feedback.traceCodeMissing', null, 'No trace code returned');
         const uploadedAtText = String(uploadedAt || '').trim();
 
         dialog.innerHTML = `
@@ -3734,11 +3937,21 @@ ${data.message || '程序已加载，等待开始执行'}
                         await window.electronAPI.clipboardWriteText(safeTraceCode);
                         this.showMessage(t('feedback.traceCodeCopied', null, 'Trace code copied'), 'success');
                     } else {
-                        this.showMessage(t('feedback.copyUnavailable', null, 'Copy is unavailable; please copy the trace code manually'), 'warning');
+                        this.showMessage(
+                            t(
+                                'feedback.copyUnavailable',
+                                null,
+                                'Copy is unavailable; please copy the trace code manually'
+                            ),
+                            'warning'
+                        );
                     }
                 } catch (error) {
                     logWarn('复制追踪码失败:', error);
-                    this.showMessage(t('feedback.copyFailed', null, 'Copy failed; please copy the trace code manually'), 'error');
+                    this.showMessage(
+                        t('feedback.copyFailed', null, 'Copy failed; please copy the trace code manually'),
+                        'error'
+                    );
                 }
             });
         }
@@ -3754,7 +3967,14 @@ ${data.message || '程序已加载，等待开始执行'}
                 } catch (error) {
                     logWarn('打开反馈页失败:', error);
                 }
-                this.showMessage(t('feedback.includeTraceCode', { code: safeTraceCode }, `Please include this trace code in your feedback: ${safeTraceCode}`), 'info');
+                this.showMessage(
+                    t(
+                        'feedback.includeTraceCode',
+                        { code: safeTraceCode },
+                        `Please include this trace code in your feedback: ${safeTraceCode}`
+                    ),
+                    'info'
+                );
                 closeDialog();
             });
         }
@@ -3793,11 +4013,18 @@ ${data.message || '程序已加载，等待开始执行'}
             try {
                 logInfo('[主进程] 检查 window.electron:', typeof window.electron);
                 logInfo('[主进程] 检查 window.electron.shell:', typeof window.electron?.shell);
-                logInfo('[主进程] 检查 window.electron.shell.openExternal:', typeof window.electron?.shell?.openExternal);
+                logInfo(
+                    '[主进程] 检查 window.electron.shell.openExternal:',
+                    typeof window.electron?.shell?.openExternal
+                );
 
                 if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
                     await window.electronAPI.openExternal(url);
-                } else if (window.electron && window.electron.shell && typeof window.electron.shell.openExternal === 'function') {
+                } else if (
+                    window.electron &&
+                    window.electron.shell &&
+                    typeof window.electron.shell.openExternal === 'function'
+                ) {
                     window.electron.shell.openExternal(url);
                 } else if (typeof window.open === 'function') {
                     window.open(url, '_blank');
@@ -3812,8 +4039,6 @@ ${data.message || '程序已加载，等待开始执行'}
         });
     }
 
-
-
     async showAbout() {
         const fallbackBuildInfo = { version: '1.0.0', buildTime: '未知', author: 'Fantasy_XY808' };
         let buildInfo = { ...fallbackBuildInfo };
@@ -3826,9 +4051,10 @@ ${data.message || '程序已加载，等待开始执行'}
             logWarn('无法读取构建信息:', error);
         }
 
-        let versionLabel = typeof buildInfo.version === 'string' && buildInfo.version.trim()
-            ? buildInfo.version.trim()
-            : fallbackBuildInfo.version;
+        let versionLabel =
+            typeof buildInfo.version === 'string' && buildInfo.version.trim()
+                ? buildInfo.version.trim()
+                : fallbackBuildInfo.version;
 
         if (!/\(v[^)]+\)/i.test(versionLabel)) {
             const tag = buildInfo.buildTag || buildInfo.buildVersion || buildInfo.buildNo;
@@ -3868,11 +4094,10 @@ ${data.message || '程序已加载，等待开始执行'}
             </div>
         `;
         document.body.appendChild(dialog);
-        
+
         this.setAboutDialogIcon();
         this.setFeedbackDialogIcon();
         this.setupAboutDialogListeners(dialog);
-        
     }
 
     showOpenSourceLicenses() {
@@ -3888,7 +4113,11 @@ ${data.message || '程序已加载，等待开始执行'}
             { name: 'markdown-it', license: 'MIT', url: 'https://github.com/markdown-it/markdown-it' },
             { name: 'markdown-it-katex', license: 'MIT', url: 'https://github.com/iktakahiro/markdown-it-katex' },
             { name: 'markdown-it-task-lists', license: 'ISC', url: 'https://github.com/revin/markdown-it-task-lists' },
-            { name: 'markdown-it-image-figures', license: 'MIT', url: 'https://github.com/Antonio-Laguna/markdown-it-image-figures' },
+            {
+                name: 'markdown-it-image-figures',
+                license: 'MIT',
+                url: 'https://github.com/Antonio-Laguna/markdown-it-image-figures',
+            },
             { name: 'highlight.js', license: 'BSD-3-Clause', url: 'https://github.com/highlightjs/highlight.js' },
             { name: 'KaTeX', license: 'MIT', url: 'https://github.com/KaTeX/KaTeX' },
             { name: 'PDF.js (pdfjs-dist)', license: 'Apache-2.0', url: 'https://github.com/mozilla/pdf.js' },
@@ -3905,16 +4134,20 @@ ${data.message || '程序已加载，等待开始执行'}
             { name: '7zip-bin', license: 'MIT', url: 'https://github.com/develar/7zip-bin' },
             { name: 'winreg', license: 'BSD-2-Clause', url: 'https://github.com/fresc81/node-winreg' },
             { name: 'monaco-editor-webpack-plugin', license: 'MIT', url: 'https://github.com/microsoft/monaco-editor' },
-            { name: 'icojs', license: 'MIT', url: 'https://github.com/nicely-bot/icojs' }
+            { name: 'icojs', license: 'MIT', url: 'https://github.com/nicely-bot/icojs' },
         ];
 
-        const libRows = openSourceLibs.map(lib => `
+        const libRows = openSourceLibs
+            .map(
+                (lib) => `
             <tr>
                 <td class="oss-lib-name">${lib.name}</td>
                 <td class="oss-lib-license">${lib.license}</td>
                 <td class="oss-lib-url">${lib.url}</td>
             </tr>
-        `).join('');
+        `
+            )
+            .join('');
 
         const dialog = document.createElement('div');
         dialog.className = 'about-dialog-overlay';
@@ -4027,7 +4260,7 @@ ${data.message || '程序已加载，等待开始执行'}
             max-width: 380px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.25);
         `;
-        
+
         if (type === 'success') {
             messageDiv.style.backgroundColor = '#4CAF50';
         } else if (type === 'error') {
@@ -4038,7 +4271,7 @@ ${data.message || '程序已加载，等待开始执行'}
         } else {
             messageDiv.style.backgroundColor = '#2196F3';
         }
-        
+
         try {
             if (type === 'error') {
                 const errObj = message instanceof Error ? message : new Error(String(message));
@@ -4046,7 +4279,7 @@ ${data.message || '程序已加载，等待开始执行'}
             }
         } catch (_) {}
         document.body.appendChild(messageDiv);
-        
+
         const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : 3000;
         setTimeout(() => {
             messageDiv.remove();
@@ -4059,11 +4292,11 @@ ${data.message || '程序已加载，等待开始执行'}
             const cursor = statusBar.querySelector('.cursor-position');
             const encoding = statusBar.querySelector('.encoding');
             const language = statusBar.querySelector('.language');
-            
+
             if (this.editorManager && this.editorManager.currentEditor) {
                 const editor = this.editorManager.currentEditor;
                 const pos = editor.cursorPosition || { line: 1, column: 1 };
-                
+
                 if (cursor) cursor.textContent = `行 ${pos.line}, 列 ${pos.column}`;
                 if (encoding) encoding.textContent = 'UTF-8';
                 if (language) language.textContent = 'C++';
@@ -4093,7 +4326,9 @@ ${data.message || '程序已加载，等待开始执行'}
                 icon.style.color = '#111';
                 if (label) label.textContent = this.t('lsp.disabledLabel', null, 'LSP 已禁用');
                 lspItem.classList.add('warning');
-                lspItem.title = guardedInfo.message || this.t('lsp.largeArrayDisabled', null, '当前文件包含潜在超大静态数组，已禁用 clangd LSP。');
+                lspItem.title =
+                    guardedInfo.message ||
+                    this.t('lsp.largeArrayDisabled', null, '当前文件包含潜在超大静态数组，已禁用 clangd LSP。');
                 return;
             }
 
@@ -4135,14 +4370,14 @@ ${data.message || '程序已加载，等待开始执行'}
 
         try {
             const counts = this.editorManager?.getCurrentMarkerCounts?.() || { errors: 0, warnings: 0, infos: 0 };
-            
+
             if (counts.errors === 0 && counts.warnings === 0) {
                 summaryItem.style.display = 'none';
                 return;
             }
 
             summaryItem.style.display = '';
-            
+
             if (counts.errors > 0) {
                 errorsEl.textContent = `✗ ${counts.errors}`;
                 errorsEl.style.color = '#f44747';
@@ -4170,7 +4405,7 @@ ${data.message || '程序已加载，等待开始执行'}
         if (this.editorManager) {
             this.editorManager.markFileSaved(filePath);
         }
-        
+
         if (window.tabManager) {
             if (window.tabManager.markTabAsSavedByUniqueKey) {
                 window.tabManager.markTabAsSavedByUniqueKey(filePath);
@@ -4186,13 +4421,16 @@ ${data.message || '程序已加载，等待开始执行'}
         try {
             // 仅在 LSP 客户端可用时启动
             if (this.editorManager.lspClient || window.lspClient) {
-                this.editorManager.ensureLspReady().then(() => {
-                    logInfo('[LSP] 应用初始化后 LSP 已就绪');
-                    this.updateLspStatusBar();
-                }).catch(err => {
-                    logWarn('[LSP] 应用初始化后 LSP 启动失败（将在打开文件时重试）:', err?.message || err);
-                    this.updateLspStatusBar();
-                });
+                this.editorManager
+                    .ensureLspReady()
+                    .then(() => {
+                        logInfo('[LSP] 应用初始化后 LSP 已就绪');
+                        this.updateLspStatusBar();
+                    })
+                    .catch((err) => {
+                        logWarn('[LSP] 应用初始化后 LSP 启动失败（将在打开文件时重试）:', err?.message || err);
+                        this.updateLspStatusBar();
+                    });
                 // 定时更新 LSP 状态（状态可能在异步中变化）
                 setTimeout(() => this.updateLspStatusBar(), 3000);
                 setTimeout(() => this.updateLspStatusBar(), 8000);
@@ -4246,18 +4484,18 @@ ${data.message || '程序已加载，等待开始执行'}
             logInfo('自动关闭欢迎页面');
             window.tabManager.closeWelcomePage();
         }
-        
+
         if (window.sidebarManager) {
             const fileExplorer = window.sidebarManager.getPanelManager('files');
             if (fileExplorer) {
                 fileExplorer.setWorkspace(folderPath);
             }
-            
+
             window.sidebarManager.showPanel('files');
         }
-        
+
         const event = new CustomEvent('workspace-opened', {
-            detail: { folderPath: folderPath }
+            detail: { folderPath: folderPath },
         });
         document.dispatchEvent(event);
     }
@@ -4320,7 +4558,7 @@ ${data.message || '程序已加载，等待开始执行'}
                     childList: true,
                     subtree: true,
                     attributes: false,
-                    characterData: false
+                    characterData: false,
                 });
             }
         } catch (err) {
@@ -4341,7 +4579,12 @@ ${data.message || '程序已加载，等待开始执行'}
                 } else if (typeof filePath === 'string') {
                     actualPath = filePath;
                 }
-                if (actualPath && !isNew && window.electronAPI && typeof window.electronAPI.addToFileHistory === 'function') {
+                if (
+                    actualPath &&
+                    !isNew &&
+                    window.electronAPI &&
+                    typeof window.electronAPI.addToFileHistory === 'function'
+                ) {
                     try {
                         await window.electronAPI.addToFileHistory(actualPath);
                     } catch (_) {}
@@ -4556,7 +4799,7 @@ ${data.message || '程序已加载，等待开始执行'}
                         filePath: tabData.filePath,
                         fileName: tabData.fileName || '',
                         groupId: tabData.groupId || '',
-                        viewType: tabData.viewType || 'code'
+                        viewType: tabData.viewType || 'code',
                     });
                 }
             }
@@ -4585,7 +4828,7 @@ ${data.message || '程序已加载，等待开始执行'}
                             await window.tabManager.openFile(fileName, content, false, {
                                 filePath: tab.filePath,
                                 viewType: tab.viewType || 'code',
-                                groupId: tab.groupId || undefined
+                                groupId: tab.groupId || undefined,
                             });
                         }
                     }

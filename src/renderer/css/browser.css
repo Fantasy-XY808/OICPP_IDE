@@ -88,7 +88,9 @@
     font-size: 13px;
     font-family: inherit;
     outline: none;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition:
+        border-color 0.15s,
+        background-color 0.15s;
     min-width: 80px;
 }
 
@@ -146,7 +148,12 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--primary-color, #007acc) 0%, var(--primary-color-hover, #4a9eff) 50%, var(--primary-color, #007acc) 100%);
+    background: linear-gradient(
+        90deg,
+        var(--primary-color, #007acc) 0%,
+        var(--primary-color-hover, #4a9eff) 50%,
+        var(--primary-color, #007acc) 100%
+    );
     background-size: 200% 100%;
     animation: browser-loading-bar 0.8s linear infinite;
 }
@@ -156,8 +163,12 @@
 }
 
 @keyframes browser-loading-bar {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 /* 浏览器标签页图标 */

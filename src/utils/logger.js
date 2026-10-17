@@ -71,10 +71,11 @@ class Logger {
 
             const toDelete = files.slice(keepCount);
             for (const f of toDelete) {
-                try { fs.unlinkSync(f.full); } catch (_) { }
+                try {
+                    fs.unlinkSync(f.full);
+                } catch (_) {}
             }
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
     static stringifyArgs(args, { level = 'info', maxLen = 2000 } = {}) {
@@ -82,13 +83,34 @@ class Logger {
         // compared after stripping separators, so loginToken, login_token and
         // LOGIN-TOKEN all match.
         const SENSITIVE_KEYS = new Set([
-            'password', 'passwd', 'pwd', 'secret', 'token', 'accesstoken', 'refreshtoken',
-            'logintoken', 'encodedtoken', 'cookie', 'cookies', 'setcookie', 'authorization',
-            'auth', 'credential', 'credentials', 'apikey', 'privatekey', 'sessionid',
-            'sessionkey', 'csrf', 'csrftoken'
+            'password',
+            'passwd',
+            'pwd',
+            'secret',
+            'token',
+            'accesstoken',
+            'refreshtoken',
+            'logintoken',
+            'encodedtoken',
+            'cookie',
+            'cookies',
+            'setcookie',
+            'authorization',
+            'auth',
+            'credential',
+            'credentials',
+            'apikey',
+            'privatekey',
+            'sessionid',
+            'sessionkey',
+            'csrf',
+            'csrftoken',
         ]);
         const REDACTED = '[redacted]';
-        const normalizeKey = (key) => String(key || '').toLowerCase().replace(/[\s_-]/g, '');
+        const normalizeKey = (key) =>
+            String(key || '')
+                .toLowerCase()
+                .replace(/[\s_-]/g, '');
         const isSensitiveKey = (key) => SENSITIVE_KEYS.has(normalizeKey(key));
 
         // Used to be an identity function, which is why nothing was ever
@@ -157,7 +179,11 @@ class Logger {
 
                 return clamp(String(v), INFO_PER_ARG_LIMIT);
             } catch (_) {
-                try { return JSON.stringify(v, redactingReplacer); } catch (e2) { return String(v); }
+                try {
+                    return JSON.stringify(v, redactingReplacer);
+                } catch (e2) {
+                    return String(v);
+                }
             }
         };
         const verbose = (v) => {
@@ -167,7 +193,11 @@ class Logger {
             if (typeof v === 'object' && v && v.error instanceof Error && Object.keys(v).length === 1) {
                 return redactString(JSON.stringify({ error: serializeError(v.error) }, null, 2));
             }
-            try { return JSON.stringify(v, redactingReplacer, 2); } catch (_) { return String(v); }
+            try {
+                return JSON.stringify(v, redactingReplacer, 2);
+            } catch (_) {
+                return String(v);
+            }
         };
         try {
             const joined = args.map(level === 'info' ? infoStringify : verbose).join(' ');
@@ -192,8 +222,7 @@ class Logger {
         try {
             if (!this.initialized) this.init();
             if (this.logFile) fs.appendFileSync(this.logFile, line, 'utf8');
-        } catch (e) {
-        }
+        } catch (e) {}
 
         // 同时输出到终端控制台
         const trimmed = line.trim();
@@ -204,13 +233,26 @@ class Logger {
         }
     }
 
-    logInfo(...args) { this.write('info', ...args); }
-    logwarn(...args) { this.write('warn', ...args); }
-    logerror(...args) { this.write('error', ...args); }
-    logWarn(...args) { this.write('warn', ...args); }
-    logError(...args) { this.write('error', ...args); }
+    logInfo(...args) {
+        this.write('info', ...args);
+    }
+    logwarn(...args) {
+        this.write('warn', ...args);
+    }
+    logerror(...args) {
+        this.write('error', ...args);
+    }
+    logWarn(...args) {
+        this.write('warn', ...args);
+    }
+    logError(...args) {
+        this.write('error', ...args);
+    }
 
-    getLogFile() { if (!this.initialized) this.init(); return this.logFile; }
+    getLogFile() {
+        if (!this.initialized) this.init();
+        return this.logFile;
+    }
 }
 
 module.exports = new Logger();

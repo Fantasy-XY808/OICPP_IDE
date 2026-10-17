@@ -103,7 +103,7 @@ class IntegratedTerminalPanel {
 
         this._dragState = {
             startY: event.clientY,
-            startHeight: this.panel.getBoundingClientRect().height
+            startHeight: this.panel.getBoundingClientRect().height,
         };
 
         this.resizer.classList.add('dragging');
@@ -149,7 +149,7 @@ class IntegratedTerminalPanel {
             this.status = {
                 available: false,
                 reason: '终端接口不可用',
-                detail: '预加载层未暴露终端接口'
+                detail: '预加载层未暴露终端接口',
             };
             this.renderStatus();
             return this.status;
@@ -157,12 +157,16 @@ class IntegratedTerminalPanel {
 
         try {
             const status = await window.electronAPI.getTerminalFeatureStatus();
-            this.status = status || { available: false, reason: window.i18n ? window.i18n.t('panel.unknownError') : '未知错误', detail: '' };
+            this.status = status || {
+                available: false,
+                reason: window.i18n ? window.i18n.t('panel.unknownError') : '未知错误',
+                detail: '',
+            };
         } catch (error) {
             this.status = {
                 available: false,
                 reason: window.i18n ? window.i18n.t('panel.terminalStatusFailed') : '获取终端状态失败',
-                detail: error?.message || String(error)
+                detail: error?.message || String(error),
             };
         }
 
@@ -213,13 +217,13 @@ class IntegratedTerminalPanel {
     resolveTerminalFontOptions() {
         const app = this.getApp ? this.getApp() : null;
         const settings = app?.settings || {};
-        const fontFamily = (typeof settings.font === 'string' && settings.font.trim())
-            ? settings.font.trim()
-            : 'Consolas';
+        const fontFamily =
+            typeof settings.font === 'string' && settings.font.trim() ? settings.font.trim() : 'Consolas';
         const configuredFontSize = Number(settings.terminalFontSize);
-        const fontSize = Number.isFinite(configuredFontSize) && configuredFontSize > 0
-            ? Math.round(configuredFontSize)
-            : this.fixedTerminalFontSize;
+        const fontSize =
+            Number.isFinite(configuredFontSize) && configuredFontSize > 0
+                ? Math.round(configuredFontSize)
+                : this.fixedTerminalFontSize;
         return { fontFamily, fontSize };
     }
 
@@ -241,7 +245,7 @@ class IntegratedTerminalPanel {
                 cursor: '#0b57d0',
                 cursorAccent: '#ffffff',
                 selectionBackground: 'rgba(9, 105, 218, 0.45)',
-                selectionForeground: '#ffffff'
+                selectionForeground: '#ffffff',
             };
         }
 
@@ -251,7 +255,7 @@ class IntegratedTerminalPanel {
             cursor: '#c8c8c8',
             cursorAccent: '#111111',
             selectionBackground: 'rgba(90, 170, 255, 0.35)',
-            selectionForeground: '#ffffff'
+            selectionForeground: '#ffffff',
         };
     }
 
@@ -266,7 +270,7 @@ class IntegratedTerminalPanel {
             try {
                 session.terminal.options.theme = xtermTheme;
                 session.terminal.refresh(0, session.terminal.rows - 1);
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 
@@ -280,7 +284,7 @@ class IntegratedTerminalPanel {
                 if (session.remoteId) {
                     window.electronAPI.resizeTerminal(session.remoteId, session.terminal.cols, session.terminal.rows);
                 }
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 
@@ -299,7 +303,7 @@ class IntegratedTerminalPanel {
             this.status = {
                 available: false,
                 reason: 'xterm 未加载',
-                detail: '请确认已安装 xterm 依赖'
+                detail: '请确认已安装 xterm 依赖',
             };
             this.renderStatus();
             this.renderEmptyState();
@@ -311,7 +315,7 @@ class IntegratedTerminalPanel {
             this.status = {
                 available: false,
                 reason: 'xterm Fit 插件未加载',
-                detail: '请确认已安装 xterm-addon-fit'
+                detail: '请确认已安装 xterm-addon-fit',
             };
             this.renderStatus();
             this.renderEmptyState();
@@ -323,7 +327,7 @@ class IntegratedTerminalPanel {
             this.status = {
                 available: false,
                 reason: 'xterm Unicode11 插件未加载',
-                detail: '请确认已安装 @xterm/addon-unicode11'
+                detail: '请确认已安装 @xterm/addon-unicode11',
             };
             this.renderStatus();
             this.renderEmptyState();
@@ -360,7 +364,7 @@ class IntegratedTerminalPanel {
             scrollback: 8000,
             allowTransparency: true,
             allowProposedApi: true,
-            theme: this.resolveTerminalTheme()
+            theme: this.resolveTerminalTheme(),
         });
         const fitAddon = new fitAddonCtor();
         const unicode11Addon = new unicode11AddonCtor();
@@ -369,7 +373,7 @@ class IntegratedTerminalPanel {
         terminal.open(mount);
         try {
             terminal.unicode.activeVersion = '11';
-        } catch (_) { }
+        } catch (_) {}
         fitAddon.fit();
 
         const provisionalSession = {
@@ -383,7 +387,7 @@ class IntegratedTerminalPanel {
             cwd: null,
             shell: null,
             inputBridge: null,
-            muteRemoteOutput: false
+            muteRemoteOutput: false,
         };
 
         this.sessions.set(tabId, provisionalSession);
@@ -394,7 +398,7 @@ class IntegratedTerminalPanel {
         const createPayload = {
             cols: terminal.cols,
             rows: terminal.rows,
-            cwd: options.cwd || await this.getPreferredCwd()
+            cwd: options.cwd || (await this.getPreferredCwd()),
         };
 
         let created;
@@ -408,7 +412,9 @@ class IntegratedTerminalPanel {
         }
 
         if (!created?.ok || !created?.terminalId) {
-            terminal.writeln(`\r\n[Error] ${created?.error || (window.i18n ? window.i18n.t('panel.terminalCreateFailed') : '终端创建失败')}`);
+            terminal.writeln(
+                `\r\n[Error] ${created?.error || (window.i18n ? window.i18n.t('panel.terminalCreateFailed') : '终端创建失败')}`
+            );
             tab.classList.remove('pending');
             this.renderEmptyState();
             return;
@@ -443,8 +449,7 @@ class IntegratedTerminalPanel {
                 this.echoBridgedInput(provisionalSession, String(data || ''));
                 try {
                     provisionalSession.inputBridge(String(data || ''));
-                } catch (_) {
-                }
+                } catch (_) {}
                 return;
             }
             window.electronAPI.writeTerminal(provisionalSession.remoteId, data);
@@ -478,94 +483,104 @@ class IntegratedTerminalPanel {
                 this.echoBridgedInput(session, String(text));
                 try {
                     session.inputBridge(String(text));
-                } catch (_) {
-                }
+                } catch (_) {}
                 return;
             }
 
             try {
                 await window.electronAPI?.writeTerminal?.(remoteId, String(text));
-            } catch (_) {
-            }
+            } catch (_) {}
         };
 
-        mountNode.addEventListener('keydown', (event) => {
-            const key = String(event?.key || '').toLowerCase();
-            const ctrl = !!event.ctrlKey;
-            const meta = !!event.metaKey;
-            const alt = !!event.altKey;
-            const shift = !!event.shiftKey;
-            const ctrlOrMeta = ctrl || meta;
-            const shiftOnly = shift && !ctrl && !meta && !alt;
+        mountNode.addEventListener(
+            'keydown',
+            (event) => {
+                const key = String(event?.key || '').toLowerCase();
+                const ctrl = !!event.ctrlKey;
+                const meta = !!event.metaKey;
+                const alt = !!event.altKey;
+                const shift = !!event.shiftKey;
+                const ctrlOrMeta = ctrl || meta;
+                const shiftOnly = shift && !ctrl && !meta && !alt;
 
-            // ---- 终端复制/粘贴快捷键（比 xterm attachCustomKeyEventHandler 更早拦截） ----
-            const session = sessionRef;
-            const term = session?.terminal;
-            const hasSelection = term && typeof term.getSelection === 'function' && !!term.getSelection();
-            const wantsCopy = (ctrlOrMeta && key === 'c' && (shift || hasSelection))
-                || (ctrlOrMeta && key === 'insert');
-            const wantsPaste = (ctrlOrMeta && key === 'v')
-                || (shiftOnly && key === 'insert');
+                // ---- 终端复制/粘贴快捷键（比 xterm attachCustomKeyEventHandler 更早拦截） ----
+                const session = sessionRef;
+                const term = session?.terminal;
+                const hasSelection = term && typeof term.getSelection === 'function' && !!term.getSelection();
+                const wantsCopy =
+                    (ctrlOrMeta && key === 'c' && (shift || hasSelection)) || (ctrlOrMeta && key === 'insert');
+                const wantsPaste = (ctrlOrMeta && key === 'v') || (shiftOnly && key === 'insert');
 
-            if (wantsCopy) {
-                event.preventDefault();
-                event.stopPropagation();
-                const sel = term && typeof term.getSelection === 'function' ? term.getSelection() : '';
-                this.copyTextToClipboard(sel);
-                return;
-            }
-
-            if (wantsPaste) {
-                event.preventDefault();
-                event.stopPropagation();
-                const remoteId = session?.remoteId;
-                if (remoteId) {
-                    this.pasteClipboardToTerminal(remoteId);
+                if (wantsCopy) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const sel = term && typeof term.getSelection === 'function' ? term.getSelection() : '';
+                    this.copyTextToClipboard(sel);
+                    return;
                 }
-                return;
-            }
 
-            // Ensure terminal input is not stolen by focus traversal or global handlers.
-            if (key === 'tab' && !ctrl && !meta && !alt) {
+                if (wantsPaste) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const remoteId = session?.remoteId;
+                    if (remoteId) {
+                        this.pasteClipboardToTerminal(remoteId);
+                    }
+                    return;
+                }
+
+                // Ensure terminal input is not stolen by focus traversal or global handlers.
+                if (key === 'tab' && !ctrl && !meta && !alt) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const seq = shift ? '\u001b[Z]' : '\t';
+                    sendInput(seq);
+                    return;
+                }
+
+                if (
+                    !ctrl &&
+                    !meta &&
+                    !alt &&
+                    (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright')
+                ) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const map = {
+                        arrowup: '\u001b[A',
+                        arrowdown: '\u001b[B',
+                        arrowright: '\u001b[C',
+                        arrowleft: '\u001b[D',
+                    };
+                    sendInput(map[key] || '');
+                    return;
+                }
+                // Let xterm handle all other keys (e.g. Backspace/Delete/Ctrl combinations).
+            },
+            true
+        );
+
+        mountNode.addEventListener(
+            'wheel',
+            (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const seq = shift ? '\u001b[Z]' : '\t';
-                sendInput(seq);
-                return;
-            }
 
-            if (!ctrl && !meta && !alt && (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright')) {
-                event.preventDefault();
-                event.stopPropagation();
-                const map = {
-                    arrowup: '\u001b[A',
-                    arrowdown: '\u001b[B',
-                    arrowright: '\u001b[C',
-                    arrowleft: '\u001b[D'
-                };
-                sendInput(map[key] || '');
-                return;
-            }
-            // Let xterm handle all other keys (e.g. Backspace/Delete/Ctrl combinations).
-        }, true);
+                const session = sessionRef;
+                if (!session?.terminal || typeof session.terminal.scrollLines !== 'function') {
+                    return;
+                }
 
-        mountNode.addEventListener('wheel', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+                const deltaY = Number(event.deltaY) || 0;
+                if (deltaY === 0) {
+                    return;
+                }
 
-            const session = sessionRef;
-            if (!session?.terminal || typeof session.terminal.scrollLines !== 'function') {
-                return;
-            }
-
-            const deltaY = Number(event.deltaY) || 0;
-            if (deltaY === 0) {
-                return;
-            }
-
-            const lines = Math.max(1, Math.min(6, Math.round(Math.abs(deltaY) / 36)));
-            session.terminal.scrollLines(deltaY > 0 ? lines : -lines);
-        }, true);
+                const lines = Math.max(1, Math.min(6, Math.round(Math.abs(deltaY) / 36)));
+                session.terminal.scrollLines(deltaY > 0 ? lines : -lines);
+            },
+            true
+        );
 
         mountNode._terminalKeyShielded = true;
     }
@@ -578,7 +593,7 @@ class IntegratedTerminalPanel {
 
         let platform = '';
         try {
-            platform = String(await window.electronAPI.getPlatform() || '').toLowerCase();
+            platform = String((await window.electronAPI.getPlatform()) || '').toLowerCase();
         } catch (_) {
             return;
         }
@@ -592,17 +607,14 @@ class IntegratedTerminalPanel {
         if (startupCommand) {
             try {
                 await window.electronAPI.writeTerminal(terminalId, startupCommand + '\r');
-            } catch (_) {
-            }
+            } catch (_) {}
         }
     }
 
     resolveTerminalStartupCommand() {
         const app = this.getApp ? this.getApp() : null;
         const settings = app?.settings || {};
-        const cmd = typeof settings.terminalStartupCommand === 'string'
-            ? settings.terminalStartupCommand.trim()
-            : '';
+        const cmd = typeof settings.terminalStartupCommand === 'string' ? settings.terminalStartupCommand.trim() : '';
         return cmd || '';
     }
 
@@ -652,12 +664,12 @@ class IntegratedTerminalPanel {
                             if (resolvedUrl) {
                                 this.openExternalUrl(resolvedUrl);
                             }
-                        }
+                        },
                     });
                 }
 
                 callback(links.length > 0 ? links : undefined);
-            }
+            },
         });
     }
 
@@ -709,7 +721,7 @@ class IntegratedTerminalPanel {
 
         return {
             start: { x: startColumn + 1, y: bufferLineNumber },
-            end: { x: endColumn, y: bufferLineNumber }
+            end: { x: endColumn, y: bufferLineNumber },
         };
     }
 
@@ -733,8 +745,7 @@ class IntegratedTerminalPanel {
                 if (['http:', 'https:', 'mailto:', 'file:'].includes(parsedUrl.protocol)) {
                     return parsedUrl.href;
                 }
-            } catch (_) {
-            }
+            } catch (_) {}
             return '';
         }
 
@@ -754,13 +765,16 @@ class IntegratedTerminalPanel {
         try {
             if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
                 await window.electronAPI.openExternal(targetUrl);
-            } else if (window.electron && window.electron.shell && typeof window.electron.shell.openExternal === 'function') {
+            } else if (
+                window.electron &&
+                window.electron.shell &&
+                typeof window.electron.shell.openExternal === 'function'
+            ) {
                 window.electron.shell.openExternal(targetUrl);
             } else if (typeof window.open === 'function') {
                 window.open(targetUrl, '_blank', 'noopener');
             }
-        } catch (_) {
-        }
+        } catch (_) {}
     }
 
     setupTerminalClipboardShortcuts(terminal, sessionRef) {
@@ -781,10 +795,9 @@ class IntegratedTerminalPanel {
             }
 
             const hasSelection = typeof terminal.getSelection === 'function' && !!terminal.getSelection();
-            const wantsCopy = (ctrlOrMeta && key === 'c' && (event.shiftKey || hasSelection))
-                || (ctrlOrMeta && key === 'insert');
-            const wantsPaste = (ctrlOrMeta && key === 'v')
-                || (shiftOnly && key === 'insert');
+            const wantsCopy =
+                (ctrlOrMeta && key === 'c' && (event.shiftKey || hasSelection)) || (ctrlOrMeta && key === 'insert');
+            const wantsPaste = (ctrlOrMeta && key === 'v') || (shiftOnly && key === 'insert');
 
             if (wantsCopy) {
                 event.preventDefault();
@@ -813,27 +826,27 @@ class IntegratedTerminalPanel {
         try {
             await navigator.clipboard.writeText(value);
             return;
-        } catch (_) { }
+        } catch (_) {}
 
         try {
             const result = await window.electronAPI?.clipboardWriteText?.(value);
             if (result?.success) {
                 return;
             }
-        } catch (_) { }
+        } catch (_) {}
     }
 
     async pasteClipboardToTerminal(terminalId) {
         let text = '';
         try {
             text = await navigator.clipboard.readText();
-        } catch (_) { }
+        } catch (_) {}
 
         if (!text) {
             try {
                 const result = await window.electronAPI?.clipboardReadText?.();
                 text = result?.success ? String(result.text || '') : '';
-            } catch (_) { }
+            } catch (_) {}
         }
 
         if (!text) {
@@ -846,13 +859,13 @@ class IntegratedTerminalPanel {
             this.echoBridgedInput(session, text);
             try {
                 session.inputBridge(text);
-            } catch (_) { }
+            } catch (_) {}
             return;
         }
 
         try {
             await window.electronAPI.writeTerminal(terminalId, text);
-        } catch (_) { }
+        } catch (_) {}
     }
 
     quoteExecutableForShell(executablePath, platform) {
@@ -904,7 +917,7 @@ class IntegratedTerminalPanel {
             throw new Error(this.status.reason || '终端功能不可用');
         }
 
-        const cwd = options.workingDirectory || await this.getPreferredCwd();
+        const cwd = options.workingDirectory || (await this.getPreferredCwd());
         const terminalId = await this.createTerminal({ cwd });
         if (!terminalId) {
             throw new Error(window.i18n ? window.i18n.t('panel.terminalCreateFailed2') : '创建内置终端失败');
@@ -917,7 +930,7 @@ class IntegratedTerminalPanel {
             if (window.electronAPI?.getPlatform) {
                 platform = await window.electronAPI.getPlatform();
             }
-        } catch (_) { }
+        } catch (_) {}
 
         const session = this.sessions.get(terminalId);
         const command = this.buildRunCommandForShell(executablePath, session?.shell || '', platform);
@@ -996,8 +1009,7 @@ class IntegratedTerminalPanel {
 
         try {
             session.terminal.write(out);
-        } catch (_) {
-        }
+        } catch (_) {}
     }
 
     handleTerminalData(payload) {
@@ -1067,9 +1079,7 @@ class IntegratedTerminalPanel {
 
         const code = payload?.exitCode;
         const signal = payload?.signal;
-        const suffix = Number.isFinite(code)
-            ? `退出码 ${code}`
-            : (signal ? `信号 ${signal}` : '已退出');
+        const suffix = Number.isFinite(code) ? `退出码 ${code}` : signal ? `信号 ${signal}` : '已退出';
         session.terminal.writeln(`\r\n[终端已退出] ${suffix}`);
         session.tab.classList.add('exited');
     }
@@ -1173,7 +1183,7 @@ class IntegratedTerminalPanel {
         if (active && !app?.isCloudFilePath?.(active) && typeof window.electronAPI?.pathDirname === 'function') {
             try {
                 return await window.electronAPI.pathDirname(active);
-            } catch (_) { }
+            } catch (_) {}
         }
 
         // With no active local file, open the terminal in the selected workspace

@@ -15,6 +15,7 @@ If you discover a security vulnerability in OICPP IDE, please report it responsi
 📧 **mywwzh@163.com**
 
 Please include the following in your report:
+
 - A detailed description of the vulnerability
 - Steps to reproduce the issue
 - Affected versions
@@ -38,6 +39,7 @@ Please include the following in your report:
 ## Architecture Notes
 
 OICPP IDE is built on Electron and:
+
 - Runs compiled C++ executables as child processes with your user privileges
 - Uses node-pty for integrated terminal (spawns shell processes)
 - Communicates with a cloud compilation API at `oicpp.mywwzh.top` over HTTPS
@@ -46,6 +48,7 @@ OICPP IDE is built on Electron and:
 ## Dependencies
 
 We monitor our dependencies for known vulnerabilities. Key dependencies include:
+
 - **Electron** — provides the application framework
 - **Monaco Editor** — code editor component
 - **node-pty** — pseudo-terminal for integrated shell

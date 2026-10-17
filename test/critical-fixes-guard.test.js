@@ -72,6 +72,7 @@ test('first-run defaults enable tab formatting, format-on-save, and translucent 
     assert.match(mainJs, /glassEffectEnabled:\s*true/);
     assert.match(mainJs, /UseTab:\s*'Always'/);
     assert.match(mainJs, /onboardingCompleted:\s*false/);
+    assert.match(mainJs, /wordWrap:\s*false/);
 });
 
 test('onboarding gates the editor until setup and previews settings live without a skip action', () => {
@@ -93,15 +94,50 @@ test('onboarding gates the editor until setup and previews settings live without
 
 test('onboarding imports and bundles the shared mesh-gradient renderer', () => {
     const onboarding = read('src/renderer/js/onboarding.js');
+    const onboardingCss = read('src/renderer/css/onboarding.css');
+    const html = read('src/renderer/index.html');
     const packageJson = JSON.parse(read('package.json'));
     assert.match(onboarding, /@applemusic-like-lyrics\/core/);
     assert.match(onboarding, /MeshGradientRenderer/);
     assert.match(onboarding, /setStaticMode\(false\)/);
-    assert.match(onboarding, /renderer\.resume\(\)/);
+    assert.match(onboarding, /setFlowSpeed\(4\)/);
+    assert.match(onboarding, /setRenderScale\(0\.65\)/);
+    assert.match(onboarding, /TabWidth: Number/);
+    assert.match(html, /data-onboarding-step="3"/);
+    assert.match(html, /onboarding-font-size/);
+    assert.match(html, /onboarding-auto-save/);
+    const backgroundSetup = onboarding.slice(
+        onboarding.indexOf('async startBackground'),
+        onboarding.indexOf('\n    disposeBackground() {')
+    );
+    assert.ok(
+        backgroundSetup.indexOf('await renderer.setAlbum(album, false)') < backgroundSetup.indexOf('renderer.resume();')
+    );
+    assert.match(onboarding, /this\.background\.pause\(\)/);
+    assert.doesNotMatch(onboarding, /addEventListener\(['"]blur['"]/);
+    assert.doesNotMatch(onboarding, /is-background-suspended/);
+    assert.match(onboardingCss, /opacity 720ms/);
+    assert.match(onboardingCss, /brightness\(1\.12\) saturate\(1\.25\) contrast\(1\.08\)/);
+    assert.match(onboardingCss, /close-btn svg/);
+    assert.doesNotMatch(onboardingCss, /box-shadow:\s*0 0 12px/);
     assert.match(packageJson.scripts.prestart, /prebuild:onboarding/);
     assert.match(packageJson.scripts.predev, /prebuild:onboarding/);
     assert.match(packageJson.scripts.build, /prebuild:onboarding/);
+    assert.match(packageJson.scripts.build, /prebuild:compiler/);
     assert.doesNotMatch(JSON.stringify(packageJson.scripts), /prebuild:soto-background/);
+});
+
+test('compiler settings do not expose manual compiler path management', () => {
+    const compilerHtml = read('src/renderer/settings/compiler.html');
+    const compilerJs = read('src/renderer/settings/compiler.js');
+    const packageJson = JSON.parse(read('package.json'));
+    const buildWorkflow = read('.github/workflows/build.yml');
+    assert.doesNotMatch(compilerHtml, /compiler-path|browse-compiler|install-compiler/);
+    assert.doesNotMatch(compilerJs, /browseCompiler|setCompilerPath|downloadCompiler/);
+    assert.match(compilerHtml, /compiler-runtime-status/);
+    assert.match(mainJs, /settings\.compilerPath = bundledCompilerPath/);
+    assert.match(packageJson.scripts.build, /prebuild:compiler/);
+    assert.match(buildWorkflow, /Setup MSYS2 UCRT64 compiler/);
 });
 
 test('existing settings profiles do not unexpectedly show first-run onboarding', () => {

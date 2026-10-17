@@ -162,7 +162,11 @@ class I18nManager {
     async setLanguage(langCode) {
         if (!langCode) return;
         try {
-            if (langCode !== this._currentLang && window.electronAPI && typeof window.electronAPI.updateSettings === 'function') {
+            if (
+                langCode !== this._currentLang &&
+                window.electronAPI &&
+                typeof window.electronAPI.updateSettings === 'function'
+            ) {
                 const result = await window.electronAPI.updateSettings({ language: langCode });
                 if (!result || result.success !== true) {
                     throw new Error(result?.error || 'Language settings could not be saved');
@@ -205,7 +209,7 @@ class I18nManager {
      * Elements with data-i18n="key" will have their textContent replaced.
      * Elements with data-i18n-placeholder="key" will have their placeholder replaced.
      * Elements with data-i18n-title="key" will have their title replaced.
-     * 
+     *
      * This is the public method - panels can call it after dynamic rendering.
      */
     applyTranslation() {
@@ -218,7 +222,7 @@ class I18nManager {
     _applyToDOM() {
         try {
             // Translate text content
-            document.querySelectorAll('[data-i18n]').forEach(el => {
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
                 const key = el.getAttribute('data-i18n');
                 if (key) {
                     el.textContent = this.t(key);
@@ -226,7 +230,7 @@ class I18nManager {
             });
 
             // Translate placeholders
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
                 const key = el.getAttribute('data-i18n-placeholder');
                 if (key) {
                     el.placeholder = this.t(key);
@@ -234,7 +238,7 @@ class I18nManager {
             });
 
             // Translate titles
-            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            document.querySelectorAll('[data-i18n-title]').forEach((el) => {
                 const key = el.getAttribute('data-i18n-title');
                 if (key) {
                     el.title = this.t(key);
@@ -259,13 +263,15 @@ class I18nManager {
                 for (const mutation of mutations) {
                     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
                         for (const node of mutation.addedNodes) {
-                            if (node.nodeType === 1) { // Element
-                                if (node.hasAttribute && (
-                                    node.hasAttribute('data-i18n') ||
-                                    node.hasAttribute('data-i18n-placeholder') ||
-                                    node.hasAttribute('data-i18n-title') ||
-                                    node.querySelector('[data-i18n],[data-i18n-placeholder],[data-i18n-title]')
-                                )) {
+                            if (node.nodeType === 1) {
+                                // Element
+                                if (
+                                    node.hasAttribute &&
+                                    (node.hasAttribute('data-i18n') ||
+                                        node.hasAttribute('data-i18n-placeholder') ||
+                                        node.hasAttribute('data-i18n-title') ||
+                                        node.querySelector('[data-i18n],[data-i18n-placeholder],[data-i18n-title]'))
+                                ) {
                                     needsTranslate = true;
                                     break;
                                 }
@@ -280,7 +286,7 @@ class I18nManager {
             });
             this._observer.observe(document.body, {
                 childList: true,
-                subtree: true
+                subtree: true,
             });
         } catch (_) {}
     }

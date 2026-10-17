@@ -33,8 +33,8 @@ const zhKeys = leafKeys(zh);
 const enKeys = leafKeys(en);
 
 test('zh-cn.json and en.json cover exactly the same keys', () => {
-    const missingInEn = [...zhKeys].filter(key => !enKeys.has(key)).sort();
-    const missingInZh = [...enKeys].filter(key => !zhKeys.has(key)).sort();
+    const missingInEn = [...zhKeys].filter((key) => !enKeys.has(key)).sort();
+    const missingInZh = [...enKeys].filter((key) => !zhKeys.has(key)).sort();
 
     assert.deepEqual(missingInEn, [], 'keys present in zh-cn.json but missing from en.json');
     assert.deepEqual(missingInZh, [], 'keys present in en.json but missing from zh-cn.json');
@@ -46,7 +46,10 @@ test('every locale declares meta.code so the main process can discover it', () =
 });
 
 test('no translation is an empty string', () => {
-    for (const [name, locale] of [['zh-cn.json', zh], ['en.json', en]]) {
+    for (const [name, locale] of [
+        ['zh-cn.json', zh],
+        ['en.json', en],
+    ]) {
         for (const key of leafKeys(locale)) {
             if (key.startsWith('meta.')) continue;
             const value = key.split('.').reduce((acc, part) => acc?.[part], locale);

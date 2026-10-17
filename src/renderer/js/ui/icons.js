@@ -126,7 +126,7 @@
             <svg class="ui-icon" viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false">
                 <rect x="3" y="3" width="10" height="10" rx="1.5" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.9"/>
             </svg>
-        `.trim()
+        `.trim(),
     };
 
     function svg(name) {
@@ -147,46 +147,76 @@
 
     window.uiIcons = {
         svg,
-        hydrate
+        hydrate,
     };
 
     // Seti 文件图标映射（配合 assets/fonts/seti.css 使用）。
     // 码点与配色来自 microsoft/vscode 的 vs-seti-icon-theme.json（MIT License）。
     const SETI_EXT_ICONS = {
-        '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp',
+        '.cpp': 'cpp',
+        '.cc': 'cpp',
+        '.cxx': 'cpp',
         '.c': 'c',
-        '.h': 'c_1', '.hpp': 'cpp_1', '.hxx': 'cpp_1',
-        '.md': 'markdown', '.markdown': 'markdown',
-        '.json': 'json', '.jsonc': 'json',
+        '.h': 'c_1',
+        '.hpp': 'cpp_1',
+        '.hxx': 'cpp_1',
+        '.md': 'markdown',
+        '.markdown': 'markdown',
+        '.json': 'json',
+        '.jsonc': 'json',
         '.pdf': 'pdf',
         '.py': 'python',
-        '.js': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript',
-        '.html': 'html_3', '.htm': 'html_3',
-        '.css': 'css', '.scss': 'sass', '.sass': 'sass', '.less': 'less',
+        '.js': 'javascript',
+        '.mjs': 'javascript',
+        '.cjs': 'javascript',
+        '.html': 'html_3',
+        '.htm': 'html_3',
+        '.css': 'css',
+        '.scss': 'sass',
+        '.sass': 'sass',
+        '.less': 'less',
         '.xml': 'xml',
-        '.yml': 'yml', '.yaml': 'yml',
-        '.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.gif': 'image',
-        '.webp': 'image', '.bmp': 'image',
+        '.yml': 'yml',
+        '.yaml': 'yml',
+        '.png': 'image',
+        '.jpg': 'image',
+        '.jpeg': 'image',
+        '.gif': 'image',
+        '.webp': 'image',
+        '.bmp': 'image',
         '.ico': 'favicon',
         '.svg': 'svg',
-        '.zip': 'zip_1', '.7z': 'zip_1', '.rar': 'zip_1', '.gz': 'zip_1', '.tar': 'zip_1',
-        '.java': 'java', '.rs': 'rust', '.go': 'go2', '.sql': 'db',
-        '.sh': 'shell', '.bat': 'windows', '.cmd': 'windows',
-        '.lua': 'lua', '.php': 'php', '.rb': 'ruby', '.swift': 'swift', '.kt': 'kotlin'
+        '.zip': 'zip_1',
+        '.7z': 'zip_1',
+        '.rar': 'zip_1',
+        '.gz': 'zip_1',
+        '.tar': 'zip_1',
+        '.java': 'java',
+        '.rs': 'rust',
+        '.go': 'go2',
+        '.sql': 'db',
+        '.sh': 'shell',
+        '.bat': 'windows',
+        '.cmd': 'windows',
+        '.lua': 'lua',
+        '.php': 'php',
+        '.rb': 'ruby',
+        '.swift': 'swift',
+        '.kt': 'kotlin',
     };
 
     const SETI_FILE_NAMES = {
-        'license': 'license',
-        'licence': 'license',
+        license: 'license',
+        licence: 'license',
         'license.md': 'license',
         'license.txt': 'license',
-        'readme': 'info',
+        readme: 'info',
         'readme.md': 'info',
         'readme.txt': 'info',
-        'makefile': 'makefile',
+        makefile: 'makefile',
         'cmakelists.txt': 'makefile_2',
         '.gitignore': 'git',
-        '.gitattributes': 'git'
+        '.gitattributes': 'git',
     };
 
     function setiIconClass(fileName) {
@@ -203,7 +233,7 @@
     }
 
     window.setiFileIcons = {
-        classNameFor: setiIconClass
+        classNameFor: setiIconClass,
     };
 
     document.addEventListener('DOMContentLoaded', () => {

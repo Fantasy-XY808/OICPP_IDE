@@ -1,6 +1,11 @@
 (function () {
     if (window.folderPicker) return;
-    const E = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt !== undefined) e.textContent = txt; return e; };
+    const E = (t, c, txt) => {
+        const e = document.createElement(t);
+        if (c) e.className = c;
+        if (txt !== undefined) e.textContent = txt;
+        return e;
+    };
     const norm = (...ps) => ps.join('/').replace(/\\/g, '/').replace(/\/+/g, '/');
 
     function buildBreadcrumb(path, bar, onChange) {
@@ -17,7 +22,9 @@
         let acc = path.startsWith('/') ? '/' : '';
         if (path.startsWith('/')) {
             const root = E('div', 'folder-picker-breadcrumb', '/');
-            root.onclick = () => { if (path !== '/') onChange('/'); };
+            root.onclick = () => {
+                if (path !== '/') onChange('/');
+            };
             bar.appendChild(root);
         } else if (/^[A-Za-z]:\\?$/.test(path)) {
             const drv = path.slice(0, 2);
@@ -27,7 +34,7 @@
         }
         for (const seg of parts) {
             if (seg === '') continue;
-            acc = acc === '/' ? ('/' + seg) : (acc ? acc + '/' + seg : seg);
+            acc = acc === '/' ? '/' + seg : acc ? acc + '/' + seg : seg;
             const c = E('div', 'folder-picker-breadcrumb', seg);
             const targetPath = acc;
             c.onclick = () => onChange(targetPath);
@@ -45,10 +52,13 @@
 
     window.folderPicker = {
         show(opts = {}) {
-            return new Promise(resolve => {
-                const theme = (window.oicppApp?.settings?.theme) || 'dark';
+            return new Promise((resolve) => {
+                const theme = window.oicppApp?.settings?.theme || 'dark';
                 const isLightTheme = String(theme).toLowerCase().includes('light');
-                let cur = opts.startPath || window.oicppApp?.settings?.lastOpen || ((process.platform === 'win32') ? (process.env.USERPROFILE || 'C:/') : '/');
+                let cur =
+                    opts.startPath ||
+                    window.oicppApp?.settings?.lastOpen ||
+                    (process.platform === 'win32' ? process.env.USERPROFILE || 'C:/' : '/');
                 if (!cur) cur = '/';
                 const backdrop = E('div', 'folder-picker-backdrop');
                 const panel = E('div', 'folder-picker ' + (isLightTheme ? 'light' : ''));
@@ -56,7 +66,10 @@
                 const header = E('div', 'folder-picker-header');
                 header.appendChild(E('span', null, '选择工作区文件夹'));
                 const close = E('span', 'folder-picker-close', '✕');
-                close.onclick = () => { clean(); resolve(null); };
+                close.onclick = () => {
+                    clean();
+                    resolve(null);
+                };
                 header.appendChild(close);
                 panel.appendChild(header);
                 const bar = E('div', 'folder-picker-pathbar');
@@ -69,12 +82,21 @@
                 body.appendChild(treeWrap);
 
                 const quick = E('div', 'folder-picker-quick');
-                quick.appendChild(E('div', 'folder-picker-quick-title', window.i18n ? window.i18n.t('folderPicker.quickAccess') : 'Quick Access'));
+                quick.appendChild(
+                    E(
+                        'div',
+                        'folder-picker-quick-title',
+                        window.i18n ? window.i18n.t('folderPicker.quickAccess') : 'Quick Access'
+                    )
+                );
                 const quickList = E('div', 'folder-picker-quick-list');
-                getQuickAccess().forEach(q => {
+                getQuickAccess().forEach((q) => {
                     const it = E('div', 'folder-picker-quick-item', q.name);
                     it.title = q.path;
-                    it.onclick = () => { cur = q.path; reload(); };
+                    it.onclick = () => {
+                        cur = q.path;
+                        reload();
+                    };
                     quickList.appendChild(it);
                 });
                 quick.appendChild(quickList);
@@ -105,10 +127,24 @@
                 tip.style.opacity = '.7';
                 tip.style.flex = '1';
                 const actions = E('div', 'folder-picker-actions');
-                const cancel = E('button', 'folder-picker-btn secondary', window.i18n ? window.i18n.t('folderPicker.cancel') : 'Cancel');
-                const choose = E('button', 'folder-picker-btn', window.i18n ? window.i18n.t('folderPicker.selectThis') : 'Choose This Directory');
-                cancel.onclick = () => { clean(); resolve(null); };
-                choose.onclick = () => { clean(); resolve(cur); };
+                const cancel = E(
+                    'button',
+                    'folder-picker-btn secondary',
+                    window.i18n ? window.i18n.t('folderPicker.cancel') : 'Cancel'
+                );
+                const choose = E(
+                    'button',
+                    'folder-picker-btn',
+                    window.i18n ? window.i18n.t('folderPicker.selectThis') : 'Choose This Directory'
+                );
+                cancel.onclick = () => {
+                    clean();
+                    resolve(null);
+                };
+                choose.onclick = () => {
+                    clean();
+                    resolve(cur);
+                };
                 actions.appendChild(cancel);
                 actions.appendChild(choose);
                 footer.appendChild(tip);
@@ -116,17 +152,30 @@
                 panel.appendChild(footer);
                 document.body.appendChild(backdrop);
                 let destroyed = false;
-                function clean() { if (destroyed) return; destroyed = true; backdrop.remove(); }
+                function clean() {
+                    if (destroyed) return;
+                    destroyed = true;
+                    backdrop.remove();
+                }
 
                 async function reload() {
                     choose.disabled = true;
-                    buildBreadcrumb(cur, bar, p => { cur = p; reload(); });
-                    treeWrap.innerHTML = '<div class="folder-picker-loading">' + (window.i18n ? window.i18n.t('folderPicker.loading') : 'Loading...') + '</div>';
-                    let entries = [], error = null;
+                    buildBreadcrumb(cur, bar, (p) => {
+                        cur = p;
+                        reload();
+                    });
+                    treeWrap.innerHTML =
+                        '<div class="folder-picker-loading">' +
+                        (window.i18n ? window.i18n.t('folderPicker.loading') : 'Loading...') +
+                        '</div>';
+                    let entries = [],
+                        error = null;
                     try {
                         entries = await window.electronAPI.readDirectory(cur);
-                    } catch (e) { error = e; }
-                    const folders = (entries || []).filter(i => i.type === 'folder');
+                    } catch (e) {
+                        error = e;
+                    }
+                    const folders = (entries || []).filter((i) => i.type === 'folder');
                     const f = search.value.trim().toLowerCase();
                     treeWrap.innerHTML = '';
                     if (error) {
@@ -135,24 +184,31 @@
                         const backBtn = E('button', 'folder-picker-btn secondary', '返回上一级');
                         backBtn.onclick = () => {
                             const parent = cur.replace(/[\\/]+$/, '').replace(/[/\\][^/\\]+$/, '') || '/';
-                            cur = parent; reload();
+                            cur = parent;
+                            reload();
                         };
                         err.appendChild(backBtn);
                         treeWrap.appendChild(err);
                         choose.disabled = true;
                         return;
                     }
-                    const list = folders.filter(d => !f || d.name.toLowerCase().includes(f));
+                    const list = folders.filter((d) => !f || d.name.toLowerCase().includes(f));
                     if (list.length === 0) {
                         treeWrap.appendChild(E('div', 'folder-picker-empty', '(空目录)'));
                     }
-                    list.forEach(d => {
+                    list.forEach((d) => {
                         const item = E('div', 'folder-picker-item folder');
-                        item.innerHTML = '<span class="folder-picker-icon" data-ui-icon="folder" aria-hidden="true"></span><span>' + d.name + '</span>';
+                        item.innerHTML =
+                            '<span class="folder-picker-icon" data-ui-icon="folder" aria-hidden="true"></span><span>' +
+                            d.name +
+                            '</span>';
                         item.onclick = (ev) => {
                             selectItem(item, d);
                         };
-                        item.ondblclick = () => { cur = d.path; reload(); };
+                        item.ondblclick = () => {
+                            cur = d.path;
+                            reload();
+                        };
                         treeWrap.appendChild(item);
                     });
                     if (window.uiIcons && typeof window.uiIcons.hydrate === 'function') {
@@ -161,12 +217,20 @@
                     choose.disabled = false;
                 }
 
-                function clearActive() { treeWrap.querySelectorAll('.folder-picker-item.active').forEach(i => i.classList.remove('active')); }
-                function selectItem(el, d) { clearActive(); el.classList.add('active'); cur = d.path; }
+                function clearActive() {
+                    treeWrap
+                        .querySelectorAll('.folder-picker-item.active')
+                        .forEach((i) => i.classList.remove('active'));
+                }
+                function selectItem(el, d) {
+                    clearActive();
+                    el.classList.add('active');
+                    cur = d.path;
+                }
 
                 search.oninput = () => reload();
                 reload();
             });
-        }
+        },
     };
 })();

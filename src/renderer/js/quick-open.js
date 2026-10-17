@@ -21,10 +21,15 @@
         if (base.endsWith(q)) return 8_000 - base.length; // 越短越靠前
         if (base.startsWith(q)) return 7_000 - base.length;
         if (base.includes(q)) return 6_000 - base.indexOf(q);
-        let qi = 0, score = 0;
+        let qi = 0,
+            score = 0;
         for (let i = 0; i < p.length && qi < q.length; i++) {
-            if (p[i] === q[qi]) { score += 2; qi++; }
-            else if (q.includes(p[i])) { score += 1; }
+            if (p[i] === q[qi]) {
+                score += 2;
+                qi++;
+            } else if (q.includes(p[i])) {
+                score += 1;
+            }
         }
         if (qi === q.length) score += 5;
         return score;
@@ -62,9 +67,13 @@
     }
 
     function search(query) {
-        if (!query) { render(allFiles.slice(0, 100)); return; }
-        const ranked = allFiles.map(f => ({ ...f, __s: fuzzyScore(query, f.path) }))
-            .filter(x => x.__s > 0)
+        if (!query) {
+            render(allFiles.slice(0, 100));
+            return;
+        }
+        const ranked = allFiles
+            .map((f) => ({ ...f, __s: fuzzyScore(query, f.path) }))
+            .filter((x) => x.__s > 0)
             .sort((a, b) => b.__s - a.__s || a.path.length - b.path.length);
         lastList = ranked;
         activeIndex = ranked.length ? 0 : -1;
@@ -78,7 +87,9 @@
         if (!indexDirty && indexedRoot === root && allFiles.length > 0) return true;
         indexedRoot = root;
         try {
-            const res = await window.electronAPI.walkDirectory(root, { excludeGlobs: ['node_modules', '.git', '.oicpp', '.vscode'] });
+            const res = await window.electronAPI.walkDirectory(root, {
+                excludeGlobs: ['node_modules', '.git', '.oicpp', '.vscode'],
+            });
             if (res && res.success) {
                 allFiles = res.files || [];
                 indexDirty = false;
@@ -129,7 +140,10 @@
     }
     input.addEventListener('input', () => search(input.value.trim()));
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { e.preventDefault(); close(); }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close();
+        }
         if (e.key === 'Enter') {
             const list = lastList && lastList.length ? lastList : allFiles;
             if (list.length > 0) {
@@ -178,7 +192,9 @@
         }
     });
 
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+    });
 
     window.quickOpen = { open, close, ensureIndex };
 

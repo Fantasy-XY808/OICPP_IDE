@@ -17,7 +17,7 @@ class SidebarManager {
             files: new FileExplorer(),
             samples: new SampleTester(),
             compare: new CodeComparer(),
-            debug: new DebugPanel()
+            debug: new DebugPanel(),
         };
 
         this._pendingResizeRaf = null;
@@ -170,7 +170,8 @@ class SidebarManager {
             const welcomeContainer = document.getElementById('welcome-container');
             const editorArea = document.querySelector('.editor-area');
 
-            const isWelcomeVisible = welcomeContainer &&
+            const isWelcomeVisible =
+                welcomeContainer &&
                 (welcomeContainer.style.display === 'block' ||
                     (welcomeContainer.style.display !== 'none' && welcomeContainer.offsetParent !== null));
             const isEditorHidden = editorArea && editorArea.style.display === 'none';
@@ -179,7 +180,7 @@ class SidebarManager {
                 this.disableResize();
                 try {
                     this.hideForWelcome();
-                } catch (_) { }
+                } catch (_) {}
                 logInfo('初始化时检测到欢迎页面，已禁用侧边栏拖拽并隐藏侧边栏');
             }
         }, 200);
@@ -208,7 +209,7 @@ class SidebarManager {
             try {
                 this._prevWidth = sidebar.style.width || '';
                 this._wasCollapsed = this.isCollapsed === true || localStorage.getItem('sidebar-collapsed') === 'true';
-            } catch (_) { }
+            } catch (_) {}
             sidebar.classList.add('hidden');
         }
         this.disableResize();
@@ -226,14 +227,14 @@ class SidebarManager {
                     const width = savedWidth ? parseInt(savedWidth) : 350;
                     sidebar.style.width = (isFinite(width) && width >= 200 ? width : 300) + 'px';
                 }
-            } catch (_) { }
+            } catch (_) {}
             try {
                 if (this._wasCollapsed) {
                     this.collapseSidebar();
                 } else {
                     this.expandSidebar();
                 }
-            } catch (_) { }
+            } catch (_) {}
         }
         this.enableResize();
     }
@@ -272,8 +273,10 @@ class SidebarManager {
         const currentWidth = parseInt(this.sidebar.style.width, 10);
         const rememberedWidth = parseInt(this.savedWidth, 10);
         const storedWidth = parseInt(localStorage.getItem('sidebar-width'), 10);
-        const width = [currentWidth, rememberedWidth, storedWidth]
-            .find(candidate => Number.isFinite(candidate) && candidate >= 200) || 350;
+        const width =
+            [currentWidth, rememberedWidth, storedWidth].find(
+                (candidate) => Number.isFinite(candidate) && candidate >= 200
+            ) || 350;
         this.sidebar.style.width = width + 'px';
 
         localStorage.setItem('sidebar-width', width);
@@ -309,7 +312,7 @@ class SidebarManager {
         return {
             welcomeVisible: isWelcomeVisible,
             editorVisible: isEditorVisible,
-            resizerEnabled: isResizerEnabled
+            resizerEnabled: isResizerEnabled,
         };
     }
 
@@ -331,7 +334,9 @@ class SidebarManager {
                 if (this._pendingResizeIsTimeout) {
                     clearTimeout(this._pendingResizeRaf);
                 } else {
-                    try { cancelAnimationFrame(this._pendingResizeRaf); } catch (_) { }
+                    try {
+                        cancelAnimationFrame(this._pendingResizeRaf);
+                    } catch (_) {}
                 }
                 this._pendingResizeRaf = null;
                 this._pendingResizeIsTimeout = false;
@@ -344,7 +349,8 @@ class SidebarManager {
             return;
         }
 
-        const raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame;
+        const raf =
+            window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame;
         if (typeof raf !== 'function') {
             this._pendingResizeRaf = setTimeout(() => {
                 this._pendingResizeRaf = null;
@@ -370,7 +376,12 @@ class SidebarManager {
                 e.stopPropagation();
 
                 const fileExplorer = this.panels.files;
-                logInfo('检查工作区状态:', fileExplorer ? fileExplorer.hasWorkspace : '文件管理器不存在', '路径:', fileExplorer ? fileExplorer.currentPath : 'N/A');
+                logInfo(
+                    '检查工作区状态:',
+                    fileExplorer ? fileExplorer.hasWorkspace : '文件管理器不存在',
+                    '路径:',
+                    fileExplorer ? fileExplorer.currentPath : 'N/A'
+                );
                 if (!fileExplorer || !fileExplorer.hasWorkspace) {
                     logInfo('没有工作区，无法执行操作');
                     return;
@@ -406,7 +417,7 @@ class SidebarManager {
         }
 
         const icons = document.querySelectorAll('.sidebar-icon');
-        icons.forEach(icon => {
+        icons.forEach((icon) => {
             icon.classList.remove('active');
             if (icon.dataset.panel === panelName) {
                 icon.classList.add('active');
@@ -414,7 +425,7 @@ class SidebarManager {
         });
 
         const panels = document.querySelectorAll('.panel-content');
-        panels.forEach(panel => {
+        panels.forEach((panel) => {
             panel.classList.remove('active');
             if (panel.id === `${panelName}-panel`) {
                 panel.classList.add('active');
@@ -459,9 +470,7 @@ class SidebarManager {
                 btn.style.cursor = hasWorkspace ? 'pointer' : 'not-allowed';
             }
         });
-
-}
-
+    }
 }
 
 if (typeof window !== 'undefined') {

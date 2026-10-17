@@ -14,7 +14,7 @@
             SpaceBeforeParens: 'ControlStatements',
             SortIncludes: true,
             AlignConsecutiveAssignments: false,
-            AlignConsecutiveDeclarations: false
+            AlignConsecutiveDeclarations: false,
         };
     }
 
@@ -45,23 +45,62 @@
             return matched || fallback;
         };
 
-        normalized.BasedOnStyle = toEnum(raw.BasedOnStyle, ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'], defaults.BasedOnStyle);
+        normalized.BasedOnStyle = toEnum(
+            raw.BasedOnStyle,
+            ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'],
+            defaults.BasedOnStyle
+        );
         normalized.IndentWidth = toInt(raw.IndentWidth, defaults.IndentWidth);
         normalized.TabWidth = toInt(raw.TabWidth, normalized.IndentWidth);
-        normalized.UseTab = toEnum(raw.UseTab, ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'], defaults.UseTab);
+        normalized.UseTab = toEnum(
+            raw.UseTab,
+            ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'],
+            defaults.UseTab
+        );
         normalized.ColumnLimit = toInt(raw.ColumnLimit, defaults.ColumnLimit);
-        normalized.BreakBeforeBraces = toEnum(raw.BreakBeforeBraces, ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'], defaults.BreakBeforeBraces);
-        normalized.AllowShortIfStatementsOnASingleLine = toEnum(raw.AllowShortIfStatementsOnASingleLine, ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'], defaults.AllowShortIfStatementsOnASingleLine);
-        normalized.AllowShortFunctionsOnASingleLine = toEnum(raw.AllowShortFunctionsOnASingleLine, ['None', 'Empty', 'Inline', 'All'], defaults.AllowShortFunctionsOnASingleLine);
+        normalized.BreakBeforeBraces = toEnum(
+            raw.BreakBeforeBraces,
+            ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'],
+            defaults.BreakBeforeBraces
+        );
+        normalized.AllowShortIfStatementsOnASingleLine = toEnum(
+            raw.AllowShortIfStatementsOnASingleLine,
+            ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'],
+            defaults.AllowShortIfStatementsOnASingleLine
+        );
+        normalized.AllowShortFunctionsOnASingleLine = toEnum(
+            raw.AllowShortFunctionsOnASingleLine,
+            ['None', 'Empty', 'Inline', 'All'],
+            defaults.AllowShortFunctionsOnASingleLine
+        );
         normalized.IndentCaseLabels = toBool(raw.IndentCaseLabels, defaults.IndentCaseLabels);
-        normalized.PointerAlignment = toEnum(raw.PointerAlignment, ['Left', 'Right', 'Middle'], defaults.PointerAlignment);
-        normalized.SpaceBeforeParens = toEnum(raw.SpaceBeforeParens, ['Never', 'ControlStatements', 'Always', 'Custom'], defaults.SpaceBeforeParens);
+        normalized.PointerAlignment = toEnum(
+            raw.PointerAlignment,
+            ['Left', 'Right', 'Middle'],
+            defaults.PointerAlignment
+        );
+        normalized.SpaceBeforeParens = toEnum(
+            raw.SpaceBeforeParens,
+            ['Never', 'ControlStatements', 'Always', 'Custom'],
+            defaults.SpaceBeforeParens
+        );
         normalized.SortIncludes = toBool(raw.SortIncludes, defaults.SortIncludes);
-        normalized.AlignConsecutiveAssignments = toBool(raw.AlignConsecutiveAssignments, defaults.AlignConsecutiveAssignments);
-        normalized.AlignConsecutiveDeclarations = toBool(raw.AlignConsecutiveDeclarations, defaults.AlignConsecutiveDeclarations);
+        normalized.AlignConsecutiveAssignments = toBool(
+            raw.AlignConsecutiveAssignments,
+            defaults.AlignConsecutiveAssignments
+        );
+        normalized.AlignConsecutiveDeclarations = toBool(
+            raw.AlignConsecutiveDeclarations,
+            defaults.AlignConsecutiveDeclarations
+        );
 
-        if (Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') && !Object.prototype.hasOwnProperty.call(raw, 'UseTab')) {
-            const legacyStyle = String(raw.formatterIndentStyle || '').trim().toLowerCase();
+        if (
+            Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') &&
+            !Object.prototype.hasOwnProperty.call(raw, 'UseTab')
+        ) {
+            const legacyStyle = String(raw.formatterIndentStyle || '')
+                .trim()
+                .toLowerCase();
             if (legacyStyle === 'tabs') {
                 normalized.UseTab = 'Always';
             } else if (legacyStyle === 'spaces') {
@@ -76,9 +115,12 @@
         if (!code || typeof code !== 'string') return code || '';
 
         const clangFormatStyle = normalizeClangFormatStyle(options.clangFormatStyle || options.clangFormat || {});
-        const indentWidth = Number.isFinite(clangFormatStyle.IndentWidth) && clangFormatStyle.IndentWidth > 0
-            ? clangFormatStyle.IndentWidth
-            : (Number.isFinite(options.tabSize) && options.tabSize > 0 ? options.tabSize : 4);
+        const indentWidth =
+            Number.isFinite(clangFormatStyle.IndentWidth) && clangFormatStyle.IndentWidth > 0
+                ? clangFormatStyle.IndentWidth
+                : Number.isFinite(options.tabSize) && options.tabSize > 0
+                  ? options.tabSize
+                  : 4;
         const insertSpaces = clangFormatStyle.UseTab === 'Never';
         const breakBeforeBraces = String(clangFormatStyle.BreakBeforeBraces || 'Attach');
         const indentCaseLabels = clangFormatStyle.IndentCaseLabels !== false;
@@ -93,7 +135,7 @@
         let blankCount = 0;
         let inPreprocessorContinuation = false;
 
-        const mkIndent = (level) => insertSpaces ? ' '.repeat(level * indentWidth) : '\t'.repeat(level);
+        const mkIndent = (level) => (insertSpaces ? ' '.repeat(level * indentWidth) : '\t'.repeat(level));
 
         const out = [];
 
@@ -104,12 +146,16 @@
                 return { segments: [keep], open: 0, close: 0, noIndent: true };
             }
 
-            let open = 0, close = 0;
-            let i = 0, s = line;
+            let open = 0,
+                close = 0;
+            let i = 0,
+                s = line;
             let out = '';
             let segments = [];
 
-            let inStrS = false, inStrD = false, inStrRaw = false;
+            let inStrS = false,
+                inStrD = false,
+                inStrRaw = false;
             let templateDepth = 0;
             let inlineBraceDepth = 0;
             let parenDepth = 0; // 括号深度，用于判定是否允许在分号处换行
@@ -134,49 +180,124 @@
                 const three = i + 2 < s.length ? s.substring(i, i + 3) : '';
 
                 if (inBlockComment) {
-                    if (pendingSpace) { out += ' '; pendingSpace = false; }
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
                     out += ch;
-                    if (ch === '*' && next === '/') { out += '/'; i += 2; inBlockComment = false; continue; }
-                    i++; continue;
+                    if (ch === '*' && next === '/') {
+                        out += '/';
+                        i += 2;
+                        inBlockComment = false;
+                        continue;
+                    }
+                    i++;
+                    continue;
                 }
                 if (!inStrS && !inStrD && !inStrRaw) {
-                    if (ch === '/' && next === '*') { if (pendingSpace) { out += ' '; pendingSpace = false; } out += '/*'; inBlockComment = true; i += 2; continue; }
-                    if (ch === '/' && next === '/') { if (pendingSpace) { out += ' '; pendingSpace = false; } out += s.substring(i); i = s.length; break; }
+                    if (ch === '/' && next === '*') {
+                        if (pendingSpace) {
+                            out += ' ';
+                            pendingSpace = false;
+                        }
+                        out += '/*';
+                        inBlockComment = true;
+                        i += 2;
+                        continue;
+                    }
+                    if (ch === '/' && next === '/') {
+                        if (pendingSpace) {
+                            out += ' ';
+                            pendingSpace = false;
+                        }
+                        out += s.substring(i);
+                        i = s.length;
+                        break;
+                    }
                 }
 
                 if (inStrS) {
-                    if (pendingSpace) { out += ' '; pendingSpace = false; }
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
                     out += ch;
-                    if (ch === '\\' && i + 1 < s.length) { out += s[i + 1]; i += 2; continue; }
-                    if (ch === '\'') inStrS = false;
-                    i++; continue;
+                    if (ch === '\\' && i + 1 < s.length) {
+                        out += s[i + 1];
+                        i += 2;
+                        continue;
+                    }
+                    if (ch === "'") inStrS = false;
+                    i++;
+                    continue;
                 }
                 if (inStrD) {
-                    if (pendingSpace) { out += ' '; pendingSpace = false; }
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
                     out += ch;
-                    if (ch === '\\' && i + 1 < s.length) { out += s[i + 1]; i += 2; continue; }
+                    if (ch === '\\' && i + 1 < s.length) {
+                        out += s[i + 1];
+                        i += 2;
+                        continue;
+                    }
                     if (ch === '"') inStrD = false;
-                    i++; continue;
+                    i++;
+                    continue;
                 }
                 if (inStrRaw) {
-                    if (pendingSpace) { out += ' '; pendingSpace = false; }
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
                     out += ch;
                     if (ch === '"') inStrRaw = false;
-                    i++; continue;
+                    i++;
+                    continue;
                 }
 
-                if (ch === '\'') { if (pendingSpace) { out += ' '; pendingSpace = false; } inStrS = true; out += ch; i++; continue; }
+                if (ch === "'") {
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
+                    inStrS = true;
+                    out += ch;
+                    i++;
+                    continue;
+                }
                 if (ch === '"') {
                     const prev = s[i - 1] || '';
                     const look = s.substring(i, i + 2);
-                    if (prev === 'R' && look === '"(') { if (pendingSpace) { out += ' '; pendingSpace = false; } inStrRaw = true; out += ch; i++; continue; }
-                    if (pendingSpace) { out += ' '; pendingSpace = false; } inStrD = true; out += ch; i++; continue;
+                    if (prev === 'R' && look === '"(') {
+                        if (pendingSpace) {
+                            out += ' ';
+                            pendingSpace = false;
+                        }
+                        inStrRaw = true;
+                        out += ch;
+                        i++;
+                        continue;
+                    }
+                    if (pendingSpace) {
+                        out += ' ';
+                        pendingSpace = false;
+                    }
+                    inStrD = true;
+                    out += ch;
+                    i++;
+                    continue;
                 }
 
                 if (ch === '{') open++;
                 if (ch === '}') close++;
 
-                if (isSpace(ch)) { pendingSpace = true; i++; continue; }
+                if (isSpace(ch)) {
+                    pendingSpace = true;
+                    i++;
+                    continue;
+                }
 
                 const two = ch + next;
                 const spacedThree = ['>>=', '<<='];
@@ -185,7 +306,8 @@
                     out = out.replace(/[ ]+$/g, '');
                     if (out && out[out.length - 1] !== ' ') out += ' ';
                     out += three + ' ';
-                    i += 3; continue;
+                    i += 3;
+                    continue;
                 }
                 if (two === '++' || two === '--') {
                     emitPendingSpaceIfNeeded('op');
@@ -195,26 +317,47 @@
                         out = out.replace(/[ ]+$/g, '');
                     }
                     out += two;
-                    i += 2; continue;
+                    i += 2;
+                    continue;
                 }
                 if (two === '->' || two === '::') {
                     out = out.replace(/[ ]+$/g, '');
                     out += two;
-                    i += 2; continue;
+                    i += 2;
+                    continue;
                 }
                 if (two === '>>' && templateDepth > 0) {
                     out = out.replace(/[ ]+$/g, '');
                     out += '>>';
                     templateDepth = Math.max(0, templateDepth - 2);
-                    i += 2; continue;
+                    i += 2;
+                    continue;
                 }
-                const spacedTwo = ['==', '!=', '<=', '>=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '<<', '>>'];
+                const spacedTwo = [
+                    '==',
+                    '!=',
+                    '<=',
+                    '>=',
+                    '&&',
+                    '||',
+                    '+=',
+                    '-=',
+                    '*=',
+                    '/=',
+                    '%=',
+                    '&=',
+                    '|=',
+                    '^=',
+                    '<<',
+                    '>>',
+                ];
                 if (spacedTwo.includes(two)) {
                     emitPendingSpaceIfNeeded('op');
                     out = out.replace(/[ ]+$/g, '');
                     if (out && out[out.length - 1] !== ' ') out += ' ';
                     out += two + ' ';
-                    i += 2; continue;
+                    i += 2;
+                    continue;
                 }
 
                 if (ch === ',') {
@@ -223,7 +366,8 @@
                     out += ',';
                     const after = s.substring(i + 1).trimStart();
                     if (after && !after.startsWith(')') && !after.startsWith(';')) out += ' ';
-                    i++; continue;
+                    i++;
+                    continue;
                 }
 
                 if (ch === ';') {
@@ -242,7 +386,8 @@
                         if (after && !after.startsWith(')') && !after.startsWith('}') && !after.startsWith(';')) {
                             out += ' ';
                         }
-                        i++; continue;
+                        i++;
+                        continue;
                     }
                 }
 
@@ -251,14 +396,16 @@
                     out = out.replace(/[ ]+$/g, '');
                     if (out && out[out.length - 1] !== ' ') out += ' ';
                     out += '? ';
-                    i++; continue;
+                    i++;
+                    continue;
                 }
                 if (ch === ':') {
                     emitPendingSpaceIfNeeded('op');
                     out = out.replace(/[ ]+$/g, '');
                     if (out && out[out.length - 1] !== ' ') out += ' ';
                     out += ': ';
-                    i++; continue;
+                    i++;
+                    continue;
                 }
 
                 if ((ch === '-' || ch === '+') && /[0-9.]?[eE]$/.test(out.replace(/\s+$/g, ''))) {
@@ -271,7 +418,9 @@
 
                 if ('=+-*/%<>&|^'.includes(ch)) {
                     const prev = out.replace(/\s+$/g, '').slice(-1);
-                    const unary = (ch === '*' || ch === '&' || ch === '+' || ch === '-') && (!prev || '([,{;=+-*/%&|^!~?:<>'.includes(prev));
+                    const unary =
+                        (ch === '*' || ch === '&' || ch === '+' || ch === '-') &&
+                        (!prev || '([,{;=+-*/%&|^!~?:<>'.includes(prev));
                     const isTemplateStart = () => {
                         if (ch !== '<') return false;
                         const prevNonSpace = out.replace(/\s+$/g, '').slice(-1);
@@ -282,9 +431,13 @@
                         while (k < s.length) {
                             const c = s[k];
                             if (c === '<') depth++;
-                            else if (c === '>') { depth--; if (depth === 0) break; }
-                            else if (c === '"' || c === '\'') break; // 字符串/字符开始则放弃
-                            else if (/[^\sA-Za-z0-9_,:<>&*]/.test(c)) { // 出现不被允许的字符
+                            else if (c === '>') {
+                                depth--;
+                                if (depth === 0) break;
+                            } else if (c === '"' || c === "'")
+                                break; // 字符串/字符开始则放弃
+                            else if (/[^\sA-Za-z0-9_,:<>&*]/.test(c)) {
+                                // 出现不被允许的字符
                                 return false;
                             }
                             k++;
@@ -304,18 +457,22 @@
                         out = out.replace(/[ ]+$/g, '');
                         out += '>';
                         templateDepth = Math.max(0, templateDepth - 1);
-                        i++; continue;
+                        i++;
+                        continue;
                     }
                     if (unary) {
                         emitPendingSpaceIfNeeded('op');
                         out = out.replace(/[ ]+$/g, '');
-                        out += ch; i++; continue;
+                        out += ch;
+                        i++;
+                        continue;
                     }
                     emitPendingSpaceIfNeeded('op');
                     out = out.replace(/[ ]+$/g, '');
                     if (out && out[out.length - 1] !== ' ') out += ' ';
                     out += ch + ' ';
-                    i++; continue;
+                    i++;
+                    continue;
                 }
 
                 if (ch === '(') {
@@ -334,9 +491,11 @@
                     emitPendingSpaceIfNeeded('op');
                     const prevNonSpace = out.replace(/\s+$/g, '').slice(-1);
                     const trimmedOut = out.replace(/\s+$/g, '');
-                    const blockKeywordRegex = /\b(if|for|while|switch|else|do|try|catch|class|struct|namespace|union|enum|case|default)\b[^{}]*$/;
+                    const blockKeywordRegex =
+                        /\b(if|for|while|switch|else|do|try|catch|class|struct|namespace|union|enum|case|default)\b[^{}]*$/;
                     const endsWithControl = /[\)\]]$/.test(trimmedOut);
-                    const isInitializerBrace = parenDepth > 0 || (!endsWithControl && !blockKeywordRegex.test(trimmedOut));
+                    const isInitializerBrace =
+                        parenDepth > 0 || (!endsWithControl && !blockKeywordRegex.test(trimmedOut));
                     const shouldBreakBeforeBrace = breakBeforeBraces === 'Allman' || breakBeforeBraces === 'GNU';
                     let shouldAddSpace = prevNonSpace && !/[\s{[(]/.test(prevNonSpace);
                     if (isInitializerBrace) {
@@ -370,7 +529,8 @@
                         while (i < s.length && (s[i] === ' ' || s[i] === '\t')) i++;
                         continue;
                     }
-                    i++; continue;
+                    i++;
+                    continue;
                 }
 
                 if (ch === '}') {
@@ -407,7 +567,12 @@
                     const afterBrace = s.substring(i + 1).trim();
                     if (afterBrace) {
                         const varDeclPattern = /^[A-Za-z_\*\&\:\<\>\[\]\,\s0-9]+;\s*$/;
-                        if (varDeclPattern.test(afterBrace) && !/\{/.test(afterBrace) && !/\}/.test(afterBrace) && !/\s/.test(afterBrace.replace(/;\s*$/, ''))) {
+                        if (
+                            varDeclPattern.test(afterBrace) &&
+                            !/\{/.test(afterBrace) &&
+                            !/\}/.test(afterBrace) &&
+                            !/\s/.test(afterBrace.replace(/;\s*$/, ''))
+                        ) {
                             out += ' ' + afterBrace.replace(/\s+$/, '');
                             segments.push(out);
                             out = '';
@@ -426,11 +591,14 @@
 
                 if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(ch)) {
                     emitPendingSpaceIfNeeded('id');
-                    out += ch; i++; continue;
+                    out += ch;
+                    i++;
+                    continue;
                 }
 
                 emitPendingSpaceIfNeeded('op');
-                out += ch; i++;
+                out += ch;
+                i++;
             }
 
             out = out.replace(/\b(if|for|while|switch|catch)\s*\(/g, '$1 (');
@@ -493,7 +661,12 @@
                 if (lastSeg && lastSeg.trim() === '}' && rawLines[idx + 1]) {
                     const nextRaw = rawLines[idx + 1].trim();
                     const nextBody = nextRaw.replace(/;\s*$/, '');
-                    if (/^[A-Za-z_\*\&\<\[]/.test(nextRaw) && /;\s*$/.test(nextRaw) && !/=/.test(nextRaw) && !/\s/.test(nextBody)) {
+                    if (
+                        /^[A-Za-z_\*\&\<\[]/.test(nextRaw) &&
+                        /;\s*$/.test(nextRaw) &&
+                        !/=/.test(nextRaw) &&
+                        !/\s/.test(nextBody)
+                    ) {
                         res.segments[res.segments.length - 1] = lastSeg + ' ' + nextRaw;
                         idx++;
                         blankCount = 0;
@@ -530,7 +703,6 @@
                 });
                 indentLevel = tempLevel;
             }
-
         }
 
         return out.join(EOL);

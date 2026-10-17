@@ -11,19 +11,36 @@ const DEST = path.join(__dirname, '..', 'build', 'compiler', 'win32');
 // bin 里需要的工具与 gcc 运行/驱动依赖 DLL
 const BIN_EXES = ['cpp.exe', 'gcc.exe', 'g++.exe', 'c++.exe', 'c++filt.exe', 'as.exe', 'ld.exe', 'ld.bfd.exe'];
 const BIN_DLLS = [
-    'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll',
-    'libgmp-10.dll', 'libgmpxx-4.dll', 'libisl-23.dll', 'libmpc-3.dll', 'libmpfr-6.dll',
-    'libzstd.dll', 'zlib1.dll', 'libatomic-1.dll', 'libssp-0.dll'
+    'libgcc_s_seh-1.dll',
+    'libstdc++-6.dll',
+    'libwinpthread-1.dll',
+    'libgmp-10.dll',
+    'libgmpxx-4.dll',
+    'libisl-23.dll',
+    'libmpc-3.dll',
+    'libmpfr-6.dll',
+    'libzstd.dll',
+    'zlib1.dll',
+    'libatomic-1.dll',
+    'libssp-0.dll',
 ];
 
 // lib 根下的导入库：排除 UWP/驱动开发用的大块非必需项
 const LIB_A_EXCLUDE = [
-    /^libcrypto\./i, /^libssl\./i, /^libonecore/i, /^libwindowscoreheadless/i,
-    /^libnanosrv/i, /^libmincore/i, /^libwsmsvc/i, /^libwindowsapp/i,
-    /^libapi-ms-win/i
+    /^libcrypto\./i,
+    /^libssl\./i,
+    /^libonecore/i,
+    /^libwindowscoreheadless/i,
+    /^libnanosrv/i,
+    /^libmincore/i,
+    /^libwsmsvc/i,
+    /^libwindowsapp/i,
+    /^libapi-ms-win/i,
 ];
 
-function ensureDir(p) { fs.mkdirSync(p, { recursive: true }); }
+function ensureDir(p) {
+    fs.mkdirSync(p, { recursive: true });
+}
 
 function copyFile(src, dest) {
     ensureDir(path.dirname(dest));
@@ -45,6 +62,11 @@ function copyTree(src, dest, filterFn) {
 }
 
 function main() {
+    if (process.platform !== 'win32') {
+        console.log('跳过 Windows 内置编译器准备: 当前构建平台为', process.platform);
+        return;
+    }
+
     if (!fs.existsSync(path.join(SRC, 'bin', 'g++.exe'))) {
         console.error('未找到 MSYS2 UCRT64 前缀:', SRC);
         console.error('请安装 MSYS2 并安装 mingw-w64-ucrt-x86_64-gcc，或设置 MSYS2_PREFIX 指向其前缀。');
@@ -97,8 +119,10 @@ function main() {
     }
 
     // 记录来源与版本
-    fs.writeFileSync(path.join(DEST, 'COMPILER_INFO.txt'),
-        `OICPP 内置编译器运行时\n来源: ${SRC}\n版本: GCC ${ver}\n生成时间: ${new Date().toISOString()}\n`);
+    fs.writeFileSync(
+        path.join(DEST, 'COMPILER_INFO.txt'),
+        `OICPP 内置编译器运行时\n来源: ${SRC}\n版本: GCC ${ver}\n生成时间: ${new Date().toISOString()}\n`
+    );
 
     console.log('完成:', DEST);
 }

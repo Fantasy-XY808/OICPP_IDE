@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025
 
 ### Added
+
 - Initial community fork release based on [mywwzh/oicpp](https://github.com/mywwzh/oicpp)
 - Modern Fluent/WinUI-style interface with rounded panel layout
 - Seti color file icons and codicon icon system
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud space (file sync)
 
 ### Changed
+
 - Major UI modernization from original oicpp project
 - Self-contained compiler bundling (no external MinGW required)
 - Replaced original editor with Monaco Editor

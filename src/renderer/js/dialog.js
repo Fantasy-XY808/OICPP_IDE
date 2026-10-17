@@ -24,8 +24,7 @@ class DialogManager {
                 if (e.target !== overlay) return;
                 if (overlay.dataset.closeOnBackdrop !== '1') return;
                 this.hideDialog();
-            } catch (_) {
-            }
+            } catch (_) {}
         });
     }
 
@@ -52,12 +51,10 @@ class DialogManager {
                         e.preventDefault();
                         this.hideDialog();
                     }
-                } catch (_) {
-                }
+                } catch (_) {}
             };
             document.addEventListener('keydown', this._keydownHandler, true);
-        } catch (_) {
-        }
+        } catch (_) {}
     }
 
     showInputDialog(title, defaultValue = '', placeholder = '', options = {}) {
@@ -117,7 +114,7 @@ class DialogManager {
 
             this.currentDialog = {
                 resolve: resolve,
-                reject: reject
+                reject: reject,
             };
         });
     }
@@ -146,7 +143,7 @@ class DialogManager {
 
             this.currentDialog = {
                 resolve: resolve,
-                reject: reject
+                reject: reject,
             };
         });
     }
@@ -157,12 +154,14 @@ class DialogManager {
             const overlay = document.getElementById('dialog-overlay');
             const container = document.getElementById('dialog-container');
 
-            const buttonsHtml = (actions || []).map((action) => {
-                const safeId = this.escapeHtml(String(action.id ?? ''));
-                const safeLabel = this.escapeHtml(String(action.label ?? ''));
-                const className = action.className ? ` ${this.escapeHtml(action.className)}` : '';
-                return `<button class="dialog-btn${className}" data-action="${safeId}" onclick="dialogManager.actionDialog('${safeId}')">${safeLabel}</button>`;
-            }).join('');
+            const buttonsHtml = (actions || [])
+                .map((action) => {
+                    const safeId = this.escapeHtml(String(action.id ?? ''));
+                    const safeLabel = this.escapeHtml(String(action.label ?? ''));
+                    const className = action.className ? ` ${this.escapeHtml(action.className)}` : '';
+                    return `<button class="dialog-btn${className}" data-action="${safeId}" onclick="dialogManager.actionDialog('${safeId}')">${safeLabel}</button>`;
+                })
+                .join('');
 
             container.innerHTML = `
                 <div class="dialog-header">
@@ -181,7 +180,7 @@ class DialogManager {
 
             this.currentDialog = {
                 resolve: resolve,
-                reject: reject
+                reject: reject,
             };
         });
     }
@@ -197,8 +196,8 @@ class DialogManager {
                 return;
             }
 
-            const isTestDate = (now instanceof Date) && (now.getMonth() === 11) && (now.getDate() === 21);
-            const displayYear = isTestDate ? (now.getFullYear() + 1) : now.getFullYear();
+            const isTestDate = now instanceof Date && now.getMonth() === 11 && now.getDate() === 21;
+            const displayYear = isTestDate ? now.getFullYear() + 1 : now.getFullYear();
 
             overlay.dataset.closeOnBackdrop = '1';
             container.classList.add('newyear-container');
@@ -236,7 +235,7 @@ class DialogManager {
 
             this.currentDialog = {
                 resolve: resolve,
-                reject: () => {}
+                reject: () => {},
             };
         });
     }
@@ -252,7 +251,7 @@ class DialogManager {
                 return;
             }
 
-            const displayYear = (now instanceof Date) ? now.getFullYear() : new Date().getFullYear();
+            const displayYear = now instanceof Date ? now.getFullYear() : new Date().getFullYear();
             const safeYear = this.escapeHtml(String(displayYear));
 
             overlay.dataset.closeOnBackdrop = '1';
@@ -290,7 +289,7 @@ class DialogManager {
 
             this.currentDialog = {
                 resolve: resolve,
-                reject: () => {}
+                reject: () => {},
             };
         });
     }
@@ -326,8 +325,7 @@ class DialogManager {
             if (pending && typeof pending.resolve === 'function') {
                 pending.resolve(null);
             }
-        } catch (_) {
-        }
+        } catch (_) {}
         overlay.style.display = 'none';
         this.resetDialogState();
         try {
@@ -335,8 +333,7 @@ class DialogManager {
                 document.removeEventListener('keydown', this._keydownHandler, true);
                 this._keydownHandler = null;
             }
-        } catch (_) {
-        }
+        } catch (_) {}
     }
 
     showGotoLineDialog() {
@@ -345,7 +342,9 @@ class DialogManager {
 
     showNewFileDialog(errorMessage = '', defaultName = 'untitled.cpp') {
         const title = errorMessage ? '新建文件 - 错误' : '新建文件';
-        const placeholder = errorMessage ? `错误: ${errorMessage}\n请输入文件名（如：main.cpp, test.py, data.txt）` : '请输入文件名（如：main.cpp, test.py, data.txt）';
+        const placeholder = errorMessage
+            ? `错误: ${errorMessage}\n请输入文件名（如：main.cpp, test.py, data.txt）`
+            : '请输入文件名（如：main.cpp, test.py, data.txt）';
         const initial = defaultName && typeof defaultName === 'string' ? defaultName : 'untitled.cpp';
         return this.showInputDialog(title, initial, placeholder);
     }
@@ -356,8 +355,12 @@ class DialogManager {
 
     showError(message) {
         this.resetDialogState();
-        try { logError('[DialogShowError]', { message: String(message) }); } catch (_) { }
-        try { logWarn('[DialogShowErrorSuppressed]', String(message)); } catch (_) { }
+        try {
+            logError('[DialogShowError]', { message: String(message) });
+        } catch (_) {}
+        try {
+            logWarn('[DialogShowErrorSuppressed]', String(message));
+        } catch (_) {}
     }
 
     escapeHtml(text) {
@@ -373,5 +376,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window !== 'undefined') {
         window.dialogManager = dialogManager;
     }
-
 });

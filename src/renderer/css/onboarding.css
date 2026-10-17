@@ -9,7 +9,10 @@ body.onboarding-active > .titlebar {
     inset: 0 0 auto;
     height: 38px;
     border: 0;
-    background: transparent;
+    background: rgba(20, 21, 27, 0.94);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    backdrop-filter: blur(12px) saturate(130%);
     visibility: visible !important;
     pointer-events: none;
 }
@@ -18,35 +21,78 @@ body.onboarding-active > .titlebar > :not(.titlebar-controls) {
     visibility: hidden;
 }
 
-body.onboarding-active > .titlebar > .titlebar-drag {
-    flex: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
-
+body.onboarding-active > .titlebar > .titlebar-drag,
 body.onboarding-active > .titlebar .titlebar-controls {
     visibility: visible;
     pointer-events: auto;
 }
 
+body.onboarding-active > .titlebar > .titlebar-drag {
+    flex: 1;
+}
+
 body.onboarding-active > .titlebar .titlebar-button {
     height: 38px;
+    width: 46px;
     color: #fff;
 }
 
+body.onboarding-active > .titlebar .titlebar-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+body.onboarding-active > .titlebar .titlebar-button.close-btn:hover {
+    background: #e81123;
+}
+
+body:has(.onboarding-overlay[data-theme='light']) > .titlebar {
+    background: rgba(244, 246, 250, 0.95);
+    box-shadow: 0 1px 0 rgba(47, 53, 67, 0.14);
+}
+
+body:has(.onboarding-overlay[data-theme='light']) > .titlebar .titlebar-button {
+    color: #252832;
+}
+
+body:has(.onboarding-overlay[data-theme='light']) > .titlebar .titlebar-button:hover {
+    background: rgba(37, 40, 50, 0.1);
+}
+
+body:has(.onboarding-overlay[data-theme='light']) > .titlebar .titlebar-button.close-btn:hover {
+    background: #e81123;
+    color: #fff;
+}
+
+body.onboarding-active > .titlebar .titlebar-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+body.onboarding-active > .titlebar .titlebar-button.close-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 .onboarding-overlay {
+    --onboarding-foreground: #f2f3f6;
+    --onboarding-muted: rgba(232, 235, 241, 0.68);
+    --onboarding-border: rgba(255, 255, 255, 0.15);
+    --onboarding-accent: #bac7e8;
     position: fixed;
     z-index: 10000;
     inset: 0;
     display: grid;
     place-items: center;
     overflow: hidden;
-    padding: 32px;
-    color: #f4f6fb;
-    background: #11131a;
+    padding: 42px 32px 32px;
+    color: var(--onboarding-foreground);
+    background: #14151b;
+    font-family: 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
     isolation: isolate;
     opacity: 1;
-    transition: opacity 240ms ease;
+    transition: opacity 720ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .onboarding-overlay[hidden] {
@@ -67,47 +113,60 @@ body.onboarding-active > .titlebar .titlebar-button {
     pointer-events: none;
 }
 
+.onboarding-background {
+    opacity: 1;
+    filter: brightness(1.12) saturate(1.25) contrast(1.08);
+}
+
 .onboarding-background canvas {
+    display: block;
     width: 100%;
     height: 100%;
 }
 
 .onboarding-scrim {
     background:
-        radial-gradient(ellipse at 50% 44%, rgba(11, 13, 19, 0.48), rgba(8, 10, 16, 0.86)),
-        linear-gradient(180deg, rgba(10, 12, 18, 0.30), rgba(10, 12, 18, 0.65));
+        radial-gradient(ellipse at 50% 42%, rgba(12, 14, 20, 0.04), rgba(12, 14, 20, 0.2)),
+        linear-gradient(180deg, rgba(12, 14, 20, 0.04), rgba(12, 14, 20, 0.12));
 }
 
 .onboarding-dialog {
     display: flex;
     flex-direction: column;
-    width: min(100%, 720px);
-    max-height: min(760px, 100%);
+    width: min(100%, 680px);
+    max-height: min(740px, 100%);
     overflow-y: auto;
-    padding: 30px 36px 26px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 20px;
-    background: rgba(20, 23, 32, 0.76);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.08);
-    -webkit-backdrop-filter: blur(26px) saturate(140%);
-    backdrop-filter: blur(26px) saturate(140%);
-    animation: onboarding-dialog-enter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    padding: 30px 34px 24px;
+    border: 1px solid var(--onboarding-border);
+    border-radius: 14px;
+    background: rgba(24, 26, 33, 0.76);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.24);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    backdrop-filter: blur(18px) saturate(125%);
+    animation: onboarding-dialog-enter 360ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease;
+}
+
+.onboarding-overlay.is-closing .onboarding-dialog {
+    opacity: 0;
+    transform: translateY(6px);
 }
 
 .onboarding-brand {
     display: flex;
     align-items: center;
     gap: 9px;
-    margin-bottom: 28px;
-    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: 25px;
+    color: rgba(255, 255, 255, 0.78);
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.035em;
+    font-weight: 550;
 }
 
 .onboarding-logo {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
 }
 
@@ -120,58 +179,57 @@ body.onboarding-active > .titlebar .titlebar-button {
 
 .onboarding-kicker {
     margin: 0 0 8px;
-    color: #b5c3ff;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
+    color: var(--onboarding-accent);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.015em;
 }
 
 .onboarding-header h1 {
     margin: 0;
     color: #fff;
-    font-size: clamp(24px, 4vw, 32px);
-    font-weight: 650;
-    letter-spacing: -0.035em;
+    font-size: clamp(25px, 4vw, 31px);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
 }
 
 .onboarding-description {
-    margin: 9px 0 0;
-    color: rgba(235, 239, 251, 0.66);
+    margin: 8px 0 0;
+    color: var(--onboarding-muted);
     font-size: 13px;
-    line-height: 1.65;
+    line-height: 1.7;
 }
 
 .onboarding-step-count {
     flex: 0 0 auto;
-    padding-bottom: 2px;
-    color: rgba(235, 239, 251, 0.56);
-    font-size: 11px;
+    padding-bottom: 3px;
+    color: rgba(232, 235, 241, 0.58);
+    font-size: 12px;
     font-variant-numeric: tabular-nums;
 }
 
 .onboarding-progress {
     display: flex;
-    gap: 7px;
-    margin: 24px 0 22px;
+    gap: 6px;
+    margin: 21px 0 20px;
 }
 
 .onboarding-progress-segment {
     flex: 1;
-    height: 4px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.16);
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.17);
     transition: background-color 220ms ease;
 }
 
 .onboarding-progress-segment.is-active {
-    background: #bbc8ff;
-    box-shadow: 0 0 12px rgba(159, 180, 255, 0.48);
+    background: var(--onboarding-accent);
 }
 
 .onboarding-step {
     flex: 1;
-    min-height: 280px;
+    min-height: 260px;
     padding: 4px 1px;
 }
 
@@ -180,62 +238,62 @@ body.onboarding-active > .titlebar .titlebar-button {
 }
 
 .onboarding-step.is-entering {
-    animation: onboarding-step-enter 240ms ease both;
+    animation: onboarding-step-enter 200ms ease both;
 }
 
 .onboarding-welcome {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 280px;
+    min-height: 260px;
 }
 
 .onboarding-welcome h2 {
     max-width: 540px;
     margin: 0;
     color: rgba(255, 255, 255, 0.96);
-    font-size: clamp(22px, 3vw, 28px);
-    font-weight: 620;
-    letter-spacing: -0.025em;
+    font-size: clamp(21px, 3vw, 26px);
+    font-weight: 550;
+    letter-spacing: 0;
+    line-height: 1.45;
 }
 
 .onboarding-welcome > p {
-    max-width: 540px;
-    margin: 11px 0 25px;
-    color: rgba(235, 239, 251, 0.64);
+    max-width: 520px;
+    margin: 10px 0 22px;
+    color: var(--onboarding-muted);
     font-size: 13px;
-    line-height: 1.7;
+    line-height: 1.75;
 }
 
 .onboarding-feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    column-gap: 26px;
+    row-gap: 0;
 }
 
 .onboarding-feature {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 10px;
     min-width: 0;
-    min-height: 58px;
-    padding: 11px 14px;
-    border: 1px solid rgba(190, 204, 255, 0.11);
-    border-radius: 11px;
-    background: rgba(255, 255, 255, 0.045);
-    color: rgba(244, 246, 255, 0.84);
+    min-height: 45px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+    color: rgba(244, 246, 250, 0.84);
     font-size: 12px;
 }
 
 .onboarding-feature .codicon {
     flex: 0 0 auto;
-    color: #b9c8ff;
-    font-size: 17px;
+    color: var(--onboarding-accent);
+    font-size: 15px;
 }
 
 .onboarding-field {
     min-width: 0;
-    margin: 0 0 22px;
+    margin: 0 0 21px;
     padding: 0;
     border: 0;
 }
@@ -245,27 +303,34 @@ body.onboarding-active > .titlebar .titlebar-button {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: 10px;
-    color: rgba(243, 246, 255, 0.88);
-    font-size: 12px;
-    font-weight: 600;
+    margin-bottom: 9px;
+    color: rgba(243, 246, 250, 0.9);
+    font-size: 13px;
+    font-weight: 550;
 }
 
 .onboarding-select {
     width: 100%;
-    min-height: 42px;
-    padding: 0 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 9px;
-    background: rgba(255, 255, 255, 0.07);
-    color: #f4f6fb;
+    min-height: 40px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.065);
+    color: #f2f3f6;
     font: inherit;
     outline: none;
 }
 
+.onboarding-select:focus-visible,
+.onboarding-theme-choice:focus-visible,
+.onboarding-actions button:focus-visible {
+    outline: 2px solid var(--onboarding-accent);
+    outline-offset: 2px;
+}
+
 .onboarding-select option {
-    background: #202330;
-    color: #f4f6fb;
+    background: #202127;
+    color: #f2f3f6;
 }
 
 .onboarding-theme-options {
@@ -278,26 +343,27 @@ body.onboarding-active > .titlebar .titlebar-button {
     display: flex;
     align-items: center;
     gap: 11px;
-    min-height: 64px;
+    min-height: 62px;
     padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.045);
-    color: rgba(243, 246, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(243, 246, 250, 0.8);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
-    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease;
 }
 
 .onboarding-theme-choice:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.085);
+    background: rgba(255, 255, 255, 0.075);
 }
 
 .onboarding-theme-choice.is-selected {
-    border-color: rgba(170, 190, 255, 0.74);
-    background: rgba(139, 161, 236, 0.15);
+    border-color: rgba(197, 209, 234, 0.72);
+    background: rgba(177, 193, 224, 0.1);
     color: #fff;
 }
 
@@ -305,20 +371,19 @@ body.onboarding-active > .titlebar .titlebar-button {
     width: 43px;
     height: 33px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 .theme-preview-dark {
-    background: linear-gradient(90deg, #171a24 0 24%, #282d3b 24% 45%, #1c202b 45%);
+    background: linear-gradient(90deg, #171a20 0 24%, #282b33 24% 45%, #1c1f26 45%);
 }
 
 .theme-preview-light {
-    background: linear-gradient(90deg, #f5f6fa 0 24%, #dce1ee 24% 45%, #fff 45%);
+    background: linear-gradient(90deg, #f5f6f8 0 24%, #dce0e8 24% 45%, #fff 45%);
 }
 
 .onboarding-setting-list {
     display: grid;
-    gap: 2px;
 }
 
 .onboarding-setting {
@@ -328,7 +393,7 @@ body.onboarding-active > .titlebar .titlebar-button {
     gap: 14px;
     min-height: 58px;
     padding: 9px 2px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
 
@@ -338,14 +403,14 @@ body.onboarding-active > .titlebar .titlebar-button {
 }
 
 .onboarding-setting-copy strong {
-    color: rgba(248, 249, 255, 0.92);
-    font-size: 12px;
-    font-weight: 600;
+    color: rgba(248, 249, 251, 0.92);
+    font-size: 13px;
+    font-weight: 550;
 }
 
 .onboarding-setting-copy small {
-    color: rgba(232, 237, 249, 0.54);
-    font-size: 11px;
+    color: rgba(232, 235, 241, 0.58);
+    font-size: 12px;
     line-height: 1.5;
 }
 
@@ -353,7 +418,7 @@ body.onboarding-active > .titlebar .titlebar-button {
     width: 16px;
     height: 16px;
     flex: 0 0 auto;
-    accent-color: #a5b8ff;
+    accent-color: #b6c4e5;
 }
 
 .onboarding-opacity-field {
@@ -361,13 +426,26 @@ body.onboarding-active > .titlebar .titlebar-button {
 }
 
 .onboarding-opacity-field output {
-    color: #c5d0ff;
+    color: rgba(232, 235, 241, 0.78);
     font-variant-numeric: tabular-nums;
 }
 
 .onboarding-opacity-field input {
     width: 100%;
-    accent-color: #a5b8ff;
+    accent-color: #b6c4e5;
+}
+
+.onboarding-step[data-onboarding-step='3'] .onboarding-field {
+    margin-bottom: 15px;
+}
+
+.onboarding-step[data-onboarding-step='3'] .onboarding-field > input[type='range'] {
+    width: 100%;
+    accent-color: #b6c4e5;
+}
+
+.onboarding-step[data-onboarding-step='3'] .onboarding-setting {
+    min-height: 52px;
 }
 
 .onboarding-error {
@@ -384,7 +462,7 @@ body.onboarding-active > .titlebar .titlebar-button {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 20px;
+    margin-top: 19px;
 }
 
 .onboarding-action-group {
@@ -393,19 +471,17 @@ body.onboarding-active > .titlebar .titlebar-button {
 }
 
 .onboarding-actions button {
-    min-height: 38px;
-    padding: 0 15px;
+    min-height: 37px;
+    padding: 0 14px;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     font: inherit;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 550;
     cursor: pointer;
-    transition: transform 160ms ease, background-color 160ms ease, opacity 160ms ease;
-}
-
-.onboarding-actions button:hover:not(:disabled) {
-    transform: translateY(-1px);
+    transition:
+        background-color 150ms ease,
+        opacity 150ms ease;
 }
 
 .onboarding-actions button:disabled {
@@ -415,87 +491,165 @@ body.onboarding-active > .titlebar .titlebar-button {
 
 .onboarding-back {
     background: transparent;
-    color: rgba(232, 237, 249, 0.72);
+    color: rgba(232, 235, 241, 0.72);
 }
 
 .onboarding-back:hover:not(:disabled) {
     color: #fff;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.07);
 }
 
 .onboarding-next {
-    min-width: 112px;
-    background: #d9e0ff;
-    color: #1c2238;
+    min-width: 108px;
+    background: #d6deef;
+    color: #20242d;
 }
 
 .onboarding-next:hover:not(:disabled) {
-    background: #edf0ff;
+    background: #e4e9f4;
 }
 
-.onboarding-overlay[data-theme="light"] .onboarding-dialog {
-    border-color: rgba(255, 255, 255, 0.42);
-    background: rgba(239, 242, 250, 0.78);
-    color: #202431;
+.onboarding-overlay[data-theme='light'] {
+    --onboarding-foreground: #252832;
+    --onboarding-muted: rgba(37, 40, 50, 0.7);
+    --onboarding-border: rgba(47, 53, 67, 0.15);
+    --onboarding-accent: #566783;
 }
 
-.onboarding-overlay[data-theme="light"] .onboarding-header h1,
-.onboarding-overlay[data-theme="light"] .onboarding-welcome h2,
-.onboarding-overlay[data-theme="light"] .onboarding-setting-copy strong,
-.onboarding-overlay[data-theme="light"] .onboarding-feature,
-.onboarding-overlay[data-theme="light"] .onboarding-theme-choice {
-    color: #202431;
+.onboarding-overlay[data-theme='light'] .onboarding-dialog {
+    background: rgba(244, 246, 250, 0.82);
+    box-shadow: 0 18px 54px rgba(30, 34, 44, 0.16);
 }
 
-.onboarding-overlay[data-theme="light"] .onboarding-description,
-.onboarding-overlay[data-theme="light"] .onboarding-welcome > p,
-.onboarding-overlay[data-theme="light"] .onboarding-setting-copy small {
-    color: rgba(32, 36, 49, 0.68);
+.onboarding-overlay[data-theme='light'] .onboarding-brand,
+.onboarding-overlay[data-theme='light'] .onboarding-header h1,
+.onboarding-overlay[data-theme='light'] .onboarding-welcome h2,
+.onboarding-overlay[data-theme='light'] .onboarding-setting-copy strong,
+.onboarding-overlay[data-theme='light'] .onboarding-feature,
+.onboarding-overlay[data-theme='light'] .onboarding-theme-choice,
+.onboarding-overlay[data-theme='light'] .onboarding-field > label,
+.onboarding-overlay[data-theme='light'] .onboarding-field legend {
+    color: #252832;
 }
 
-.onboarding-overlay[data-theme="light"] .onboarding-feature,
-.onboarding-overlay[data-theme="light"] .onboarding-theme-choice,
-.onboarding-overlay[data-theme="light"] .onboarding-select {
-    border-color: rgba(52, 63, 90, 0.14);
-    background: rgba(255, 255, 255, 0.48);
+.onboarding-overlay[data-theme='light'] .onboarding-progress-segment {
+    background: rgba(37, 40, 50, 0.16);
 }
 
-.onboarding-overlay[data-theme="light"] .onboarding-select {
-    color: #202431;
+.onboarding-overlay[data-theme='light'] .onboarding-progress-segment.is-active {
+    background: var(--onboarding-accent);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-step-count,
+.onboarding-overlay[data-theme='light'] .onboarding-opacity-field output {
+    color: rgba(37, 40, 50, 0.65);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-feature,
+.onboarding-overlay[data-theme='light'] .onboarding-setting,
+.onboarding-overlay[data-theme='light'] .onboarding-theme-choice {
+    border-color: rgba(47, 53, 67, 0.14);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-theme-choice {
+    background: rgba(255, 255, 255, 0.36);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-theme-choice.is-selected {
+    border-color: rgba(76, 94, 124, 0.55);
+    background: rgba(94, 117, 157, 0.1);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-select {
+    border-color: rgba(47, 53, 67, 0.18);
+    background: rgba(255, 255, 255, 0.55);
+    color: #252832;
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-select option {
+    background: #f5f6f8;
+    color: #252832;
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-back {
+    color: rgba(37, 40, 50, 0.72);
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-back:hover:not(:disabled) {
+    color: #252832;
+    background: rgba(37, 40, 50, 0.07);
 }
 
 @keyframes onboarding-dialog-enter {
-    from { opacity: 0; transform: translateY(12px) scale(0.99); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes onboarding-step-enter {
-    from { opacity: 0; transform: translateX(12px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(7px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @media (max-width: 560px) {
-    .onboarding-overlay { padding: 14px; }
-    .onboarding-dialog { padding: 24px 20px 20px; border-radius: 16px; }
-    .onboarding-brand { margin-bottom: 22px; }
+    .onboarding-overlay {
+        padding: 42px 14px 14px;
+    }
+    .onboarding-dialog {
+        padding: 24px 20px 20px;
+    }
+    .onboarding-brand {
+        margin-bottom: 20px;
+    }
     .onboarding-step,
-    .onboarding-welcome { min-height: 240px; }
-    .onboarding-feature-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+    .onboarding-welcome {
+        min-height: 230px;
+    }
+    .onboarding-feature-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @media (max-height: 600px) {
-    .onboarding-overlay { padding: 12px; }
-    .onboarding-dialog { padding-top: 18px; padding-bottom: 16px; }
-    .onboarding-brand { margin-bottom: 14px; }
-    .onboarding-progress { margin: 16px 0; }
+    .onboarding-overlay {
+        padding-top: 40px;
+        padding-bottom: 12px;
+    }
+    .onboarding-dialog {
+        padding-top: 18px;
+        padding-bottom: 16px;
+    }
+    .onboarding-brand {
+        margin-bottom: 14px;
+    }
+    .onboarding-progress {
+        margin: 15px 0;
+    }
     .onboarding-step,
-    .onboarding-welcome { min-height: 210px; }
+    .onboarding-welcome {
+        min-height: 190px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .onboarding-dialog,
-    .onboarding-step { animation: none; }
+    .onboarding-step {
+        animation: none;
+    }
     .onboarding-overlay,
-    .onboarding-progress-segment,
-    .onboarding-theme-choice { transition: none; }
+    .onboarding-background,
+    .onboarding-progress-segment {
+        transition-duration: 1ms;
+    }
 }

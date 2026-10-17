@@ -6,12 +6,12 @@ class Token {
         this.hasRepeatedChar = false;
     }
 }
-Token.Undefined  = 0;
-Token.OpenBrace  = 1;
+Token.Undefined = 0;
+Token.OpenBrace = 1;
 Token.CloseBrace = 2;
-Token.Equal      = 3;
-Token.String     = 4;
-Token.Comma      = 5;
+Token.Equal = 3;
+Token.String = 4;
+Token.Comma = 5;
 Token.prototype.extractString = function (s) {
     return s.substring(this.start, this.end);
 };
@@ -185,7 +185,7 @@ function isPointerType(typeStr) {
 }
 function addChild(watchObj, childName, childValue) {
     let child;
-    const existing = (watchObj.children || []).find(c => c.name === childName);
+    const existing = (watchObj.children || []).find((c) => c.name === childName);
     if (existing) {
         child = existing;
     } else {
@@ -261,8 +261,15 @@ function parseGDBWatchValueRecursive(watchObj, value, start, length) {
                 if (tokenName.type === Token.Undefined) {
                     tokenName = token;
                 } else if (tokenValue.type === Token.Undefined) {
-                    if (/^\d/.test(str) || str.startsWith("'") || str.startsWith('"') ||
-                        str.startsWith('<') || str.startsWith('-') || str.startsWith('L"') || str.startsWith("L'")) {
+                    if (
+                        /^\d/.test(str) ||
+                        str.startsWith("'") ||
+                        str.startsWith('"') ||
+                        str.startsWith('<') ||
+                        str.startsWith('-') ||
+                        str.startsWith('L"') ||
+                        str.startsWith("L'")
+                    ) {
                         tokenValue = token;
                     } else {
                         let expandedToken = new Token(token.start, token.end, token.type);
@@ -271,8 +278,10 @@ function parseGDBWatchValueRecursive(watchObj, value, start, length) {
                             if (value[expandedToken.end] === '=') {
                                 let foundBrace = false;
                                 for (let ii = expandedToken.end + 1; ii < value.length; ii++) {
-                                    if (value[ii] === '{') { foundBrace = true; break; }
-                                    else if (value[ii] !== ' ' && value[ii] !== '\t' && value[ii] !== '\n') break;
+                                    if (value[ii] === '{') {
+                                        foundBrace = true;
+                                        break;
+                                    } else if (value[ii] !== ' ' && value[ii] !== '\t' && value[ii] !== '\n') break;
                                 }
                                 if (foundBrace) {
                                     token.end = expandedToken.end;
@@ -322,7 +331,11 @@ function parseGDBWatchValueRecursive(watchObj, value, start, length) {
                 } else {
                     if (tokenName.type !== Token.Undefined) {
                         if (tokenValue.type !== Token.Undefined) {
-                            const child = addChild(watchObj, tokenName.extractString(value), tokenValue.extractString(value));
+                            const child = addChild(
+                                watchObj,
+                                tokenName.extractString(value),
+                                tokenValue.extractString(value)
+                            );
                             if (!child.children || child.children.length === 0) {
                                 parseGDBWatchValue(child, child.value);
                             }
@@ -340,8 +353,12 @@ function parseGDBWatchValueRecursive(watchObj, value, start, length) {
                         if (nextRes.success) {
                             nextRes.token.trim(value);
                             const nextStr = nextRes.token.extractString(value);
-                            if (!((nextRes.token.type === Token.String && isLikelyName(nextStr)) ||
-                                  nextRes.token.type === Token.CloseBrace)) {
+                            if (
+                                !(
+                                    (nextRes.token.type === Token.String && isLikelyName(nextStr)) ||
+                                    nextRes.token.type === Token.CloseBrace
+                                )
+                            ) {
                                 break;
                             }
                         }
@@ -378,7 +395,11 @@ function parseGDBWatchValueRecursive(watchObj, value, start, length) {
                 if (!lastWasClosingBrace) {
                     if (tokenName.type !== Token.Undefined) {
                         if (tokenValue.type !== Token.Undefined) {
-                            const child = addChild(watchObj, tokenName.extractString(value), tokenValue.extractString(value));
+                            const child = addChild(
+                                watchObj,
+                                tokenName.extractString(value),
+                                tokenValue.extractString(value)
+                            );
                             if (!child.children || child.children.length === 0) {
                                 parseGDBWatchValue(child, child.value);
                             }
@@ -478,7 +499,7 @@ function tokenizeGDBLocals(value) {
                 if (!inString && !escaped) inChar = !inChar;
                 break;
         }
-        escaped = (ch === '\\' && !escaped);
+        escaped = ch === '\\' && !escaped;
     }
     if (start < value.length) {
         const line = value.substring(start);
@@ -551,7 +572,7 @@ function tokenizeBacktrace(output) {
                 function: sf.function,
                 file: sf.file,
                 line: sf.line,
-                hasLineInfo: hasLineInfo
+                hasLineInfo: hasLineInfo,
             });
         }
     }
@@ -591,5 +612,5 @@ module.exports = {
     parseGDBWatchValue,
     tokenizeBacktrace,
     parseGDBExamineMemoryLine,
-    isPointerType
+    isPointerType,
 };

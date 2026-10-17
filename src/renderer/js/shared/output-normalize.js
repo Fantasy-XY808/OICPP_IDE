@@ -43,7 +43,9 @@
         if (!text) return '';
         return unifyNewlines(text)
             .split('\n')
-            .map(function (line) { return line.trimEnd(); })
+            .map(function (line) {
+                return line.trimEnd();
+            })
             .join('\n')
             .replace(/\n+$/, '');
     }
@@ -100,6 +102,6 @@
         normalizeForVerdict: normalizeForVerdict,
         normalizeForDisplay: normalizeForDisplay,
         verdictsMatch: verdictsMatch,
-        findDifference: findDifference
+        findDifference: findDifference,
     };
 });

@@ -7,7 +7,7 @@ const {
     normalizeForVerdict,
     normalizeForDisplay,
     verdictsMatch,
-    findDifference
+    findDifference,
 } = require('../src/renderer/js/shared/output-normalize.js');
 
 // ---------------------------------------------------------------------------
@@ -23,8 +23,10 @@ const {
 
 function legacySampleTesterCompareOutput(actual, expected) {
     const normalize = (str) => {
-        return String(str || '').replace(/\r\n?/g, '\n').split('\n')
-            .map(line => line.trimEnd())
+        return String(str || '')
+            .replace(/\r\n?/g, '\n')
+            .split('\n')
+            .map((line) => line.trimEnd())
             .join('\n')
             .replace(/\n+$/, '');
     };
@@ -33,8 +35,9 @@ function legacySampleTesterCompareOutput(actual, expected) {
 
 function legacyCodeComparerCompareOutputs(output1, output2) {
     const normalize = (str) => {
-        return str.split('\n')
-            .map(line => line.trimEnd())
+        return str
+            .split('\n')
+            .map((line) => line.trimEnd())
             .join('\n')
             .replace(/\n+$/, '');
     };
@@ -69,14 +72,16 @@ const CORPUS = [
     '\u00e4\u00b8\u00e6\u4e2d\u6587',
     '\u00a0nbsp\u00a0',
     'line1   \nline2\t\nline3',
-    'x'.repeat(5000)
+    'x'.repeat(5000),
 ];
 
 test('normalizeForVerdict matches the legacy sample tester verdict basis', () => {
     for (const text of CORPUS) {
         // the legacy compareOutput normalized exactly this way internally
-        const expected = String(text || '').replace(/\r\n?/g, '\n').split('\n')
-            .map(line => line.trimEnd())
+        const expected = String(text || '')
+            .replace(/\r\n?/g, '\n')
+            .split('\n')
+            .map((line) => line.trimEnd())
             .join('\n')
             .replace(/\n+$/, '');
         assert.equal(normalizeForVerdict(text), expected, 'input: ' + JSON.stringify(text));
@@ -138,11 +143,7 @@ test('the legacy comparators disagreed on a lone CR, and we keep the tester sema
 });
 
 test('normalizeForDisplay matches the legacy code comparer display basis', () => {
-    const displayCorpus = CORPUS.concat([
-        '\uFEFFwith bom',
-        'bom\uFEFFinside',
-        '\uFEFF'
-    ]);
+    const displayCorpus = CORPUS.concat(['\uFEFFwith bom', 'bom\uFEFFinside', '\uFEFF']);
     for (const text of displayCorpus) {
         assert.equal(
             normalizeForDisplay(text),

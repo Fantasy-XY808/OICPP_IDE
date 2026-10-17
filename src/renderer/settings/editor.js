@@ -26,7 +26,7 @@ class EditorSettings {
             receiveBetaUpdates: false,
             glassEffectEnabled: true,
             markdownMode: 'split',
-            keybindings: this.getDefaultKeybindings()
+            keybindings: this.getDefaultKeybindings(),
         };
 
         this._initialLoadedSettings = null;
@@ -69,7 +69,7 @@ class EditorSettings {
             debugStepOut: 'Shift+F8',
             cloudCompile: 'F12',
             openTerminal: 'Ctrl+`',
-            runAllSamples: isMacPlatform ? 'Ctrl+Shift+F11' : 'Ctrl+F11'
+            runAllSamples: isMacPlatform ? 'Ctrl+Shift+F11' : 'Ctrl+F11',
         };
     }
 
@@ -93,7 +93,7 @@ class EditorSettings {
             'debugStepOut',
             'cloudCompile',
             'openTerminal',
-            'runAllSamples'
+            'runAllSamples',
         ];
     }
 
@@ -117,7 +117,7 @@ class EditorSettings {
             { key: 'debugStepOut', labelKey: 'keybinding.debugStepOut', label: '单步跳出' },
             { key: 'cloudCompile', labelKey: 'keybinding.cloudCompile', label: '云端编译' },
             { key: 'openTerminal', labelKey: 'keybinding.openTerminal', label: '打开内置终端' },
-            { key: 'runAllSamples', labelKey: 'keybinding.runAllSamples', label: '运行所有样例' }
+            { key: 'runAllSamples', labelKey: 'keybinding.runAllSamples', label: '运行所有样例' },
         ];
     }
 
@@ -136,7 +136,7 @@ class EditorSettings {
             SpaceBeforeParens: 'ControlStatements',
             SortIncludes: true,
             AlignConsecutiveAssignments: false,
-            AlignConsecutiveDeclarations: false
+            AlignConsecutiveDeclarations: false,
         };
     }
 
@@ -167,23 +167,62 @@ class EditorSettings {
             return matched || fallback;
         };
 
-        normalized.BasedOnStyle = toEnum(raw.BasedOnStyle, ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'], defaults.BasedOnStyle);
+        normalized.BasedOnStyle = toEnum(
+            raw.BasedOnStyle,
+            ['LLVM', 'Google', 'Mozilla', 'Chromium', 'Microsoft', 'WebKit'],
+            defaults.BasedOnStyle
+        );
         normalized.IndentWidth = toInt(raw.IndentWidth, defaults.IndentWidth);
         normalized.TabWidth = toInt(raw.TabWidth, normalized.IndentWidth);
-        normalized.UseTab = toEnum(raw.UseTab, ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'], defaults.UseTab);
+        normalized.UseTab = toEnum(
+            raw.UseTab,
+            ['Never', 'ForIndentation', 'ForContinuationAndIndentation', 'Always'],
+            defaults.UseTab
+        );
         normalized.ColumnLimit = toInt(raw.ColumnLimit, defaults.ColumnLimit);
-        normalized.BreakBeforeBraces = toEnum(raw.BreakBeforeBraces, ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'], defaults.BreakBeforeBraces);
-        normalized.AllowShortIfStatementsOnASingleLine = toEnum(raw.AllowShortIfStatementsOnASingleLine, ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'], defaults.AllowShortIfStatementsOnASingleLine);
-        normalized.AllowShortFunctionsOnASingleLine = toEnum(raw.AllowShortFunctionsOnASingleLine, ['None', 'Empty', 'Inline', 'All'], defaults.AllowShortFunctionsOnASingleLine);
+        normalized.BreakBeforeBraces = toEnum(
+            raw.BreakBeforeBraces,
+            ['Attach', 'LLVM', 'Stroustrup', 'Allman', 'GNU', 'Mozilla', 'WebKit', 'Custom'],
+            defaults.BreakBeforeBraces
+        );
+        normalized.AllowShortIfStatementsOnASingleLine = toEnum(
+            raw.AllowShortIfStatementsOnASingleLine,
+            ['Never', 'WithoutElse', 'OnlyFirstIf', 'AllIfsAndElse', 'Always'],
+            defaults.AllowShortIfStatementsOnASingleLine
+        );
+        normalized.AllowShortFunctionsOnASingleLine = toEnum(
+            raw.AllowShortFunctionsOnASingleLine,
+            ['None', 'Empty', 'Inline', 'All'],
+            defaults.AllowShortFunctionsOnASingleLine
+        );
         normalized.IndentCaseLabels = toBool(raw.IndentCaseLabels, defaults.IndentCaseLabels);
-        normalized.PointerAlignment = toEnum(raw.PointerAlignment, ['Left', 'Right', 'Middle'], defaults.PointerAlignment);
-        normalized.SpaceBeforeParens = toEnum(raw.SpaceBeforeParens, ['Never', 'ControlStatements', 'Always', 'Custom'], defaults.SpaceBeforeParens);
+        normalized.PointerAlignment = toEnum(
+            raw.PointerAlignment,
+            ['Left', 'Right', 'Middle'],
+            defaults.PointerAlignment
+        );
+        normalized.SpaceBeforeParens = toEnum(
+            raw.SpaceBeforeParens,
+            ['Never', 'ControlStatements', 'Always', 'Custom'],
+            defaults.SpaceBeforeParens
+        );
         normalized.SortIncludes = toBool(raw.SortIncludes, defaults.SortIncludes);
-        normalized.AlignConsecutiveAssignments = toBool(raw.AlignConsecutiveAssignments, defaults.AlignConsecutiveAssignments);
-        normalized.AlignConsecutiveDeclarations = toBool(raw.AlignConsecutiveDeclarations, defaults.AlignConsecutiveDeclarations);
+        normalized.AlignConsecutiveAssignments = toBool(
+            raw.AlignConsecutiveAssignments,
+            defaults.AlignConsecutiveAssignments
+        );
+        normalized.AlignConsecutiveDeclarations = toBool(
+            raw.AlignConsecutiveDeclarations,
+            defaults.AlignConsecutiveDeclarations
+        );
 
-        if (Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') && !Object.prototype.hasOwnProperty.call(raw, 'UseTab')) {
-            const legacyStyle = String(raw.formatterIndentStyle || '').trim().toLowerCase();
+        if (
+            Object.prototype.hasOwnProperty.call(raw, 'formatterIndentStyle') &&
+            !Object.prototype.hasOwnProperty.call(raw, 'UseTab')
+        ) {
+            const legacyStyle = String(raw.formatterIndentStyle || '')
+                .trim()
+                .toLowerCase();
             if (legacyStyle === 'tabs') {
                 normalized.UseTab = 'Always';
             } else if (legacyStyle === 'spaces') {
@@ -196,32 +235,36 @@ class EditorSettings {
 
     parseClangFormatText(text = '') {
         const parsed = {};
-        String(text || '').split(/\r?\n/).forEach((line) => {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#') || trimmed === '---' || trimmed === '...') {
-                return;
-            }
-            const match = trimmed.match(/^([A-Za-z][A-Za-z0-9]*)\s*:\s*(.+)$/);
-            if (!match) {
-                return;
-            }
-            const key = match[1];
-            let value = match[2].trim();
-            if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-                value = value.slice(1, -1);
-            }
-            if (/^(true|false)$/i.test(value)) {
-                value = value.toLowerCase() === 'true';
-            } else if (/^-?\d+$/.test(value)) {
-                value = parseInt(value, 10);
-            }
-            parsed[key] = value;
-        });
+        String(text || '')
+            .split(/\r?\n/)
+            .forEach((line) => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#') || trimmed === '---' || trimmed === '...') {
+                    return;
+                }
+                const match = trimmed.match(/^([A-Za-z][A-Za-z0-9]*)\s*:\s*(.+)$/);
+                if (!match) {
+                    return;
+                }
+                const key = match[1];
+                let value = match[2].trim();
+                if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+                if (/^(true|false)$/i.test(value)) {
+                    value = value.toLowerCase() === 'true';
+                } else if (/^-?\d+$/.test(value)) {
+                    value = parseInt(value, 10);
+                }
+                parsed[key] = value;
+            });
         return parsed;
     }
 
     generateClangFormatText(style = null) {
-        const normalized = this.normalizeClangFormatStyle(style || this.settings.clangFormatStyle || this.getDefaultClangFormatStyle());
+        const normalized = this.normalizeClangFormatStyle(
+            style || this.settings.clangFormatStyle || this.getDefaultClangFormatStyle()
+        );
         const serialize = (value) => {
             if (typeof value === 'boolean') return value ? 'true' : 'false';
             if (typeof value === 'number') return String(value);
@@ -246,13 +289,17 @@ class EditorSettings {
             `SpaceBeforeParens: ${serialize(normalized.SpaceBeforeParens)}`,
             `SortIncludes: ${serialize(normalized.SortIncludes)}`,
             `AlignConsecutiveAssignments: ${serialize(normalized.AlignConsecutiveAssignments)}`,
-            `AlignConsecutiveDeclarations: ${serialize(normalized.AlignConsecutiveDeclarations)}`
+            `AlignConsecutiveDeclarations: ${serialize(normalized.AlignConsecutiveDeclarations)}`,
         ].join('\n');
     }
 
     applyClangFormatStyleToUI(style = null, options = {}) {
-        const normalized = this.normalizeClangFormatStyle(style || this.settings.clangFormatStyle || this.getDefaultClangFormatStyle());
-        const rawTextOverride = Object.prototype.hasOwnProperty.call(options || {}, 'rawText') ? options.rawText : undefined;
+        const normalized = this.normalizeClangFormatStyle(
+            style || this.settings.clangFormatStyle || this.getDefaultClangFormatStyle()
+        );
+        const rawTextOverride = Object.prototype.hasOwnProperty.call(options || {}, 'rawText')
+            ? options.rawText
+            : undefined;
         const mapValue = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
@@ -299,10 +346,11 @@ class EditorSettings {
                 AllowShortFunctionsOnASingleLine: 'Empty',
                 IndentCaseLabels: !!document.getElementById('clang-format-indent-case-labels')?.checked,
                 PointerAlignment: document.getElementById('clang-format-pointer-alignment')?.value || 'Left',
-                SpaceBeforeParens: document.getElementById('clang-format-space-before-parens')?.value || 'ControlStatements',
+                SpaceBeforeParens:
+                    document.getElementById('clang-format-space-before-parens')?.value || 'ControlStatements',
                 SortIncludes: !!document.getElementById('clang-format-sort-includes')?.checked,
                 AlignConsecutiveAssignments: !!document.getElementById('clang-format-align-assignments')?.checked,
-                AlignConsecutiveDeclarations: !!document.getElementById('clang-format-align-declarations')?.checked
+                AlignConsecutiveDeclarations: !!document.getElementById('clang-format-align-declarations')?.checked,
             });
         }
 
@@ -342,14 +390,17 @@ class EditorSettings {
             SpaceBeforeParens: readValue('clang-format-space-before-parens', 'ControlStatements'),
             SortIncludes: readCheckbox('clang-format-sort-includes', true),
             AlignConsecutiveAssignments: readCheckbox('clang-format-align-assignments', false),
-            AlignConsecutiveDeclarations: readCheckbox('clang-format-align-declarations', false)
+            AlignConsecutiveDeclarations: readCheckbox('clang-format-align-declarations', false),
         });
     }
 
     async importClangFormatFromFile() {
         try {
             if (!window.electronAPI?.showOpenDialog || !window.electronAPI?.readFileContent) {
-                this.showMessage((window.i18n ? window.i18n.t('settings.importNotSupported') : '当前环境不支持文件导入'), 'error');
+                this.showMessage(
+                    window.i18n ? window.i18n.t('settings.importNotSupported') : '当前环境不支持文件导入',
+                    'error'
+                );
                 return;
             }
             const result = await window.electronAPI.showOpenDialog({
@@ -357,8 +408,8 @@ class EditorSettings {
                 properties: ['openFile'],
                 filters: [
                     { name: '.clang-format', extensions: ['clang-format', 'yml', 'yaml', 'txt'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
+                    { name: 'All Files', extensions: ['*'] },
+                ],
             });
             if (!result || result.canceled || !result.filePaths || result.filePaths.length === 0) {
                 return;
@@ -366,10 +417,15 @@ class EditorSettings {
             const filePath = result.filePaths[0];
             const content = await window.electronAPI.readFileContent(filePath);
             this.loadClangFormatFromText(String(content || ''));
-            this.showMessage((window.i18n ? window.i18n.t('message.importSuccess') : '已导入 .clang-format'), 'success');
+            this.showMessage(window.i18n ? window.i18n.t('message.importSuccess') : '已导入 .clang-format', 'success');
         } catch (error) {
             logError('导入 .clang-format 失败:', error);
-            this.showMessage((window.i18n ? window.i18n.t('message.importFailed', {msg: error.message}) : '导入 .clang-format 失败：' + error.message), 'error');
+            this.showMessage(
+                window.i18n
+                    ? window.i18n.t('message.importFailed', { msg: error.message })
+                    : '导入 .clang-format 失败：' + error.message,
+                'error'
+            );
         }
     }
 
@@ -377,7 +433,9 @@ class EditorSettings {
         const parsed = this.parseClangFormatText(text);
         const normalized = this.normalizeClangFormatStyle(parsed);
         this.settings.clangFormatStyle = normalized;
-        this.settings.clangFormatRaw = String(text || '').trim() ? String(text) : this.generateClangFormatText(normalized);
+        this.settings.clangFormatRaw = String(text || '').trim()
+            ? String(text)
+            : this.generateClangFormatText(normalized);
         this._clangFormatRawDirty = false;
         this._clangFormatControlsDirty = false;
         this.applyClangFormatStyleToUI(normalized, { rawText: this.settings.clangFormatRaw });
@@ -387,30 +445,42 @@ class EditorSettings {
     async saveClangFormatToFile() {
         try {
             if (!window.electronAPI?.showSaveDialog || !window.electronAPI?.writeFile) {
-                this.showMessage((window.i18n ? window.i18n.t('settings.saveNotSupported') : '当前环境不支持文件保存'), 'error');
+                this.showMessage(
+                    window.i18n ? window.i18n.t('settings.saveNotSupported') : '当前环境不支持文件保存',
+                    'error'
+                );
                 return;
             }
             const rawTextArea = document.getElementById('clang-format-raw-text');
             const style = this.collectClangFormatStyleFromUI();
-            const content = (this._clangFormatRawDirty && !this._clangFormatControlsDirty && rawTextArea && String(rawTextArea.value || '').trim())
-                ? String(rawTextArea.value)
-                : this.generateClangFormatText(style);
+            const content =
+                this._clangFormatRawDirty &&
+                !this._clangFormatControlsDirty &&
+                rawTextArea &&
+                String(rawTextArea.value || '').trim()
+                    ? String(rawTextArea.value)
+                    : this.generateClangFormatText(style);
             const result = await window.electronAPI.showSaveDialog({
                 title: window.i18n ? window.i18n.t('settings.saveClangFormat') : '写入 .clang-format',
                 defaultPath: '.clang-format',
                 filters: [
                     { name: '.clang-format', extensions: ['clang-format', 'yml', 'yaml', 'txt'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
+                    { name: 'All Files', extensions: ['*'] },
+                ],
             });
             if (!result || result.canceled || !result.filePath) {
                 return;
             }
             await window.electronAPI.writeFile(result.filePath, content);
-            this.showMessage((window.i18n ? window.i18n.t('message.exportSuccess') : '已写入 .clang-format'), 'success');
+            this.showMessage(window.i18n ? window.i18n.t('message.exportSuccess') : '已写入 .clang-format', 'success');
         } catch (error) {
             logError('写入 .clang-format 失败:', error);
-            this.showMessage((window.i18n ? window.i18n.t('message.exportFailed', {msg: error.message}) : '写入 .clang-format 失败：' + error.message), 'error');
+            this.showMessage(
+                window.i18n
+                    ? window.i18n.t('message.exportFailed', { msg: error.message })
+                    : '写入 .clang-format 失败：' + error.message,
+                'error'
+            );
         }
     }
 
@@ -440,7 +510,7 @@ class EditorSettings {
             'clang-format-indent-case-labels',
             'clang-format-sort-includes',
             'clang-format-align-assignments',
-            'clang-format-align-declarations'
+            'clang-format-align-declarations',
         ];
 
         bindingIds.forEach((id) => {
@@ -494,7 +564,7 @@ class EditorSettings {
     }
 
     normalizeThemeKey(theme) {
-        const raw = (typeof theme === 'string' && theme.trim()) ? theme.trim() : 'dark';
+        const raw = typeof theme === 'string' && theme.trim() ? theme.trim() : 'dark';
         return raw;
     }
 
@@ -512,7 +582,7 @@ class EditorSettings {
             'operator',
             'punctuation',
             'pointer',
-            'variable'
+            'variable',
         ];
     }
 
@@ -532,7 +602,7 @@ class EditorSettings {
                 operator: '#d4d4d4',
                 punctuation: '#d4d4d4',
                 pointer: '#d4d4d4',
-                variable: '#9cdcfe'
+                variable: '#9cdcfe',
             },
             light: {
                 keyword: '#0000ff',
@@ -547,7 +617,7 @@ class EditorSettings {
                 operator: '#000000',
                 punctuation: '#000000',
                 pointer: '#001080',
-                variable: '#001080'
+                variable: '#001080',
             },
             monokai: {
                 keyword: '#f92672',
@@ -562,7 +632,7 @@ class EditorSettings {
                 operator: '#f8f8f2',
                 punctuation: '#f8f8f2',
                 pointer: '#fd971f',
-                variable: '#f8f8f2'
+                variable: '#f8f8f2',
             },
             'github-light': {
                 keyword: '#d73a49',
@@ -577,7 +647,7 @@ class EditorSettings {
                 operator: '#24292e',
                 punctuation: '#24292e',
                 pointer: '#e36209',
-                variable: '#24292e'
+                variable: '#24292e',
             },
             'github-dark': {
                 keyword: '#ff7b72',
@@ -592,7 +662,7 @@ class EditorSettings {
                 operator: '#e6edf3',
                 punctuation: '#e6edf3',
                 pointer: '#ffa657',
-                variable: '#c9d1d9'
+                variable: '#c9d1d9',
             },
             'solarized-light': {
                 keyword: '#859900',
@@ -607,7 +677,7 @@ class EditorSettings {
                 operator: '#586e75',
                 punctuation: '#586e75',
                 pointer: '#cb4b16',
-                variable: '#657b83'
+                variable: '#657b83',
             },
             'solarized-dark': {
                 keyword: '#859900',
@@ -622,7 +692,7 @@ class EditorSettings {
                 operator: '#93a1a1',
                 punctuation: '#93a1a1',
                 pointer: '#cb4b16',
-                variable: '#93a1a1'
+                variable: '#93a1a1',
             },
             dracula: {
                 keyword: '#ff79c6',
@@ -637,8 +707,8 @@ class EditorSettings {
                 operator: '#f8f8f2',
                 punctuation: '#f8f8f2',
                 pointer: '#ffb86c',
-                variable: '#f8f8f2'
-            }
+                variable: '#f8f8f2',
+            },
         };
         return { ...(presets[themeKey] || presets.dark) };
     }
@@ -682,7 +752,10 @@ class EditorSettings {
         if (raw && typeof raw === 'object') {
             Object.keys(defaults).forEach((key) => {
                 const legacyKeys = key === 'variable' ? ['localVariable', 'globalVariable'] : [];
-                normalized[key] = this.normalizeHexColor(this.resolveSyntaxTokenValue(raw, key, legacyKeys), defaults[key]);
+                normalized[key] = this.normalizeHexColor(
+                    this.resolveSyntaxTokenValue(raw, key, legacyKeys),
+                    defaults[key]
+                );
             });
         }
         return normalized;
@@ -725,7 +798,9 @@ class EditorSettings {
 
     areSyntaxFontStylesEqual(left, right) {
         const keys = this.getSyntaxTokenKeys();
-        return keys.every((key) => !!left[key]?.bold === !!right[key]?.bold && !!left[key]?.italic === !!right[key]?.italic);
+        return keys.every(
+            (key) => !!left[key]?.bold === !!right[key]?.bold && !!left[key]?.italic === !!right[key]?.italic
+        );
     }
 
     getCurrentThemeFromUI() {
@@ -733,7 +808,10 @@ class EditorSettings {
         return this.normalizeThemeKey(themeSelect?.value || this.settings.theme || 'dark');
     }
 
-    getEffectiveSyntaxColors(theme = this.getCurrentThemeFromUI(), syntaxColorsByTheme = this.settings.syntaxColorsByTheme) {
+    getEffectiveSyntaxColors(
+        theme = this.getCurrentThemeFromUI(),
+        syntaxColorsByTheme = this.settings.syntaxColorsByTheme
+    ) {
         const themeKey = this.normalizeThemeKey(theme);
         const defaults = this.getDefaultSyntaxColors(themeKey);
         const byTheme = this.normalizeSyntaxColorsByTheme(syntaxColorsByTheme);
@@ -874,7 +952,11 @@ class EditorSettings {
             }
 
             const normalizeDraftHex = (raw) => {
-                const body = String(raw || '').trim().replace(/^#/, '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+                const body = String(raw || '')
+                    .trim()
+                    .replace(/^#/, '')
+                    .replace(/[^0-9a-fA-F]/g, '')
+                    .slice(0, 6);
                 return body.toUpperCase();
             };
 
@@ -915,7 +997,10 @@ class EditorSettings {
                 if (hasFullHex(textInput.value)) {
                     const currentTheme = this.getCurrentThemeFromUI();
                     const themeDefaults = this.getDefaultSyntaxColors(currentTheme);
-                    const normalized = this.normalizeHexColor(`#${normalizeDraftHex(textInput.value)}`, themeDefaults[key]);
+                    const normalized = this.normalizeHexColor(
+                        `#${normalizeDraftHex(textInput.value)}`,
+                        themeDefaults[key]
+                    );
                     colorInput.value = normalized;
                     textInput.value = normalized.toUpperCase();
                     textInput.classList.remove('invalid');
@@ -994,7 +1079,7 @@ class EditorSettings {
         await this.loadSystemFonts();
 
         this.setupEventListeners();
-        
+
         this.setupSidebarNavigation();
 
         this.setupThemeListener();
@@ -1012,13 +1097,13 @@ class EditorSettings {
         const sidebarItems = document.querySelectorAll('.sidebar-item');
         const sections = document.querySelectorAll('.settings-section');
 
-        sidebarItems.forEach(item => {
+        sidebarItems.forEach((item) => {
             item.addEventListener('click', () => {
-                sidebarItems.forEach(i => i.classList.remove('active'));
+                sidebarItems.forEach((i) => i.classList.remove('active'));
                 item.classList.add('active');
 
-                sections.forEach(section => section.classList.remove('active'));
-                
+                sections.forEach((section) => section.classList.remove('active'));
+
                 const targetId = item.getAttribute('data-target');
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
@@ -1152,11 +1237,11 @@ class EditorSettings {
                         title: '选择背景图片',
                         filters: [
                             { name: 'Images', extensions: ['jpg', 'png', 'gif', 'jpeg', 'webp'] },
-                            { name: 'All Files', extensions: ['*'] }
+                            { name: 'All Files', extensions: ['*'] },
                         ],
-                        properties: ['openFile']
+                        properties: ['openFile'],
                     });
-                    
+
                     if (!result.canceled && result.filePaths.length > 0) {
                         bgImageInput.value = result.filePaths[0];
                     }
@@ -1267,8 +1352,6 @@ class EditorSettings {
                 this.notifyMainWindowPreview();
             });
         }
-
-
     }
 
     normalizeKeybindings(raw) {
@@ -1350,7 +1433,7 @@ class EditorSettings {
         }
 
         const codeExamples = document.querySelectorAll('.code-example, pre, code');
-        codeExamples.forEach(element => {
+        codeExamples.forEach((element) => {
             element.style.fontFamily = currentSettings.font;
             element.style.fontSize = currentSettings.fontSize + 'px';
             if (currentSettings.lineHeight && currentSettings.lineHeight > 0) {
@@ -1375,7 +1458,6 @@ class EditorSettings {
                     logWarn('预览API (electronAPI.sendSettingsPreview) 不可用');
                 }
             }, 150);
-
         } catch (error) {
             logWarn('实时预览通知失败:', error);
         }
@@ -1422,17 +1504,25 @@ class EditorSettings {
             }
 
             if (allSettings) {
-                const rawMode = typeof allSettings.markdownMode === 'string' ? allSettings.markdownMode.trim().toLowerCase() : '';
+                const rawMode =
+                    typeof allSettings.markdownMode === 'string' ? allSettings.markdownMode.trim().toLowerCase() : '';
                 const markdownMode = ['code', 'split'].includes(rawMode) ? rawMode : 'split';
-                const clangFormatStyle = this.normalizeClangFormatStyle(allSettings.clangFormatStyle || allSettings.clangFormat || (() => {
-                    if (typeof allSettings.clangFormatRaw === 'string' && allSettings.clangFormatRaw.trim()) {
-                        return this.parseClangFormatText(allSettings.clangFormatRaw);
-                    }
-                    return allSettings.formatterIndentStyle ? { formatterIndentStyle: allSettings.formatterIndentStyle } : null;
-                })());
-                const clangFormatRaw = typeof allSettings.clangFormatRaw === 'string' && allSettings.clangFormatRaw.trim()
-                    ? allSettings.clangFormatRaw
-                    : this.generateClangFormatText(clangFormatStyle);
+                const clangFormatStyle = this.normalizeClangFormatStyle(
+                    allSettings.clangFormatStyle ||
+                        allSettings.clangFormat ||
+                        (() => {
+                            if (typeof allSettings.clangFormatRaw === 'string' && allSettings.clangFormatRaw.trim()) {
+                                return this.parseClangFormatText(allSettings.clangFormatRaw);
+                            }
+                            return allSettings.formatterIndentStyle
+                                ? { formatterIndentStyle: allSettings.formatterIndentStyle }
+                                : null;
+                        })()
+                );
+                const clangFormatRaw =
+                    typeof allSettings.clangFormatRaw === 'string' && allSettings.clangFormatRaw.trim()
+                        ? allSettings.clangFormatRaw
+                        : this.generateClangFormatText(clangFormatStyle);
                 this.settings = {
                     language: allSettings.language || 'zh-cn',
                     font: allSettings.font || 'Consolas',
@@ -1440,12 +1530,19 @@ class EditorSettings {
                     terminalFontSize: allSettings.terminalFontSize || 14,
                     terminalStartupCommand: allSettings.terminalStartupCommand || '',
                     syntaxCheckEnabled: allSettings.syntaxCheckEnabled !== false,
-                    lineHeight: typeof allSettings.lineHeight === 'number' && allSettings.lineHeight > 0 ? allSettings.lineHeight : 0,
+                    lineHeight:
+                        typeof allSettings.lineHeight === 'number' && allSettings.lineHeight > 0
+                            ? allSettings.lineHeight
+                            : 0,
                     theme: allSettings.theme || 'dark',
                     syntaxColorsByTheme: (() => {
                         const normalizedTheme = this.normalizeThemeKey(allSettings.theme || 'dark');
                         const byTheme = this.normalizeSyntaxColorsByTheme(allSettings.syntaxColorsByTheme);
-                        if (Object.keys(byTheme).length === 0 && allSettings.syntaxColors && typeof allSettings.syntaxColors === 'object') {
+                        if (
+                            Object.keys(byTheme).length === 0 &&
+                            allSettings.syntaxColors &&
+                            typeof allSettings.syntaxColors === 'object'
+                        ) {
                             const migrated = this.normalizeSyntaxColors(allSettings.syntaxColors, normalizedTheme);
                             if (!this.areSyntaxColorsEqual(migrated, this.getDefaultSyntaxColors(normalizedTheme))) {
                                 byTheme[normalizedTheme] = migrated;
@@ -1459,7 +1556,10 @@ class EditorSettings {
                     unifiedPreprocessorColor: !!allSettings.unifiedPreprocessorColor,
                     tabSize: allSettings.tabSize || 4,
                     formatterIndentStyle: (() => {
-                        const rawStyle = typeof allSettings.formatterIndentStyle === 'string' ? allSettings.formatterIndentStyle.trim().toLowerCase() : 'editor';
+                        const rawStyle =
+                            typeof allSettings.formatterIndentStyle === 'string'
+                                ? allSettings.formatterIndentStyle.trim().toLowerCase()
+                                : 'editor';
                         return ['editor', 'spaces', 'tabs'].includes(rawStyle) ? rawStyle : 'editor';
                     })(),
                     clangFormatStyle,
@@ -1470,14 +1570,15 @@ class EditorSettings {
                     enableAutoCompletion: allSettings.enableAutoCompletion !== false,
                     autoSave: allSettings.autoSave !== false,
                     formatOnSave: allSettings.formatOnSave !== false,
-                    autoSaveInterval: typeof allSettings.autoSaveInterval === 'number' ? allSettings.autoSaveInterval : 60000,
+                    autoSaveInterval:
+                        typeof allSettings.autoSaveInterval === 'number' ? allSettings.autoSaveInterval : 60000,
                     autoOpenLastWorkspace: allSettings.autoOpenLastWorkspace !== false,
                     receiveBetaUpdates: allSettings.receiveBetaUpdates === true,
                     glassEffectEnabled: allSettings.glassEffectEnabled !== false,
                     windowOpacity: typeof allSettings.windowOpacity === 'number' ? allSettings.windowOpacity : 0.95,
                     backgroundImage: allSettings.backgroundImage || '',
                     markdownMode,
-                    keybindings: this.normalizeKeybindings(allSettings.keybindings)
+                    keybindings: this.normalizeKeybindings(allSettings.keybindings),
                 };
                 logInfo('编辑器设置加载完成:', this.settings);
             } else {
@@ -1509,7 +1610,7 @@ class EditorSettings {
                     windowOpacity: 0.95,
                     backgroundImage: '',
                     markdownMode: 'split',
-                    keybindings: this.getDefaultKeybindings()
+                    keybindings: this.getDefaultKeybindings(),
                 };
             }
         } catch (error) {
@@ -1517,9 +1618,9 @@ class EditorSettings {
             this.settings = {
                 font: 'Consolas',
                 fontSize: 14,
-                    terminalFontSize: 14,
-                    terminalStartupCommand: '',
-                    syntaxCheckEnabled: true,
+                terminalFontSize: 14,
+                terminalStartupCommand: '',
+                syntaxCheckEnabled: true,
                 lineHeight: 0,
                 theme: 'dark',
                 syntaxColorsByTheme: {},
@@ -1541,7 +1642,7 @@ class EditorSettings {
                 windowOpacity: 0.95,
                 backgroundImage: '',
                 markdownMode: 'split',
-                keybindings: this.getDefaultKeybindings()
+                keybindings: this.getDefaultKeybindings(),
             };
         }
     }
@@ -1580,7 +1681,7 @@ class EditorSettings {
 
         fontSelect.innerHTML = '';
 
-        availableFonts.forEach(font => {
+        availableFonts.forEach((font) => {
             const option = document.createElement('option');
             option.value = font;
             option.textContent = font;
@@ -1615,7 +1716,7 @@ class EditorSettings {
             'Verdana',
             'Microsoft YaHei',
             'SimSun',
-            'monospace'
+            'monospace',
         ];
     }
 
@@ -1667,9 +1768,10 @@ class EditorSettings {
 
         const clangFormatStyle = this.collectClangFormatStyleFromUI();
         const clangFormatRawTextArea = document.getElementById('clang-format-raw-text');
-        const clangFormatRawText = clangFormatRawTextArea && String(clangFormatRawTextArea.value || '').trim()
-            ? String(clangFormatRawTextArea.value)
-            : this.generateClangFormatText(clangFormatStyle);
+        const clangFormatRawText =
+            clangFormatRawTextArea && String(clangFormatRawTextArea.value || '').trim()
+                ? String(clangFormatRawTextArea.value)
+                : this.generateClangFormatText(clangFormatStyle);
         newSettings.clangFormatStyle = clangFormatStyle;
         newSettings.clangFormatRaw = clangFormatRawText;
 
@@ -1775,7 +1877,7 @@ class EditorSettings {
             logInfo('API可用性检查:', {
                 electronAPI: !!window.electronAPI,
                 updateSettings: !!(window.electronAPI && window.electronAPI.updateSettings),
-                requireAvailable: typeof require !== 'undefined'
+                requireAvailable: typeof require !== 'undefined',
             });
 
             let result = null;
@@ -1809,27 +1911,35 @@ class EditorSettings {
                 }
 
                 const themeChanged = newSettings.theme && newSettings.theme !== this.settings.theme;
-                const bgImageChanged = newSettings.backgroundImage !== undefined && newSettings.backgroundImage !== this.settings.backgroundImage;
-                logInfo('主题变化检测:', { oldTheme: this.settings.theme, newTheme: newSettings.theme, changed: themeChanged });
-                logInfo('背景图片变化检测:', { oldBgImage: this.settings.backgroundImage, newBgImage: newSettings.backgroundImage, changed: bgImageChanged });
+                const bgImageChanged =
+                    newSettings.backgroundImage !== undefined &&
+                    newSettings.backgroundImage !== this.settings.backgroundImage;
+                logInfo('主题变化检测:', {
+                    oldTheme: this.settings.theme,
+                    newTheme: newSettings.theme,
+                    changed: themeChanged,
+                });
+                logInfo('背景图片变化检测:', {
+                    oldBgImage: this.settings.backgroundImage,
+                    newBgImage: newSettings.backgroundImage,
+                    changed: bgImageChanged,
+                });
 
                 Object.assign(this.settings, newSettings);
 
                 this.showMessage('编辑器设置保存成功！', 'success');
 
-
                 // 不再自动关闭窗口
             } else {
-                const errorMsg = result ? (result.error || '未知错误') : '设置 API 不可用';
+                const errorMsg = result ? result.error || '未知错误' : '设置 API 不可用';
                 this.showMessage('保存设置失败：' + errorMsg, 'error');
                 logError('保存设置失败，详细信息:', {
                     result,
                     electronAPI: !!window.electronAPI,
                     updateSettings: !!(window.electronAPI && window.electronAPI.updateSettings),
-                    requireAvailable: typeof require !== 'undefined'
+                    requireAvailable: typeof require !== 'undefined',
                 });
             }
-
         } catch (error) {
             logError('保存编辑器设置失败:', error);
             this.showMessage('保存设置失败：' + error.message, 'error');
@@ -1904,7 +2014,7 @@ class EditorSettings {
                 fontValue = fontValue.split(',')[0].trim().replace(/["']/g, '');
             }
             const options = Array.from(fontSelect.options);
-            const matchingOption = options.find(option => option.value === fontValue);
+            const matchingOption = options.find((option) => option.value === fontValue);
             if (matchingOption) {
                 fontSelect.value = fontValue;
             } else {
@@ -1966,14 +2076,22 @@ class EditorSettings {
         if (clangFormatIndentWidthInput) clangFormatIndentWidthInput.value = clangFormatStyle.IndentWidth;
         if (clangFormatTabWidthInput) clangFormatTabWidthInput.value = clangFormatStyle.TabWidth;
         if (clangFormatColumnLimitInput) clangFormatColumnLimitInput.value = clangFormatStyle.ColumnLimit;
-        if (clangFormatBreakBeforeBracesSelect) clangFormatBreakBeforeBracesSelect.value = clangFormatStyle.BreakBeforeBraces;
-        if (clangFormatPointerAlignmentSelect) clangFormatPointerAlignmentSelect.value = clangFormatStyle.PointerAlignment;
-        if (clangFormatSpaceBeforeParensSelect) clangFormatSpaceBeforeParensSelect.value = clangFormatStyle.SpaceBeforeParens;
-        if (clangFormatIndentCaseLabelsCheckbox) clangFormatIndentCaseLabelsCheckbox.checked = !!clangFormatStyle.IndentCaseLabels;
+        if (clangFormatBreakBeforeBracesSelect)
+            clangFormatBreakBeforeBracesSelect.value = clangFormatStyle.BreakBeforeBraces;
+        if (clangFormatPointerAlignmentSelect)
+            clangFormatPointerAlignmentSelect.value = clangFormatStyle.PointerAlignment;
+        if (clangFormatSpaceBeforeParensSelect)
+            clangFormatSpaceBeforeParensSelect.value = clangFormatStyle.SpaceBeforeParens;
+        if (clangFormatIndentCaseLabelsCheckbox)
+            clangFormatIndentCaseLabelsCheckbox.checked = !!clangFormatStyle.IndentCaseLabels;
         if (clangFormatSortIncludesCheckbox) clangFormatSortIncludesCheckbox.checked = !!clangFormatStyle.SortIncludes;
-        if (clangFormatAlignAssignmentsCheckbox) clangFormatAlignAssignmentsCheckbox.checked = !!clangFormatStyle.AlignConsecutiveAssignments;
-        if (clangFormatAlignDeclarationsCheckbox) clangFormatAlignDeclarationsCheckbox.checked = !!clangFormatStyle.AlignConsecutiveDeclarations;
-        if (clangFormatRawTextArea) clangFormatRawTextArea.value = this.settings.clangFormatRaw || this.generateClangFormatText(clangFormatStyle);
+        if (clangFormatAlignAssignmentsCheckbox)
+            clangFormatAlignAssignmentsCheckbox.checked = !!clangFormatStyle.AlignConsecutiveAssignments;
+        if (clangFormatAlignDeclarationsCheckbox)
+            clangFormatAlignDeclarationsCheckbox.checked = !!clangFormatStyle.AlignConsecutiveDeclarations;
+        if (clangFormatRawTextArea)
+            clangFormatRawTextArea.value =
+                this.settings.clangFormatRaw || this.generateClangFormatText(clangFormatStyle);
         this._clangFormatRawDirty = false;
         this._clangFormatControlsDirty = false;
 
@@ -1995,11 +2113,13 @@ class EditorSettings {
             formatOnSaveCheckbox.checked = this.settings.formatOnSave === true;
         }
         if (autoSaveIntervalInput) {
-            const intervalMs = Number.isFinite(this.settings.autoSaveInterval) && this.settings.autoSaveInterval > 0 ? this.settings.autoSaveInterval : 60000;
+            const intervalMs =
+                Number.isFinite(this.settings.autoSaveInterval) && this.settings.autoSaveInterval > 0
+                    ? this.settings.autoSaveInterval
+                    : 60000;
             autoSaveIntervalInput.value = Math.max(1, Math.round(intervalMs / 1000));
             this.toggleAutoSaveInterval(autoSaveIntervalInput, autoSaveEnabled);
         }
-
 
         if (autoOpenLastWorkspaceCheckbox) {
             autoOpenLastWorkspaceCheckbox.checked = this.settings.autoOpenLastWorkspace !== false;
@@ -2107,7 +2227,7 @@ class EditorSettings {
                 const errObj = message instanceof Error ? message : new Error(String(message));
                 logError('[EditorSettingsToastError]', { message: String(message), stack: errObj.stack });
             }
-        } catch (_) { }
+        } catch (_) {}
         document.body.appendChild(messageDiv);
 
         requestAnimationFrame(() => {

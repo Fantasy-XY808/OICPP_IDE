@@ -423,8 +423,6 @@
     gap: 14px;
 }
 
-
-
 .diff-section {
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -561,17 +559,17 @@
     opacity: 0.8;
 }
 
-body[data-theme="solarized-light"] .compare-notice {
+body[data-theme='solarized-light'] .compare-notice {
     background-color: #eee8d5;
     border-color: #b58900;
     color: #657b83;
 }
 
-body[data-theme="solarized-light"] .notice-text {
+body[data-theme='solarized-light'] .notice-text {
     color: #657b83;
 }
 
-body[data-theme="solarized-light"] .notice-text strong {
+body[data-theme='solarized-light'] .notice-text strong {
     color: #b58900;
 }
 

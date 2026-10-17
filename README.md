@@ -38,24 +38,25 @@
 
 ## ✨ 特性
 
-| 类别 | 特性 |
-|------|------|
-| 🎯 **零配置** | 内置 clangd 语言服务器；MinGW-w64 工具链可在设置中一键下载，或自动检测系统已安装的 MinGW/LLVM |
-| 🎨 **现代界面** | Fluent / WinUI 风格悬浮圆角面板布局、Seti 彩色文件图标、codicon 图标体系、全局流畅动效 |
-| 📝 **VS Code 同源编辑器** | Monaco Editor，支持彩虹括号、Inlay Hints、CodeLens、圆角选区、平滑光标滚动 |
-| 🏆 **竞赛工具链** | 样例测试器、代码对拍器 (duipai)、GDB 调试、clangd 实时诊断 |
-| 🖥️ **内置终端** | 集成 node-pty 终端，编译运行全程在同一界面完成，支持交互式程序 |
-| 📋 **模板系统** | 内置 OI 常用模板（快读、调试宏等），支持自定义代码片段 |
-| 🎨 **多主题** | Dark Modern 默认，另有 Monokai、Dracula、GitHub、Solarized 等主题 |
-| 🌐 **云编译** | 支持将代码提交到 Linux 服务器进行云端编译验证 |
-| 🌍 **双语界面** | 支持简体中文 / English 界面切换 |
-| 📄 **PDF 阅读** | 内置 PDF 查看器，方便查看题目描述 |
+| 类别                      | 特性                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| 🎯 **零配置**             | 内置 clangd 语言服务器；MinGW-w64 工具链可在设置中一键下载，或自动检测系统已安装的 MinGW/LLVM |
+| 🎨 **现代界面**           | Fluent / WinUI 风格悬浮圆角面板布局、Seti 彩色文件图标、codicon 图标体系、全局流畅动效        |
+| 📝 **VS Code 同源编辑器** | Monaco Editor，支持彩虹括号、Inlay Hints、CodeLens、圆角选区、平滑光标滚动                    |
+| 🏆 **竞赛工具链**         | 样例测试器、代码对拍器 (duipai)、GDB 调试、clangd 实时诊断                                    |
+| 🖥️ **内置终端**           | 集成 node-pty 终端，编译运行全程在同一界面完成，支持交互式程序                                |
+| 📋 **模板系统**           | 内置 OI 常用模板（快读、调试宏等），支持自定义代码片段                                        |
+| 🎨 **多主题**             | Dark Modern 默认，另有 Monokai、Dracula、GitHub、Solarized 等主题                             |
+| 🌐 **云编译**             | 支持将代码提交到 Linux 服务器进行云端编译验证                                                 |
+| 🌍 **双语界面**           | 支持简体中文 / English 界面切换                                                               |
+| 📄 **PDF 阅读**           | 内置 PDF 查看器，方便查看题目描述                                                             |
 
 ## 🚀 快速开始
 
 ### 安装方式
 
 #### 方式一：下载安装包（推荐）
+
 从 [Releases](https://github.com/Fantasy-XY808/OICPP_IDE/releases) 页面下载最新的 Windows 安装包 (`OICPP-IDE-x.x.x-Setup.exe`)，双击安装即可。
 
 #### 方式二：从源码运行
@@ -93,18 +94,19 @@ npm run build
 
 ## 💻 系统要求
 
-| 项目 | 要求 |
-|------|------|
-| **操作系统** | Windows 10/11 (64 位) |
+| 项目           | 要求                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| **操作系统**   | Windows 10/11 (64 位)                                                                            |
 | **预装编译器** | 无需 —— 可在「设置 → 编译器」一键下载 MinGW-w64 工具链，或由 IDE 自动检测系统已安装的 MinGW/LLVM |
-| **磁盘空间** | ~1 GB（不含按需下载的编译器工具链） |
-| **内存** | 4 GB 以上推荐 |
+| **磁盘空间**   | ~1 GB（不含按需下载的编译器工具链）                                                              |
+| **内存**       | 4 GB 以上推荐                                                                                    |
 
 > **注意**：安装包**内置 clangd**（`~/.oicpp/LSP`），但**不内置 MinGW-w64 编译器**——发布流水线的打包步骤不包含它。因此首次使用前需要在设置里下载一次编译器，或自行安装 MinGW-w64 / LLVM 并确保在 `PATH` 中。IDE 会自动探测常见的 MSYS2 / TDM-GCC 安装位置。
 
 ## 🔧 核心功能
 
 ### 📝 代码编辑
+
 - **Monaco Editor**：VS Code 同款编辑器内核
 - **语法高亮**：完整的 C++ 语法着色，支持自定义配色
 - **智能补全**：基于 clangd LSP 的代码补全与实时诊断
@@ -113,66 +115,69 @@ npm run build
 - **Sticky Scroll**：顶部吸附显示当前作用域
 
 ### ⚡ 编译运行
+
 - **一键编译运行**：`F5` 编译并运行，输出显示在终端区域
 - **内置终端模式**：编译过程实时可见，编译完成后自动清屏运行
 - **弹窗模式**：程序在独立控制台窗口运行（支持交互）
 - **编译缓存**：智能检测源码变化，避免重复编译
 
 ### 🧪 样例测试器
+
 - 添加多组输入/输出样例
 - 自动比对程序输出与预期输出
 - 显示运行时间与内存占用
 - 支持文件 I/O（freopen）和标准 I/O
 
 ### ⚖️ 代码对拍器
+
 - 对拍验证算法正确性
 - 支持 testlib 和自定义 SPJ
 - 并行多线程对拍
 - 实时显示对拍进度与差异
 
 ### 🐛 GDB 调试器
+
 - 图形化断点管理
 - 变量监视与调用栈查看
 - 单步执行、步入/步出
 - 终端内交互式调试
 
 ### 🌐 云编译
+
 - 将代码提交至 Linux 服务器编译
 - 适用于验证跨平台兼容性
 - 排队状态实时显示
 
 ## ⌨️ 快捷键
 
-| 快捷键 | 功能 |
-|--------|------|
 > 以下为**出厂默认值**，全部可在「设置 → 快捷键」中自定义。
 
-| 快捷键 | 功能 |
-|--------|------|
-| `Ctrl+N` | 新建文件 |
-| `Ctrl+Shift+N` | 新建临时文件 |
-| `Ctrl+K` | 打开文件夹 |
-| `Ctrl+S` | 保存文件 |
-| `Ctrl+Shift+S` | 另存为 |
-| `Ctrl+W` | 关闭当前标签 |
-| `F9` | 仅编译 |
-| `F10` | 仅运行（需先编译） |
-| `F11` | 编译并运行 |
-| `F12` | 云编译 |
-| `Ctrl+F11` | 运行全部样例 |
-| `F5` | 开始 / 结束调试 |
-| `F6` | 调试：继续 |
-| `F7` | 调试：单步跳过 |
-| `F8` | 调试：单步进入 |
-| `Shift+F8` | 调试：单步跳出 |
-| `Alt+Shift+S` | 格式化代码 |
-| `F2` | 重命名符号 |
-| `Ctrl+Shift+G` | 函数选择器 |
-| `Ctrl+P` | 快速打开文件 |
-| `Ctrl+\`` | 切换内置终端 |
-| `Ctrl+B` | 切换侧边栏 |
-| `Ctrl+F` | 查找 |
-| `Ctrl+H` | 替换 |
+| 快捷键         | 功能               |
+| -------------- | ------------------ |
+| `Ctrl+N`       | 新建文件           |
+| `Ctrl+Shift+N` | 新建临时文件       |
+| `Ctrl+K`       | 打开文件夹         |
+| `Ctrl+S`       | 保存文件           |
+| `Ctrl+Shift+S` | 另存为             |
+| `Ctrl+W`       | 关闭当前标签       |
+| `F9`           | 仅编译             |
+| `F10`          | 仅运行（需先编译） |
+| `F11`          | 编译并运行         |
+| `F12`          | 云编译             |
+| `Ctrl+F11`     | 运行全部样例       |
+| `F5`           | 开始 / 结束调试    |
+| `F6`           | 调试：继续         |
+| `F7`           | 调试：单步跳过     |
+| `F8`           | 调试：单步进入     |
+| `Shift+F8`     | 调试：单步跳出     |
+| `Alt+Shift+S`  | 格式化代码         |
+| `F2`           | 重命名符号         |
+| `Ctrl+Shift+G` | 函数选择器         |
+| `Ctrl+P`       | 快速打开文件       |
+| `Ctrl+\``      | 切换内置终端       |
+| `Ctrl+B`       | 切换侧边栏         |
+| `Ctrl+F`       | 查找               |
+| `Ctrl+H`       | 替换               |
 
 ## 📁 项目结构
 
@@ -238,19 +243,19 @@ OICPP_IDE/
 
 OICPP IDE 使用了以下开源项目：
 
-| 项目 | 用途 | 许可证 |
-|------|------|--------|
-| [Electron](https://www.electronjs.org/) | 应用框架 | MIT |
-| [Monaco Editor](https://microsoft.github.io/monaco-editor/) | 代码编辑器 | MIT |
-| [xterm.js](https://xtermjs.org/) | 终端模拟 | MIT |
-| [node-pty](https://github.com/TooTallNate/node-pty) | 伪终端 | MIT |
-| [clangd](https://clangd.llvm.org/) | 语言服务器 | Apache 2.0 |
-| [MinGW-w64](https://www.mingw-w64.org/) | 编译器工具链 | GPL / Public Domain |
-| [highlight.js](https://highlightjs.org/) | 语法高亮 | BSD-3-Clause |
-| [@applemusic-like-lyrics/core](https://github.com/amll-dev/applemusic-like-lyrics) | Soto Player MeshGradientRenderer 初始化背景 | AGPL-3.0-only |
-| [KaTeX](https://katex.org/) | 数学公式渲染 | MIT |
-| [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown 解析 | MIT |
-| [pdfjs-dist](https://mozilla.github.io/pdf.js/) | PDF 渲染 | Apache 2.0 |
+| 项目                                                                               | 用途                                        | 许可证              |
+| ---------------------------------------------------------------------------------- | ------------------------------------------- | ------------------- |
+| [Electron](https://www.electronjs.org/)                                            | 应用框架                                    | MIT                 |
+| [Monaco Editor](https://microsoft.github.io/monaco-editor/)                        | 代码编辑器                                  | MIT                 |
+| [xterm.js](https://xtermjs.org/)                                                   | 终端模拟                                    | MIT                 |
+| [node-pty](https://github.com/TooTallNate/node-pty)                                | 伪终端                                      | MIT                 |
+| [clangd](https://clangd.llvm.org/)                                                 | 语言服务器                                  | Apache 2.0          |
+| [MinGW-w64](https://www.mingw-w64.org/)                                            | 编译器工具链                                | GPL / Public Domain |
+| [highlight.js](https://highlightjs.org/)                                           | 语法高亮                                    | BSD-3-Clause        |
+| [@applemusic-like-lyrics/core](https://github.com/amll-dev/applemusic-like-lyrics) | Soto Player MeshGradientRenderer 初始化背景 | AGPL-3.0-only       |
+| [KaTeX](https://katex.org/)                                                        | 数学公式渲染                                | MIT                 |
+| [markdown-it](https://github.com/markdown-it/markdown-it)                          | Markdown 解析                               | MIT                 |
+| [pdfjs-dist](https://mozilla.github.io/pdf.js/)                                    | PDF 渲染                                    | Apache 2.0          |
 
 ## 🔗 链接
 

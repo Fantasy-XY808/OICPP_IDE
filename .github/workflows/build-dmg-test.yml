@@ -1,44 +1,44 @@
 name: Build .dmg to test
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  build-dmg-test:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    build-dmg-test:
+        runs-on: macos-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+            - name: Install dependencies
+              run: npm install
 
-      - name: Prepare clangd bundle
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run prebuild:clangd
+            - name: Prepare clangd bundle
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: npm run prebuild:clangd
 
-      - name: Build macOS DMG
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm run prebuild:buildinfo
-          npm run prebuild:icons
-          test -f build/icons/png/512x512.png
-          npx electron-builder --mac dmg
+            - name: Build macOS DMG
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  npm run prebuild:buildinfo
+                  npm run prebuild:icons
+                  test -f build/icons/png/512x512.png
+                  npx electron-builder --mac dmg
 
-      - name: Upload .dmg artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dmg-test-artifacts
-          path: dist/*.dmg
-          if-no-files-found: error
+            - name: Upload .dmg artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dmg-test-artifacts
+                  path: dist/*.dmg
+                  if-no-files-found: error

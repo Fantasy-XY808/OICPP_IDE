@@ -26,9 +26,9 @@ class CompilerManager {
             compilerPath: '',
             compilerArgs: '-std=c++14 -O2 -static',
             runMode: 'popup',
-            workingDirectory: ''
+            workingDirectory: '',
         };
-        
+
         this.isCompiling = false;
         this.isRunning = false;
         this.compileOutput = null;
@@ -128,7 +128,7 @@ class CompilerManager {
         this.analysisEmptyState = this.compileOutput.querySelector('#compile-analysis-empty');
         this.analysisHint = this.compileOutput.querySelector('.compile-output-hint');
         this.tabButtons = Array.from(this.compileOutput.querySelectorAll('.compile-tab-btn'));
-        this.tabButtons.forEach(btn => {
+        this.tabButtons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.pane === 'analysis' ? 'analysis' : 'raw';
                 this.switchOutputPane(target);
@@ -182,7 +182,7 @@ class CompilerManager {
         const maxHeight = Math.max(1, Math.floor(hostHeight - 48));
         return {
             minHeight: Math.min(120, maxHeight),
-            maxHeight
+            maxHeight,
         };
     }
 
@@ -207,9 +207,7 @@ class CompilerManager {
         try {
             const inlineHeight = Number.parseFloat(this.compileOutput.style.height);
             const height = Math.round(
-                Number.isFinite(inlineHeight)
-                    ? inlineHeight
-                    : this.compileOutput.getBoundingClientRect().height
+                Number.isFinite(inlineHeight) ? inlineHeight : this.compileOutput.getBoundingClientRect().height
             );
             localStorage.setItem('oicpp.compileOutput.height', String(height));
         } catch {}
@@ -218,14 +216,6 @@ class CompilerManager {
     setupEventListeners() {
         if (window.electron && window.electron.ipcRenderer) {
             const ipcRenderer = window.electron.ipcRenderer;
-
-            ipcRenderer.on('compile-result', (result) => {
-                this.handleCompileResult(result);
-            });
-
-            ipcRenderer.on('compile-error', (error) => {
-                this.handleCompileError(error);
-            });
 
             ipcRenderer.on('run-result', (result) => {
                 this.handleRunResult(result);
@@ -237,11 +227,22 @@ class CompilerManager {
 
             ipcRenderer.on('settings-changed', (_event, _settingsType, newSettings) => {
                 logInfo('编译管理器收到设置变化通知:', newSettings);
-                if (newSettings && (newSettings.compilerPath !== undefined || newSettings.compilerArgs !== undefined || newSettings.runMode !== undefined)) {
+                if (
+                    newSettings &&
+                    (newSettings.compilerPath !== undefined ||
+                        newSettings.compilerArgs !== undefined ||
+                        newSettings.runMode !== undefined)
+                ) {
                     this.updateSettings({
-                        compilerPath: newSettings.compilerPath !== undefined ? newSettings.compilerPath : this.settings.compilerPath,
-                        compilerArgs: newSettings.compilerArgs !== undefined ? newSettings.compilerArgs : this.settings.compilerArgs,
-                        runMode: newSettings.runMode !== undefined ? newSettings.runMode : this.settings.runMode
+                        compilerPath:
+                            newSettings.compilerPath !== undefined
+                                ? newSettings.compilerPath
+                                : this.settings.compilerPath,
+                        compilerArgs:
+                            newSettings.compilerArgs !== undefined
+                                ? newSettings.compilerArgs
+                                : this.settings.compilerArgs,
+                        runMode: newSettings.runMode !== undefined ? newSettings.runMode : this.settings.runMode,
                     });
                     logInfo('编译管理器设置已更新:', this.settings);
                 }
@@ -255,18 +256,30 @@ class CompilerManager {
 
     async loadSettings() {
         try {
-            const isIntegratedOnlyPlatform = !!(typeof window !== 'undefined' && window.process && (window.process.platform === 'darwin' || window.process.platform === 'linux'));
-            const isMacPlatform = !!(typeof window !== 'undefined' && window.process && window.process.platform === 'darwin');
+            const isIntegratedOnlyPlatform = !!(
+                typeof window !== 'undefined' &&
+                window.process &&
+                (window.process.platform === 'darwin' || window.process.platform === 'linux')
+            );
+            const isMacPlatform = !!(
+                typeof window !== 'undefined' &&
+                window.process &&
+                window.process.platform === 'darwin'
+            );
             if (window.electronAPI && window.electronAPI.getAllSettings) {
                 const allSettings = await window.electronAPI.getAllSettings();
                 if (allSettings) {
-                    const loadedCompilerArgs = allSettings.compilerArgs || (isMacPlatform ? '-std=c++14 -O2' : '-std=c++14 -O2 -static');
+                    const loadedCompilerArgs =
+                        allSettings.compilerArgs || (isMacPlatform ? '-std=c++14 -O2' : '-std=c++14 -O2 -static');
                     this.updateSettings({
                         compilerPath: allSettings.compilerPath || '',
                         compilerArgs: isMacPlatform
-                            ? loadedCompilerArgs.replace(/\s-static\b/g, ' ').replace(/\s+/g, ' ').trim()
+                            ? loadedCompilerArgs
+                                  .replace(/\s-static\b/g, ' ')
+                                  .replace(/\s+/g, ' ')
+                                  .trim()
                             : loadedCompilerArgs,
-                        runMode: isIntegratedOnlyPlatform ? 'integrated-terminal' : (allSettings.runMode || 'popup')
+                        runMode: isIntegratedOnlyPlatform ? 'integrated-terminal' : allSettings.runMode || 'popup',
                     });
                     logInfo('编译器设置已加载:', this.settings);
                 }
@@ -275,13 +288,17 @@ class CompilerManager {
                 const savedSettings = localStorage.getItem('oicpp-settings');
                 if (savedSettings) {
                     const parsed = JSON.parse(savedSettings);
-                    const loadedCompilerArgs = parsed.compilerArgs || (isMacPlatform ? '-std=c++14 -O2' : '-std=c++14 -O2 -static');
+                    const loadedCompilerArgs =
+                        parsed.compilerArgs || (isMacPlatform ? '-std=c++14 -O2' : '-std=c++14 -O2 -static');
                     this.updateSettings({
                         compilerPath: parsed.compilerPath || '',
                         compilerArgs: isMacPlatform
-                            ? loadedCompilerArgs.replace(/\s-static\b/g, ' ').replace(/\s+/g, ' ').trim()
+                            ? loadedCompilerArgs
+                                  .replace(/\s-static\b/g, ' ')
+                                  .replace(/\s+/g, ' ')
+                                  .trim()
                             : loadedCompilerArgs,
-                        runMode: isIntegratedOnlyPlatform ? 'integrated-terminal' : (parsed.runMode || 'popup')
+                        runMode: isIntegratedOnlyPlatform ? 'integrated-terminal' : parsed.runMode || 'popup',
                     });
                     logInfo('从本地存储加载编译器设置:', this.settings);
                 }
@@ -304,7 +321,10 @@ class CompilerManager {
 
             if (!this.settings.compilerPath) {
                 logInfo('编译器路径为空，显示设置提示');
-                this.showMessage(this.t('message.setCompilerFirst', null, 'Please configure the compiler first'), 'error');
+                this.showMessage(
+                    this.t('message.setCompilerFirst', null, 'Please configure the compiler first'),
+                    'error'
+                );
                 this.openCompilerSettings();
                 return;
             }
@@ -323,17 +343,22 @@ class CompilerManager {
             logInfo('[编译管理器] 获取到的文件路径:', filePath);
             logInfo('[编译管理器] 文件路径类型:', typeof filePath);
             logInfo('[编译管理器] currentEditor.filePath:', currentEditor.filePath);
-            if (!filePath || filePath === 'null' || filePath === 'undefined' || filePath.toString().startsWith('untitled')) {
+            if (
+                !filePath ||
+                filePath === 'null' ||
+                filePath === 'undefined' ||
+                filePath.toString().startsWith('untitled')
+            ) {
                 logInfo('[编译管理器] 文件路径无效，提示保存文件');
                 this.showMessage(this.t('message.saveFileFirst', null, 'Please save the file first'), 'error');
                 return;
             }
 
             if (filePath && typeof filePath === 'string') {
-                 const isWin = (typeof window !== 'undefined' && window.process && window.process.platform === 'win32');
-                 if (isWin) {
-                     filePath = filePath.replace(/\//g, '\\');
-                 }
+                const isWin = typeof window !== 'undefined' && window.process && window.process.platform === 'win32';
+                if (isWin) {
+                    filePath = filePath.replace(/\//g, '\\');
+                }
             }
 
             this.isCompiling = true;
@@ -347,9 +372,16 @@ class CompilerManager {
             const outputFile = this.getExecutablePath(filePath);
 
             let compilerArgs = this.settings.compilerArgs;
-            const isMacPlatform = !!(typeof window !== 'undefined' && window.process && window.process.platform === 'darwin');
+            const isMacPlatform = !!(
+                typeof window !== 'undefined' &&
+                window.process &&
+                window.process.platform === 'darwin'
+            );
             if (isMacPlatform && /\s-static\b/.test(` ${compilerArgs}`)) {
-                compilerArgs = compilerArgs.replace(/\s-static\b/g, ' ').replace(/\s+/g, ' ').trim();
+                compilerArgs = compilerArgs
+                    .replace(/\s-static\b/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
                 this.appendOutput('检测到 macOS 平台，已自动移除不兼容参数 -static\n', 'warning');
             }
             if (options.forDebug) {
@@ -363,11 +395,21 @@ class CompilerManager {
                 }
                 compilerArgs = compilerArgs.replace(/-s\b/g, '');
                 compilerArgs = compilerArgs.replace(/\s+/g, ' ').trim();
-                this.appendOutput(this.t('compileOutput.modeDebug', null, 'Compilation mode: Debug (debug info, optimizations disabled)') + '\n', 'info');
+                this.appendOutput(
+                    this.t(
+                        'compileOutput.modeDebug',
+                        null,
+                        'Compilation mode: Debug (debug info, optimizations disabled)'
+                    ) + '\n',
+                    'info'
+                );
             } else {
                 if (!compilerArgs.includes('-g')) {
                     compilerArgs = compilerArgs + ' -g';
-                    this.appendOutput(this.t('compileOutput.modeNormal', null, 'Compilation mode: Normal (with debug info)') + '\n', 'info');
+                    this.appendOutput(
+                        this.t('compileOutput.modeNormal', null, 'Compilation mode: Normal (with debug info)') + '\n',
+                        'info'
+                    );
                 }
             }
 
@@ -377,7 +419,11 @@ class CompilerManager {
             logInfo(`目标文件: ${outputFile}`);
             logInfo(`编译命令: ${compileCommand}`);
 
-            const isWinPlatform = !!(typeof window !== 'undefined' && window.process && window.process.platform === 'win32');
+            const isWinPlatform = !!(
+                typeof window !== 'undefined' &&
+                window.process &&
+                window.process.platform === 'win32'
+            );
 
             // 集成终端模式:编译与运行均在终端内完成,编译完成后清屏再运行,不切换窗口
             if (this.isIntegratedRunMode() && this.shouldRunAfterCompile) {
@@ -411,8 +457,15 @@ class CompilerManager {
             }
             this.setStatus(this.t('compileOutput.compiling', null, 'Compiling...'));
             this.clearOutput();
-            this.appendOutput(this.t('compileOutput.command', { command: compileCommand }, `Compilation command: ${compileCommand}`) + '\n', 'command');
-            this.appendOutput(this.t('compileOutput.targetFile', { file: outputFile }, `Output file: ${outputFile}`) + '\n', 'info');
+            this.appendOutput(
+                this.t('compileOutput.command', { command: compileCommand }, `Compilation command: ${compileCommand}`) +
+                    '\n',
+                'command'
+            );
+            this.appendOutput(
+                this.t('compileOutput.targetFile', { file: outputFile }, `Output file: ${outputFile}`) + '\n',
+                'info'
+            );
             this.appendOutput(this.t('compileOutput.compiling', null, 'Compiling...') + '\n', 'info');
 
             if (typeof require !== 'undefined') {
@@ -423,7 +476,7 @@ class CompilerManager {
                         outputFile,
                         compilerPath: this.settings.compilerPath,
                         compilerArgs: compilerArgs,
-                        workingDirectory: this.getWorkingDirectory(filePath)
+                        workingDirectory: this.getWorkingDirectory(filePath),
                     });
                     this.handleCompileResult(result);
                 } catch (error) {
@@ -432,7 +485,6 @@ class CompilerManager {
             } else {
                 this.handleCompileError('Electron 环境不可用');
             }
-
         } catch (error) {
             logError('编译失败:', error);
             this.handleCompileError(error.message);
@@ -442,7 +494,14 @@ class CompilerManager {
     async cloudCompileCurrentFile() {
         try {
             if (!this.isWindowsPlatform()) {
-                this.showMessage(this.t('message.cloudCompileWindowsOnly', null, 'Cloud compilation is currently available only on Windows'), 'warning');
+                this.showMessage(
+                    this.t(
+                        'message.cloudCompileWindowsOnly',
+                        null,
+                        'Cloud compilation is currently available only on Windows'
+                    ),
+                    'warning'
+                );
                 return;
             }
 
@@ -453,13 +512,21 @@ class CompilerManager {
             }
 
             const filePath = currentEditor.filePath || (currentEditor.getFilePath && currentEditor.getFilePath());
-            if (!filePath || filePath === 'null' || filePath === 'undefined' || filePath.toString().startsWith('untitled')) {
+            if (
+                !filePath ||
+                filePath === 'null' ||
+                filePath === 'undefined' ||
+                filePath.toString().startsWith('untitled')
+            ) {
                 this.showMessage(this.t('message.saveFileFirst', null, 'Please save the file first'), 'error');
                 return;
             }
 
             if (!/\.cpp$/i.test(filePath)) {
-                this.showMessage(this.t('message.cloudCompileCppOnly', null, 'Cloud compilation currently supports only .cpp files'), 'error');
+                this.showMessage(
+                    this.t('message.cloudCompileCppOnly', null, 'Cloud compilation currently supports only .cpp files'),
+                    'error'
+                );
                 return;
             }
 
@@ -506,7 +573,9 @@ class CompilerManager {
                     const status = await window.electronAPI.getIdeLoginStatus();
                     loginToken = status?.loginToken || '';
                 }
-            } catch (e) { logWarn('获取登录状态失败:', e); }
+            } catch (e) {
+                logWarn('获取登录状态失败:', e);
+            }
 
             const payload = {
                 cpp: codeContent,
@@ -515,7 +584,7 @@ class CompilerManager {
                 // registered a handler for the 'get-encoded-token' channel, so
                 // the invoke always rejected inside a try/catch and this was
                 // always ''. Cloud compilation authenticates via login_token.
-                token: ''
+                token: '',
             };
 
             if (loginToken) {
@@ -525,10 +594,10 @@ class CompilerManager {
             const response = await fetch(`https://oicpp.mywwzh.top/api/cloudCompilation`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payload),
-                signal: this.cloudCompileAbortController.signal
+                signal: this.cloudCompileAbortController.signal,
             });
 
             let data = null;
@@ -607,23 +676,39 @@ class CompilerManager {
 
             const executablePath = this.getExecutablePath(filePath);
             logInfo(`检查可执行文件路径: ${executablePath}`);
-            
+
             const exists = await this.checkFileExists(executablePath);
             logInfo(`可执行文件存在性检查结果: ${exists}`);
-            
+
             if (!exists) {
-                this.showMessage(this.t('message.compileBeforeRun', { file: executablePath }, `Please compile the program first (not found: ${executablePath})`), 'error');
+                this.showMessage(
+                    this.t(
+                        'message.compileBeforeRun',
+                        { file: executablePath },
+                        `Please compile the program first (not found: ${executablePath})`
+                    ),
+                    'error'
+                );
                 return;
             }
 
             this.isRunning = true;
             this.showOutput();
-            this.appendOutput(this.t('compileOutput.startingProgram', { file: executablePath }, `Starting program: ${executablePath}`) + '\n', 'info');
+            this.appendOutput(
+                this.t(
+                    'compileOutput.startingProgram',
+                    { file: executablePath },
+                    `Starting program: ${executablePath}`
+                ) + '\n',
+                'info'
+            );
             this.runExecutable(executablePath);
-
         } catch (error) {
             logError('运行失败:', error);
-            this.showMessage(this.t('message.runFailed', { error: error.message }, `Failed to run: ${error.message}`), 'error');
+            this.showMessage(
+                this.t('message.runFailed', { error: error.message }, `Failed to run: ${error.message}`),
+                'error'
+            );
         }
     }
 
@@ -698,18 +783,16 @@ class CompilerManager {
      * @returns {string} Full compile command line
      */
     buildCompileCommand(inputFile, outputFile, customArgs = null) {
-        const args = [
-            `"${inputFile}"`,
-            customArgs || this.settings.compilerArgs,
-            `-o "${outputFile}"`
-        ].filter(arg => arg.trim()).join(' ');
-        
+        const args = [`"${inputFile}"`, customArgs || this.settings.compilerArgs, `-o "${outputFile}"`]
+            .filter((arg) => arg.trim())
+            .join(' ');
+
         return `"${this.settings.compilerPath}" ${args}`;
     }
 
     getExecutablePath(sourceFile) {
-        const isWin = (typeof window !== 'undefined' && window.process && window.process.platform === 'win32');
-        
+        const isWin = typeof window !== 'undefined' && window.process && window.process.platform === 'win32';
+
         let normalizedPath = sourceFile;
         if (isWin) {
             normalizedPath = sourceFile.replace(/\//g, '\\');
@@ -721,11 +804,11 @@ class CompilerManager {
         const lastSlash = normalizedPath.lastIndexOf(sep);
         const dir = lastSlash >= 0 ? normalizedPath.substring(0, lastSlash) : '';
         const fileName = lastSlash >= 0 ? normalizedPath.substring(lastSlash + 1) : normalizedPath;
-        
+
         const dot = fileName.lastIndexOf('.');
         const nameWithoutExt = dot >= 0 ? fileName.substring(0, dot) : fileName;
-        
-        const base = (dir ? (dir + (dir.endsWith(sep) ? '' : sep)) : '') + nameWithoutExt;
+
+        const base = (dir ? dir + (dir.endsWith(sep) ? '' : sep) : '') + nameWithoutExt;
         return isWin ? base + '.exe' : base;
     }
 
@@ -736,8 +819,10 @@ class CompilerManager {
      * @returns {string}
      */
     getWorkingDirectory(filePath) {
-        const lastSlash = filePath.lastIndexOf('/') > filePath.lastIndexOf('\\') ?
-            filePath.lastIndexOf('/') : filePath.lastIndexOf('\\');
+        const lastSlash =
+            filePath.lastIndexOf('/') > filePath.lastIndexOf('\\')
+                ? filePath.lastIndexOf('/')
+                : filePath.lastIndexOf('\\');
         return filePath.substring(0, lastSlash);
     }
 
@@ -759,14 +844,17 @@ class CompilerManager {
         if (typeof require !== 'undefined') {
             try {
                 const { ipcRenderer } = require('electron');
-                ipcRenderer.invoke('run-executable', {
-                    executablePath,
-                    workingDirectory: this.getWorkingDirectory(executablePath)
-                }).then(result => {
-                    this.handleRunResult(result);
-                }).catch(error => {
-                    this.handleRunError(error.message || error);
-                });
+                ipcRenderer
+                    .invoke('run-executable', {
+                        executablePath,
+                        workingDirectory: this.getWorkingDirectory(executablePath),
+                    })
+                    .then((result) => {
+                        this.handleRunResult(result);
+                    })
+                    .catch((error) => {
+                        this.handleRunError(error.message || error);
+                    });
             } catch (error) {
                 this.handleRunError('IPC 调用失败: ' + error.message);
             }
@@ -781,18 +869,24 @@ class CompilerManager {
             this.setStatus('云编译超时');
             this.setCloudProgressMessage('云编译等待超时，请稍后再试。', 'error');
             this.appendOutput('云编译等待超时，请稍后重试。', 'error');
-            this.showMessage(this.t('message.cloudCompileTimeout', null, 'Cloud compilation timed out. Please try again later.'), 'error');
+            this.showMessage(
+                this.t('message.cloudCompileTimeout', null, 'Cloud compilation timed out. Please try again later.'),
+                'error'
+            );
             this.resetCloudCompileState();
             return;
         }
 
         try {
-            const response = await fetch(`https://oicpp.mywwzh.top/api/getCloudCompilationResult?task_id=${encodeURIComponent(taskId)}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
+            const response = await fetch(
+                `https://oicpp.mywwzh.top/api/getCloudCompilationResult?task_id=${encodeURIComponent(taskId)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        Accept: 'application/json',
+                    },
                 }
-            });
+            );
 
             let data = null;
             try {
@@ -825,7 +919,14 @@ class CompilerManager {
                 this.setStatus('云编译失败');
                 this.setCloudProgressMessage('云编译状态查询失败，请稍后再试。', 'error');
                 this.appendOutput(message, 'error');
-                this.showMessage(this.t('message.cloudCompileStatusFailed', null, 'Failed to retrieve cloud compilation status. Please try again later.'), 'error');
+                this.showMessage(
+                    this.t(
+                        'message.cloudCompileStatusFailed',
+                        null,
+                        'Failed to retrieve cloud compilation status. Please try again later.'
+                    ),
+                    'error'
+                );
                 this.resetCloudCompileState();
                 return;
             }
@@ -870,7 +971,9 @@ class CompilerManager {
     }
 
     handleCloudCompilationSuccess(data) {
-        const duration = this.cloudCompileStartTime ? ((Date.now() - this.cloudCompileStartTime) / 1000).toFixed(2) : null;
+        const duration = this.cloudCompileStartTime
+            ? ((Date.now() - this.cloudCompileStartTime) / 1000).toFixed(2)
+            : null;
         const status = duration ? `云编译成功 (${duration}s)` : '云编译成功';
         this.setStatus(status);
         this.setCloudProgressMessage('云编译完成，结果：通过。', 'success');
@@ -883,7 +986,9 @@ class CompilerManager {
     }
 
     handleCloudCompilationFailure(data) {
-        const duration = this.cloudCompileStartTime ? ((Date.now() - this.cloudCompileStartTime) / 1000).toFixed(2) : null;
+        const duration = this.cloudCompileStartTime
+            ? ((Date.now() - this.cloudCompileStartTime) / 1000).toFixed(2)
+            : null;
         const status = duration ? `云编译失败 (${duration}s)` : '云编译失败';
         this.setStatus(status);
         this.setCloudProgressMessage('云编译失败，请查看下方错误信息。', 'error');
@@ -898,7 +1003,7 @@ class CompilerManager {
     appendMultilineOutput(message, type = 'info') {
         if (!message) return;
         const lines = String(message).split(/\r?\n/);
-        lines.forEach(line => {
+        lines.forEach((line) => {
             if (line.trim().length > 0) {
                 this.appendOutput(line, type);
             }
@@ -1047,7 +1152,7 @@ class CompilerManager {
 
             const badge = document.createElement('span');
             badge.className = `analysis-badge severity-${item.severity || 'info'}`;
-            badge.textContent = item.severity === 'warning' ? '警告' : (item.severity === 'error' ? '错误' : '提示');
+            badge.textContent = item.severity === 'warning' ? '警告' : item.severity === 'error' ? '错误' : '提示';
 
             const location = document.createElement('span');
             location.className = 'analysis-location';
@@ -1088,19 +1193,20 @@ class CompilerManager {
             const model = editor?.getModel ? editor.getModel() : null;
             if (!model) return false;
 
-            const markers = monaco.editor.getModelMarkers
-                ? monaco.editor.getModelMarkers({ resource: model.uri })
-                : [];
+            const markers = monaco.editor.getModelMarkers ? monaco.editor.getModelMarkers({ resource: model.uri }) : [];
 
             const diagnostics = markers.map((marker) => ({
-                severity: marker.severity === monaco.MarkerSeverity.Warning
-                    ? 'warning'
-                    : (marker.severity === monaco.MarkerSeverity.Info ? 'note' : 'error'),
+                severity:
+                    marker.severity === monaco.MarkerSeverity.Warning
+                        ? 'warning'
+                        : marker.severity === monaco.MarkerSeverity.Info
+                          ? 'note'
+                          : 'error',
                 message: marker.message || '',
                 raw: marker.message || '',
                 file: editor?.filePath || model.uri?.fsPath || model.uri?.path || '',
                 line: marker.startLineNumber || 1,
-                column: marker.startColumn || 1
+                column: marker.startColumn || 1,
             }));
 
             const rendered = this.renderSmartAnalysis({ diagnostics });
@@ -1145,11 +1251,11 @@ class CompilerManager {
             if (seen.has(key)) return;
             seen.add(key);
             items.push({
-                severity: diag.severity === 'warning' ? 'warning' : (diag.severity === 'error' ? 'error' : 'info'),
+                severity: diag.severity === 'warning' ? 'warning' : diag.severity === 'error' ? 'error' : 'info',
                 location,
                 message: rawMsg || '未知信息',
                 hint: translated || hint.title,
-                suggestion: hint.suggestion
+                suggestion: hint.suggestion,
             });
         });
 
@@ -1166,7 +1272,7 @@ class CompilerManager {
                 location: diag.location || (window.i18n ? window.i18n.t('compileOutput.title') : 'Compile Output'),
                 message: diag.message,
                 hint: translated || hint.title,
-                suggestion: hint.suggestion
+                suggestion: hint.suggestion,
             });
         });
 
@@ -1179,7 +1285,7 @@ class CompilerManager {
                     location: window.i18n ? window.i18n.t('compileOutput.title') : 'Compile Output',
                     message: this.translateMessage(text),
                     hint: hint.title,
-                    suggestion: hint.suggestion
+                    suggestion: hint.suggestion,
                 });
             }
         }
@@ -1193,93 +1299,102 @@ class CompilerManager {
         if (/expected\s+'?;/.test(message)) {
             return {
                 title: '疑似缺少分号',
-                suggestion: '在提示行或上一行末尾补一个分号 ; ，或检查语句是否提前换行。'
+                suggestion: '在提示行或上一行末尾补一个分号 ; ，或检查语句是否提前换行。',
             };
         }
 
-        if (/expected\s+['"`]?\)/i.test(message) || /expected\s+['"`]?\}/i.test(message) || /expected\s+['"`]?\]/i.test(message)) {
+        if (
+            /expected\s+['"`]?\)/i.test(message) ||
+            /expected\s+['"`]?\}/i.test(message) ||
+            /expected\s+['"`]?\]/i.test(message)
+        ) {
             return {
                 title: '疑似缺少括号/花括号',
-                suggestion: '检查成对的 (), {}, [] 是否匹配，尤其是 if/for/while 或函数声明的位置。'
+                suggestion: '检查成对的 (), {}, [] 是否匹配，尤其是 if/for/while 或函数声明的位置。',
             };
         }
 
         if (/no such file or directory/.test(lower)) {
-            const compilerPath = typeof this.settings?.compilerPath === 'string' ? this.settings.compilerPath.trim() : '';
+            const compilerPath =
+                typeof this.settings?.compilerPath === 'string' ? this.settings.compilerPath.trim() : '';
             return {
                 title: compilerPath ? '包含的文件没找到' : '包含的文件没找到，请先设置编译器路径',
                 suggestion: compilerPath
                     ? '确认 #include 的头文件路径是否正确，或源文件/编译器路径中是否包含空格导致识别失败。'
-                    : '请先设置编译器路径，然后再确认 #include 的头文件路径是否正确。'
+                    : '请先设置编译器路径，然后再确认 #include 的头文件路径是否正确。',
             };
         }
 
         if (/was not declared in this scope/.test(lower)) {
             return {
                 title: '标识符未声明',
-                suggestion: '检查变量/函数是否拼写错误、是否在使用前声明，或需要添加对应的头文件。'
+                suggestion: '检查变量/函数是否拼写错误、是否在使用前声明，或需要添加对应的头文件。',
             };
         }
 
         if (/redefinition of/.test(lower) || /has a previous declaration/.test(lower)) {
             return {
                 title: '重复定义',
-                suggestion: '同名的函数或变量被重复定义。检查是否在多个文件或多次包含头文件时缺少 include guard。'
+                suggestion: '同名的函数或变量被重复定义。检查是否在多个文件或多次包含头文件时缺少 include guard。',
             };
         }
 
-        if (/cannot open output file/.test(lower) && (/permission denied/.test(lower) || /access is denied/.test(lower))) {
+        if (
+            /cannot open output file/.test(lower) &&
+            (/permission denied/.test(lower) || /access is denied/.test(lower))
+        ) {
             return {
                 title: '链接器无法写入输出文件',
-                suggestion: '目标可执行文件可能正被运行或被占用。先关闭已打开的程序/终端窗口，再重新编译。'
+                suggestion: '目标可执行文件可能正被运行或被占用。先关闭已打开的程序/终端窗口，再重新编译。',
             };
         }
 
         if (/undefined reference to [`'"]?main/.test(lower)) {
             return {
                 title: '缺少 main 函数',
-                suggestion: '确认是否正确定义了 int main() 函数，或文件是否保存为 C++ 源文件后再编译。'
+                suggestion: '确认是否正确定义了 int main() 函数，或文件是否保存为 C++ 源文件后再编译。',
             };
         }
 
         if (/undefined reference/.test(lower)) {
             return {
                 title: '链接到未定义的符号',
-                suggestion: '对应的函数/变量未实现或缺少链接的库。检查函数是否写错、源文件是否编译、或需补充链接参数。'
+                suggestion: '对应的函数/变量未实现或缺少链接的库。检查函数是否写错、源文件是否编译、或需补充链接参数。',
             };
         }
 
         if (/expected (class|struct|union)/i.test(lower)) {
             return {
                 title: '类型/声明不完整',
-                suggestion: '可能缺少头文件或写错模板语法，检查该行前后的类型声明和模板尖括号。'
+                suggestion: '可能缺少头文件或写错模板语法，检查该行前后的类型声明和模板尖括号。',
             };
         }
 
         if (/control reaches end of non-void function/i.test(lower)) {
             return {
                 title: '非 void 函数缺少返回值',
-                suggestion: '确保每个分支都返回值，或将函数声明改为 void。'
+                suggestion: '确保每个分支都返回值，或将函数声明改为 void。',
             };
         }
 
         if (/maybe uninitialized/i.test(lower)) {
             return {
                 title: '变量可能未初始化',
-                suggestion: '在使用前给变量赋初值，或在所有分支中确保赋值。'
+                suggestion: '在使用前给变量赋初值，或在所有分支中确保赋值。',
             };
         }
 
         return {
             title: '查看原始输出获取更多细节',
-            suggestion: '跳转到对应行查看上下文，必要时打开原始输出获取完整信息。'
+            suggestion: '跳转到对应行查看上下文，必要时打开原始输出获取完整信息。',
         };
     }
 
     translateMessage(message = '') {
         const text = String(message);
         if (/no such file or directory/.test(text)) {
-            const compilerPath = typeof this.settings?.compilerPath === 'string' ? this.settings.compilerPath.trim() : '';
+            const compilerPath =
+                typeof this.settings?.compilerPath === 'string' ? this.settings.compilerPath.trim() : '';
             return compilerPath
                 ? '包含的文件没找到，请检查头文件路径是否正确。'
                 : '包含的文件没找到，请先设置编译器路径，再检查 #include 的头文件路径是否正确。';
@@ -1313,7 +1428,11 @@ class CompilerManager {
         const m = String(raw).match(/^(.+?):(\d+):(?:(\d+):)?\s*(fatal error|error|warning|note):\s*(.+)$/i);
         if (m) {
             const [, file, lineNum, colNum, sevRaw, msg] = m;
-            const severity = /warning/i.test(sevRaw) ? 'warning' : (/error/i.test(sevRaw) || /fatal/i.test(sevRaw) ? 'error' : 'info');
+            const severity = /warning/i.test(sevRaw)
+                ? 'warning'
+                : /error/i.test(sevRaw) || /fatal/i.test(sevRaw)
+                  ? 'error'
+                  : 'info';
             const locationParts = [];
             if (file) locationParts.push(this.extractFileName(file));
             if (lineNum) locationParts.push(`行 ${parseInt(lineNum, 10)}`);
@@ -1324,73 +1443,84 @@ class CompilerManager {
                 message: msg?.trim() || raw,
                 file,
                 line: lineNum ? parseInt(lineNum, 10) : undefined,
-                column: colNum ? parseInt(colNum, 10) : undefined
+                column: colNum ? parseInt(colNum, 10) : undefined,
             };
         }
 
-        const severity = /warning/i.test(raw) ? 'warning' : (/error|fatal/i.test(raw) ? 'error' : 'info');
+        const severity = /warning/i.test(raw) ? 'warning' : /error|fatal/i.test(raw) ? 'error' : 'info';
         return {
             severity,
             location: '',
-            message: raw
+            message: raw,
         };
     }
 
     handleCompileResult(result) {
         this.isCompiling = false;
 
-        
-            if (result.success) {
+        if (result.success) {
             this.setStatus(this.t('compileOutput.successSimple', null, 'Compilation successful'));
             this.appendOutput(this.t('compileOutput.successSimple', null, 'Compilation successful') + '!\n', 'success');
-            
+
             if (result.warnings && result.warnings.length > 0) {
-                this.appendOutput(this.t('compileOutput.warningCount', { count: result.warnings.length }, `Found ${result.warnings.length} warnings:`) + '\n', 'warning');
-                    result.warnings.forEach(warning => {
-                        this.appendOutput(`${warning}\n`, 'warning');
-                    });
+                this.appendOutput(
+                    this.t(
+                        'compileOutput.warningCount',
+                        { count: result.warnings.length },
+                        `Found ${result.warnings.length} warnings:`
+                    ) + '\n',
+                    'warning'
+                );
+                result.warnings.forEach((warning) => {
+                    this.appendOutput(`${warning}\n`, 'warning');
+                });
             }
 
-                if (window.editorManager && window.editorManager.clearDiagnostics) {
-                    window.editorManager.clearDiagnostics();
-                }
+            if (window.editorManager && window.editorManager.clearDiagnostics) {
+                window.editorManager.clearDiagnostics();
+            }
 
-            window.dispatchEvent(new CustomEvent('compile-success', {
-                detail: { result }
-            }));
+            window.dispatchEvent(
+                new CustomEvent('compile-success', {
+                    detail: { result },
+                })
+            );
 
             if (this.shouldRunAfterCompile) {
                 this.shouldRunAfterCompile = false;
                 this.runCurrentFile();
             }
-            } else {
+        } else {
             this.setStatus(this.t('compileOutput.failSimple', null, 'Compilation failed'));
             this.appendOutput(this.t('compileOutput.failSimple', null, 'Compilation failed') + '!\n', 'error');
             this.shouldRunAfterCompile = false;
-            
+
             if (result.errors && result.errors.length > 0) {
                 this.appendOutput(this.t('compileOutput.errorInfo', null, 'Error information:') + '\n', 'error');
-                result.errors.forEach(error => {
+                result.errors.forEach((error) => {
                     this.appendOutput(`${this._stringifyError(error)}\n`, 'error');
                 });
             }
 
-                if (result.diagnostics && window.editorManager && window.editorManager.applyDiagnostics) {
-                    window.editorManager.applyDiagnostics(result.diagnostics);
-                }
+            if (result.diagnostics && window.editorManager && window.editorManager.applyDiagnostics) {
+                window.editorManager.applyDiagnostics(result.diagnostics);
+            }
 
-            window.dispatchEvent(new CustomEvent('compile-error', {
-                detail: { result }
-            }));
+            window.dispatchEvent(
+                new CustomEvent('compile-error', {
+                    detail: { result },
+                })
+            );
         }
 
-        const hasIssues = (result.errors && result.errors.length > 0) || (result.warnings && result.warnings.length > 0);
+        const hasIssues =
+            (result.errors && result.errors.length > 0) || (result.warnings && result.warnings.length > 0);
         const analysisRendered = this.renderSmartAnalysis({
             diagnostics: result.diagnostics,
             errors: result.errors,
             warnings: result.warnings,
             stderr: result.stderr,
-            stdout: result.stdout
+            stdout: result.stdout,
         });
 
         if (hasIssues && analysisRendered && this.analysisAvailable) {
@@ -1412,10 +1542,12 @@ class CompilerManager {
         if (this.analysisHasContent && this.analysisAvailable) {
             this.switchOutputPane('analysis');
         }
-        
-        window.dispatchEvent(new CustomEvent('compile-error', {
-            detail: { error }
-        }));
+
+        window.dispatchEvent(
+            new CustomEvent('compile-error', {
+                detail: { error },
+            })
+        );
     }
 
     showExternalCompileResult(result = {}, options = {}) {
@@ -1444,7 +1576,14 @@ class CompilerManager {
         }
 
         if (result.warnings && result.warnings.length > 0) {
-            this.appendOutput(this.t('compileOutput.warningCount', { count: result.warnings.length }, `Found ${result.warnings.length} warnings:`) + '\n', 'warning');
+            this.appendOutput(
+                this.t(
+                    'compileOutput.warningCount',
+                    { count: result.warnings.length },
+                    `Found ${result.warnings.length} warnings:`
+                ) + '\n',
+                'warning'
+            );
             result.warnings.forEach((warning) => {
                 this.appendOutput(`${warning}\n`, 'warning');
             });
@@ -1455,7 +1594,7 @@ class CompilerManager {
             errors: result.errors,
             warnings: result.warnings,
             stderr: result.stderr,
-            stdout: result.stdout
+            stdout: result.stdout,
         });
 
         if (!success && analysisRendered && this.analysisAvailable) {
@@ -1496,7 +1635,7 @@ class CompilerManager {
             let platform = 'windows';
             try {
                 if (window.electronAPI?.getPlatform) platform = await window.electronAPI.getPlatform();
-            } catch (_) { }
+            } catch (_) {}
 
             if (this._runTerminalId && tp.sessions && tp.sessions.has(this._runTerminalId)) {
                 const terminalId = this._runTerminalId;
@@ -1518,11 +1657,15 @@ class CompilerManager {
 
             // 无可用终端时回退到旧行为(新建终端运行)
             await app.openIntegratedTerminalAndRunExecutable(executablePath, {
-                workingDirectory: result?.workingDirectory || undefined
+                workingDirectory: result?.workingDirectory || undefined,
             });
 
             this.hideOutput();
-            const message = this.t('compileOutput.programStartedIntegratedTerminal', null, 'Program started in the integrated terminal');
+            const message = this.t(
+                'compileOutput.programStartedIntegratedTerminal',
+                null,
+                'Program started in the integrated terminal'
+            );
             this.appendOutput(message + '\n', 'success');
             this.showMessage(message, 'success');
             logInfo('程序运行完成(内置终端):', result);
@@ -1596,8 +1739,12 @@ class CompilerManager {
                         if (editor && editor.revealLineInCenter) {
                             const ln = parseInt(lineNum, 10) || 1;
                             const cn = colNum ? parseInt(colNum, 10) : 1;
-                            try { editor.revealLineInCenter(ln); } catch {}
-                            try { editor.setPosition({ lineNumber: ln, column: cn }); } catch {}
+                            try {
+                                editor.revealLineInCenter(ln);
+                            } catch {}
+                            try {
+                                editor.setPosition({ lineNumber: ln, column: cn });
+                            } catch {}
                         }
                     });
                 }
@@ -1623,13 +1770,13 @@ class CompilerManager {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-popup message-${type}`;
         messageDiv.textContent = message;
-        
+
         document.body.appendChild(messageDiv);
-        
+
         setTimeout(() => {
             messageDiv.classList.add('show');
         }, 10);
-        
+
         setTimeout(() => {
             messageDiv.classList.remove('show');
             setTimeout(() => {
@@ -1658,7 +1805,11 @@ class CompilerManager {
             if (typeof err.message === 'string') return err.message;
             return JSON.stringify(err);
         } catch (_) {
-            try { return String(err); } catch { return '未知错误'; }
+            try {
+                return String(err);
+            } catch {
+                return '未知错误';
+            }
         }
     }
 
@@ -1692,11 +1843,11 @@ class CompilerManager {
             }
 
             logInfo('[自动保存] 开始保存文件:', filePath);
-            
+
             if (window.electronAPI && window.electronAPI.saveFile) {
                 await window.electronAPI.saveFile(filePath, content);
                 logInfo('[自动保存] 文件保存成功');
-                
+
                 if (window.tabManager) {
                     const fileName = filePath.split(/[\\/]/).pop();
                     if (window.tabManager.markTabAsSaved) {
@@ -1718,7 +1869,7 @@ class CompilerManager {
         if (typeof require !== 'undefined') {
             try {
                 const { ipcRenderer } = require('electron');
-                ipcRenderer.invoke('open-compiler-settings').catch(error => {
+                ipcRenderer.invoke('open-compiler-settings').catch((error) => {
                     logError('打开编译器设置失败:', error);
                 });
             } catch (error) {

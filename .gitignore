@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 out/
+src/renderer/js/onboarding.bundle.js
 
 # Local build dependencies (compiler + clangd — downloaded/generated locally)
 build/

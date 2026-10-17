@@ -2,7 +2,7 @@
     --editor-font-family: 'Consolas';
     --editor-font-size: 14px;
     --editor-line-height: 21px;
-    
+
     --bg-color: #1e1e1e;
     --text-color: #d4d4d4;
     --text-color-secondary: #858585;
@@ -18,11 +18,11 @@
 }
 
 body.theme-light,
-body[data-theme="light"],
-body[data-editor-theme="light"] {
+body[data-theme='light'],
+body[data-editor-theme='light'] {
     --editor-background: #ffffff !important;
     --editor-foreground: #000000 !important;
-    --editor-selection: rgba(87, 161, 255, 0.60) !important;
+    --editor-selection: rgba(87, 161, 255, 0.6) !important;
     --editor-line-highlight: #f0f0f0 !important;
     --editor-cursor: #000000 !important;
     --editor-gutter: #ffffff !important;
@@ -47,7 +47,7 @@ body[data-editor-theme="light"] {
     --active-color: #0060c0 !important;
 }
 
-body[data-theme="solarized-light"] {
+body[data-theme='solarized-light'] {
     --bg-color: #fdf6e3 !important;
     --text-color: #657b83 !important;
     --text-color-secondary: #586e75 !important;
@@ -79,9 +79,7 @@ body[data-theme="solarized-light"] {
     --hover-color: #eee8d5 !important;
     --active-color: #0060c0 !important;
 }
-*/
-
-.monaco-editor {
+*/ .monaco-editor {
     font-family: 'Consolas' !important;
 }
 
@@ -147,7 +145,9 @@ body.glass-effect-enabled .monaco-editor .monaco-editor-background {
     min-width: 120px;
     max-width: 200px;
     position: relative;
-    transition: background-color 0.12s ease, border-color 0.12s ease;
+    transition:
+        background-color 0.12s ease,
+        border-color 0.12s ease;
 }
 
 .tab:hover {
@@ -185,7 +185,10 @@ body.glass-effect-enabled .monaco-editor .monaco-editor-background {
     padding: 2px;
     border-radius: 2px;
     opacity: 0.7;
-    transition: opacity 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.12s ease,
+        color 0.12s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -294,7 +297,9 @@ body.glass-effect-enabled .monaco-editor .monaco-editor-background {
 .breakpoint-glyph {
     background: #e51400 !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 0 0 3px rgba(229,20,0,0.18);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.3),
+        0 0 0 3px rgba(229, 20, 0, 0.18);
     border-radius: 50%;
     width: 11px !important;
     height: 11px !important;
@@ -302,15 +307,17 @@ body.glass-effect-enabled .monaco-editor .monaco-editor-background {
     margin-top: 4px;
 }
 
-body[data-theme="light"] .breakpoint-glyph,
+body[data-theme='light'] .breakpoint-glyph,
 body.theme-light .breakpoint-glyph,
-body[data-editor-theme="light"] .breakpoint-glyph {
+body[data-editor-theme='light'] .breakpoint-glyph {
     border-color: rgba(0, 0, 0, 0.15) !important;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.6), 0 0 0 3px rgba(229,20,0,0.18);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.6),
+        0 0 0 3px rgba(229, 20, 0, 0.18);
 }
 
 .monaco-editor .margin:hover {
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .monaco-editor {
@@ -346,15 +353,15 @@ body[data-editor-theme="light"] .breakpoint-glyph {
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .welcome-content {
         padding: 20px;
     }
-    
+
     .welcome-header h1 {
         font-size: 24px;
     }
-    
+
     .tab {
         min-width: 100px;
         max-width: 150px;
@@ -413,8 +420,12 @@ body[data-editor-theme="light"] .breakpoint-glyph {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .context-menu {
@@ -582,7 +593,7 @@ body[data-editor-theme="light"] .breakpoint-glyph {
     --active-color: #094771;
 }
 
-body[data-theme="solarized-light"] {
+body[data-theme='solarized-light'] {
     --bg-color: #fdf6e3 !important;
     --text-color: #657b83 !important;
     --text-color-secondary: #586e75 !important;
@@ -620,7 +631,9 @@ body[data-theme="solarized-light"] {
 }
 
 .monaco-editor .view-lines {
-    font-feature-settings: 'liga' on, 'calt' on;
+    font-feature-settings:
+        'liga' on,
+        'calt' on;
 }
 
 .monaco-editor .scrollbar {
@@ -749,7 +762,9 @@ body[data-theme="solarized-light"] {
     text-decoration: none !important;
     border-bottom: none !important;
 }
-.monaco-editor .view-line span[style*="underline"]:not(.squiggly-error):not(.squiggly-warning):not(.squiggly-info):not(.squiggly-hint) {
+.monaco-editor
+    .view-line
+    span[style*='underline']:not(.squiggly-error):not(.squiggly-warning):not(.squiggly-info):not(.squiggly-hint) {
     text-decoration: none !important;
 }
 
@@ -815,19 +830,23 @@ body[data-theme="solarized-light"] {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 768px) {
     .monaco-editor-container {
         font-size: 12px;
     }
-    
+
     .monaco-editor .suggest-widget {
         max-height: 200px;
     }
-    
+
     .monaco-editor .find-widget {
         max-width: 300px;
     }
@@ -838,11 +857,11 @@ body[data-theme="solarized-light"] {
         background: white !important;
         color: black !important;
     }
-    
+
     .monaco-editor .view-lines {
         background: white !important;
     }
-    
+
     .monaco-editor .line-numbers {
         color: #666 !important;
     }
