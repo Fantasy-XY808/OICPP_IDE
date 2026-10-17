@@ -160,13 +160,21 @@ class I18nManager {
      * Set language and save to settings.
      */
     async setLanguage(langCode) {
-        if (!langCode || langCode === this._currentLang) return;
+        if (!langCode) return;
         try {
-            if (window.electronAPI && typeof window.electronAPI.updateSettings === 'function') {
-                await window.electronAPI.updateSettings({ language: langCode });
+            if (langCode !== this._currentLang && window.electronAPI && typeof window.electronAPI.updateSettings === 'function') {
+                const result = await window.electronAPI.updateSettings({ language: langCode });
+                if (!result || result.success !== true) {
+                    throw new Error(result?.error || 'Language settings could not be saved');
+                }
             }
+            this._currentLang = langCode;
+            await this._loadCurrentLanguage();
+            this._notifyListeners();
+            this._applyToDOM();
         } catch (error) {
             logError('[i18n] 设置语言失败:', error);
+            throw error;
         }
     }
 

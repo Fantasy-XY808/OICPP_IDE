@@ -5,6 +5,7 @@
     min-width: 0;
     width: 100%;
     position: relative;
+    container-type: inline-size;
 }
 
 .compare-content::-webkit-scrollbar {
@@ -48,43 +49,6 @@
 .no-compiler-message .sub-text {
     font-size: 12px !important;
     opacity: 0.8;
-}
-
-#no-login-message {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text-secondary);
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    padding: 40px 20px;
-}
-
-#no-login-message .message-icon {
-    font-size: 40px;
-    margin-bottom: 16px;
-    opacity: 0.8;
-}
-
-#no-login-message p {
-    margin: 4px 0;
-    font-size: 15px;
-    color: #e0e0e0;
-}
-
-#no-login-message .sub-text {
-    font-size: 13px !important;
-    opacity: 0.7;
-    color: #b0b0b0;
 }
 
 .compare-file-section {
@@ -459,6 +423,8 @@
     gap: 14px;
 }
 
+
+
 .diff-section {
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -607,4 +573,129 @@ body[data-theme="solarized-light"] .notice-text {
 
 body[data-theme="solarized-light"] .notice-text strong {
     color: #b58900;
+}
+
+.compare-content {
+    padding: 10px;
+}
+
+.compare-file-section {
+    gap: 12px;
+}
+
+.compare-notice {
+    padding: 9px 11px;
+    border-radius: 8px;
+}
+
+.file-select-group {
+    gap: 8px;
+}
+
+.file-select-item {
+    border-radius: 8px;
+}
+
+.file-select-header {
+    padding: 7px 10px 3px;
+    background: transparent;
+    border-bottom: 0;
+}
+
+.file-path-display {
+    padding: 4px 10px 9px;
+    font-size: 11px;
+}
+
+.compare-config-section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    padding: 11px;
+    border-radius: 8px;
+}
+
+.compare-config-section .config-item {
+    min-width: 0;
+    margin: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.compare-config-section .config-label {
+    min-width: 0;
+    font-size: 11px;
+}
+
+.compare-config-section .config-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    border-radius: 6px;
+}
+
+.compare-config-section .config-unit {
+    margin-top: -3px;
+}
+
+.compare-config-section .compare-freopen-row,
+.compare-config-section .testlib-spj-row {
+    grid-column: 1 / -1;
+}
+
+.compare-config-section .compare-freopen-row {
+    flex-direction: column;
+}
+
+.compare-config-section .compare-freopen-group {
+    gap: 6px;
+}
+
+.compare-config-section .compare-freopen-input {
+    width: 100%;
+}
+
+.compare-config-section .testlib-spj-row {
+    align-items: center;
+    padding-top: 9px;
+    border-top: 1px solid var(--border-color);
+}
+
+.compare-actions {
+    gap: 8px;
+}
+
+.compare-btn {
+    justify-content: center;
+    min-height: 34px;
+    border-radius: 7px;
+}
+
+.result-diff {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 11px;
+}
+
+.result-diff .diff-section:first-child {
+    grid-column: 1 / -1;
+}
+
+.diff-section {
+    min-width: 0;
+    border-radius: 7px;
+}
+
+@container (max-width: 420px) {
+    .compare-config-section,
+    .result-diff {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .result-diff .diff-section:first-child {
+        grid-column: auto;
+    }
 }

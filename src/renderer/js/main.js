@@ -10,13 +10,14 @@ class OICPPApp {
             syntaxColorsByTheme: {},
             syntaxFontStyles: {},
             tabSize: 4,
-            formatterIndentStyle: 'editor',
+            formatterIndentStyle: 'tabs',
             clangFormatStyle: null,
             clangFormatRaw: '',
             wordWrap: false,
             enableAutoCompletion: true,
-            formatOnSave: false,
-            glassEffectEnabled: false,
+            formatOnSave: true,
+            glassEffectEnabled: true,
+            windowOpacity: 0.95,
             autoSave: true,
             autoSaveInterval: 1000
         };
@@ -470,9 +471,6 @@ class OICPPApp {
         const username = this.accountInfo?.username || this.accountInfo?.name || this.accountInfo?.uid || '';
         const avatarUrl = this.accountInfo?.avatar || this.accountInfo?.avatar_url || this.accountInfo?.icon || '';
 
-        const noLoginMsg = document.getElementById('no-login-message');
-        const compareLoginBtn = document.getElementById('compare-login-btn');
-
         if (this.accountLoggedIn) {
             loginItem.style.display = 'none';
             accountItem.style.display = '';
@@ -494,7 +492,6 @@ class OICPPApp {
             if (labelEl) {
                 labelEl.textContent = username || '我的账户';
             }
-            if (noLoginMsg) noLoginMsg.style.display = 'none';
         } else {
             loginItem.style.display = '';
             accountItem.style.display = 'none';
@@ -506,12 +503,6 @@ class OICPPApp {
             if (labelEl) {
                 labelEl.textContent = '我的账户';
             }
-            if (noLoginMsg) noLoginMsg.style.display = '';
-        }
-
-        if (compareLoginBtn && !this._compareLoginBound) {
-            this._compareLoginBound = true;
-            compareLoginBtn.addEventListener('click', () => this.startIdeLogin());
         }
     }
 

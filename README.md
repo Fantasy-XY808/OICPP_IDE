@@ -78,6 +78,9 @@ npm start
 npm run dev
 ```
 
+首次运行 `npm start` 或 `npm run dev` 时会自动下载当前平台的 clangd；完成后再次启动会复用本地文件。
+首次启动会先显示初始化向导（不闪现编辑器界面），语言、主题和编辑器选项均可即时预览；流动背景使用 `@applemusic-like-lyrics/core` 提供的 MeshGradientRenderer。
+
 #### 方式三：构建安装包
 
 ```bash
@@ -244,6 +247,7 @@ OICPP IDE 使用了以下开源项目：
 | [clangd](https://clangd.llvm.org/) | 语言服务器 | Apache 2.0 |
 | [MinGW-w64](https://www.mingw-w64.org/) | 编译器工具链 | GPL / Public Domain |
 | [highlight.js](https://highlightjs.org/) | 语法高亮 | BSD-3-Clause |
+| [@applemusic-like-lyrics/core](https://github.com/amll-dev/applemusic-like-lyrics) | Soto Player MeshGradientRenderer 初始化背景 | AGPL-3.0-only |
 | [KaTeX](https://katex.org/) | 数学公式渲染 | MIT |
 | [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown 解析 | MIT |
 | [pdfjs-dist](https://mozilla.github.io/pdf.js/) | PDF 渲染 | Apache 2.0 |

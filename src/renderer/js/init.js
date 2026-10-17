@@ -1,14 +1,18 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     logInfo('DOM 加载完成，开始初始化应用...');
-    setUserIconPath();
-    // Initialize i18n before app
-    if (window.i18n && typeof window.i18n.init === 'function') {
-        window.i18n.init().then(() => {
+    try {
+        if (window.i18n && typeof window.i18n.init === 'function') {
+            await window.i18n.init();
             if (typeof window.i18n.enableAutoTranslate === 'function') {
                 window.i18n.enableAutoTranslate();
             }
-        }).catch(err => logError('i18n 初始化失败:', err));
+        }
+        await window.onboardingManager?.initialize?.();
+    } catch (error) {
+        logError('初始化向导启动失败:', error);
+        document.documentElement.classList.remove('startup-pending');
     }
+    setUserIconPath();
     initializeApp();
     setTimeout(() => {
         try {
@@ -73,7 +77,7 @@ async function initializeApp() {
         window.oicppApp = new OICPPApp();
         logInfo('OICPPApp 实例已创建');
         await window.oicppApp.init();
-   
+
         setupDefaultContent();
         
         logInfo('应用初始化完成！');

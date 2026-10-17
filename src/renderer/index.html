@@ -1,10 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="startup-pending">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: http: https:; worker-src 'self' blob: file:; connect-src 'self' https://oicpp.mywwzh.top; frame-src * data:;">
     <meta http-equiv="Permissions-Policy" content="fullscreen=(self)">
+    <style>
+        html.startup-pending body > :not(#onboarding-overlay) {
+            visibility: hidden !important;
+        }
+        html.startup-pending body {
+            background: #101117;
+        }
+    </style>
     <title>OICPP IDE</title>
     <link rel="stylesheet" href="css/titlebar.css">
     <link rel="stylesheet" href="css/main.css">
@@ -14,6 +22,7 @@
     <link rel="stylesheet" href="css/pdf-viewer.css">
     <link rel="stylesheet" href="css/statusbar.css">
     <link rel="stylesheet" href="css/welcome.css">
+    <link rel="stylesheet" href="css/onboarding.css">
     <link rel="stylesheet" href="css/dialog.css">
     <link rel="stylesheet" href="css/compile-output.css">
     <link rel="stylesheet" href="css/samples.css">
@@ -357,7 +366,7 @@
                 
                 <div class="panel-content" id="compare-panel">
                     <div class="panel-header">
-                        <span class="panel-title" data-i18n="compare.title">Code Comparer</span>
+                        <span class="panel-title" data-i18n="compare.title">代码对拍器</span>
                     </div>
                     <div class="compare-content">
                         <div class="no-compiler-message" id="no-compiler-message" style="display: none;">
@@ -367,13 +376,6 @@
                             <button class="empty-state-button" onclick="window.electronAPI?.openCompilerSettings?.()" data-i18n="compare.openCompilerSettings">
                                 Open Compiler Settings
                             </button>
-                        </div>
-
-                        <div class="no-login-message" id="no-login-message" style="display: none;">
-                            <div class="message-icon" data-ui-icon="warning"></div>
-                            <p data-i18n="compare.loginRequired">请先登录洛谷账号</p>
-                            <p class="sub-text" data-i18n="compare.loginRequiredDesc">登录后即可使用代码对比功能</p>
-                            <button class="empty-state-button" id="compare-login-btn" data-i18n="compare.loginNow">立即登录</button>
                         </div>
 
                         <div class="compare-file-section" id="compare-file-section">
@@ -607,6 +609,119 @@
         </div>
     </div>
 
+    <div class="onboarding-overlay" id="onboarding-overlay" data-theme="dark" aria-hidden="true" hidden>
+        <div class="onboarding-background" id="onboarding-background" aria-hidden="true"></div>
+        <div class="onboarding-scrim" aria-hidden="true"></div>
+        <section class="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+            <div class="onboarding-brand">
+                <img src="../../oicpp.ico" alt="" class="onboarding-logo">
+                <span>OICPP IDE</span>
+            </div>
+            <header class="onboarding-header">
+                <div>
+                    <p class="onboarding-kicker" data-i18n="onboarding.kicker">A workspace made for problem solving</p>
+                    <h1 id="onboarding-title" data-i18n="onboarding.title">欢迎使用 OICPP IDE</h1>
+                    <p class="onboarding-description" data-i18n="onboarding.description">设置你的工作环境，所有更改都会即时预览。</p>
+                </div>
+                <span class="onboarding-step-count" id="onboarding-step-count" aria-live="polite">1 / 3</span>
+            </header>
+            <div class="onboarding-progress" aria-hidden="true">
+                <span class="onboarding-progress-segment is-active"></span>
+                <span class="onboarding-progress-segment"></span>
+                <span class="onboarding-progress-segment"></span>
+            </div>
+
+            <div class="onboarding-step" data-onboarding-step="0">
+                <div class="onboarding-welcome">
+                    <h2 data-i18n="onboarding.welcomeTitle">为编程竞赛准备好你的工作区</h2>
+                    <p data-i18n="onboarding.welcomeDescription">简洁、专注的 C++ 开发环境，设置完成后即可开始。</p>
+                    <div class="onboarding-feature-grid">
+                        <div class="onboarding-feature">
+                            <i class="codicon codicon-code" aria-hidden="true"></i>
+                            <span data-i18n="onboarding.featureEditor">VS Code 风格代码编辑</span>
+                        </div>
+                        <div class="onboarding-feature">
+                            <i class="codicon codicon-checklist" aria-hidden="true"></i>
+                            <span data-i18n="onboarding.featureSamples">快速运行样例测试</span>
+                        </div>
+                        <div class="onboarding-feature">
+                            <i class="codicon codicon-sync" aria-hidden="true"></i>
+                            <span data-i18n="onboarding.featureStress">自动化代码对拍</span>
+                        </div>
+                        <div class="onboarding-feature">
+                            <i class="codicon codicon-settings-gear" aria-hidden="true"></i>
+                            <span data-i18n="onboarding.featurePreferences">按你的习惯定制</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="onboarding-step" data-onboarding-step="1" hidden>
+                <div class="onboarding-field">
+                    <label for="onboarding-language" data-i18n="onboarding.language">界面语言</label>
+                    <select id="onboarding-language" class="onboarding-select">
+                        <option value="zh-cn">简体中文</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <fieldset class="onboarding-field">
+                    <legend data-i18n="onboarding.theme">选择主题</legend>
+                    <div class="onboarding-theme-options" role="group">
+                        <button class="onboarding-theme-choice is-selected" type="button" data-theme-choice="dark" aria-pressed="true">
+                            <span class="onboarding-theme-preview theme-preview-dark"></span>
+                            <span data-i18n="onboarding.darkTheme">深色</span>
+                        </button>
+                        <button class="onboarding-theme-choice" type="button" data-theme-choice="light" aria-pressed="false">
+                            <span class="onboarding-theme-preview theme-preview-light"></span>
+                            <span data-i18n="onboarding.lightTheme">浅色</span>
+                        </button>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="onboarding-step" data-onboarding-step="2" hidden>
+                <div class="onboarding-setting-list">
+                    <label class="onboarding-setting">
+                        <span class="onboarding-setting-copy">
+                            <strong data-i18n="onboarding.useTabs">始终使用 Tab 缩进</strong>
+                            <small data-i18n="onboarding.useTabsDesc">编辑器和代码格式化统一使用制表符。</small>
+                        </span>
+                        <input id="onboarding-use-tabs" type="checkbox" checked>
+                    </label>
+                    <label class="onboarding-setting">
+                        <span class="onboarding-setting-copy">
+                            <strong data-i18n="onboarding.formatOnSave">保存时自动格式化</strong>
+                            <small data-i18n="onboarding.formatOnSaveDesc">保存 C/C++ 文件前自动应用格式化规则。</small>
+                        </span>
+                        <input id="onboarding-format-on-save" type="checkbox" checked>
+                    </label>
+                    <label class="onboarding-setting">
+                        <span class="onboarding-setting-copy">
+                            <strong data-i18n="onboarding.glassEffect">启用玻璃效果</strong>
+                            <small data-i18n="onboarding.glassEffectDesc">为编辑区域启用轻透磨砂效果。</small>
+                        </span>
+                        <input id="onboarding-glass-effect" type="checkbox" checked>
+                    </label>
+                </div>
+                <div class="onboarding-field onboarding-opacity-field">
+                    <label for="onboarding-opacity">
+                        <span data-i18n="onboarding.transparency">窗口透明度</span>
+                        <output id="onboarding-opacity-value">5%</output>
+                    </label>
+                    <input id="onboarding-opacity" type="range" min="0" max="0.8" step="0.01" value="0.05">
+                </div>
+            </div>
+
+            <p class="onboarding-error" id="onboarding-error" role="alert" hidden></p>
+            <div class="onboarding-actions">
+                <div class="onboarding-action-group">
+                    <button class="onboarding-back" id="onboarding-back" type="button" data-i18n="onboarding.back" hidden>上一步</button>
+                    <button class="onboarding-next" id="onboarding-next" type="button" data-i18n="onboarding.start">开始设置</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <script>
         // 语言 worker（json/css/html/ts 等）的 worker 文件本身是 AMD 模块，直接作为
         // getWorkerUrl 返回会被当成普通脚本加载而缺少 AMD loader，导致
@@ -620,6 +735,7 @@
         };
     </script>
     <script src="../../node_modules/monaco-editor/min/vs/loader.js"></script>
+    <script src="js/onboarding.bundle.js"></script>
     <script>
         (function() {
             window.__oicppAmdDefine = window.define;

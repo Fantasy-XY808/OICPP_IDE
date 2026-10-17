@@ -206,7 +206,8 @@ const main = async () => {
     }
 
     const targetRoot = path.join(outputRoot, platform);
-    if (fs.existsSync(targetRoot)) {
+    const executableName = platform === 'win32' ? 'clangd.exe' : 'clangd';
+    if (fs.existsSync(path.join(targetRoot, 'bin', executableName))) {
         console.log(`[clangd] Target exists: ${targetRoot}, skipping`);
         return;
     }

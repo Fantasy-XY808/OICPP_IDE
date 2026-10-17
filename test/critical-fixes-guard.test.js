@@ -11,6 +11,9 @@ const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
 const mainJs = read('src/main.js');
 const preloadJs = read('src/preload.js');
 const comparerJs = read('src/renderer/js/sidebar/codeComparer.js');
+const rendererMainJs = read('src/renderer/js/main.js');
+const rendererIndex = read('src/renderer/index.html');
+const monacoManagerJs = read('src/renderer/js/monaco-editor-manager.js');
 
 test('run-program lifts timeLimit out of the options object', () => {
     // Regression: memoryLimit was lifted but timeLimit was not, so every caller
@@ -60,4 +63,69 @@ test('a swallowed per-case error can no longer report a clean pass', () => {
     assert.match(near, /errorOccurred = true/);
     assert.match(near, /failedGenerations\+\+/);
     assert.doesNotMatch(near, /^\s*continue;\s*$/m);
+});
+
+test('first-run defaults enable tab formatting, format-on-save, and translucent glass', () => {
+    assert.match(mainJs, /formatterIndentStyle:\s*'tabs'/);
+    assert.match(mainJs, /formatOnSave:\s*true/);
+    assert.match(mainJs, /windowOpacity:\s*0\.95/);
+    assert.match(mainJs, /glassEffectEnabled:\s*true/);
+    assert.match(mainJs, /UseTab:\s*'Always'/);
+    assert.match(mainJs, /onboardingCompleted:\s*false/);
+});
+
+test('onboarding gates the editor until setup and previews settings live without a skip action', () => {
+    const html = read('src/renderer/index.html');
+    const onboarding = read('src/renderer/js/onboarding.js');
+    const init = read('src/renderer/js/init.js');
+    assert.match(html, /class="startup-pending"/);
+    assert.match(html, /onboarding\.bundle\.js/);
+    assert.match(html, /onboarding-background/);
+    assert.doesNotMatch(html, /onboarding-skip/);
+    assert.match(onboarding, /sendSettingsPreview/);
+    assert.match(onboarding, /onboardingCompleted: true/);
+    assert.match(init, /await window\.onboardingManager\?\.initialize/);
+    assert.ok(init.indexOf('await window.onboardingManager?.initialize') < init.indexOf('initializeApp();'));
+    assert.match(mainJs, /previewSettings\?\.windowOpacity[\s\S]*mainWindow\.setOpacity/);
+    assert.doesNotMatch(read('src/lang/zh-cn.json'), /稍后设置/);
+    assert.doesNotMatch(read('src/lang/en.json'), /Set up later/);
+});
+
+test('onboarding imports and bundles the shared mesh-gradient renderer', () => {
+    const onboarding = read('src/renderer/js/onboarding.js');
+    const packageJson = JSON.parse(read('package.json'));
+    assert.match(onboarding, /@applemusic-like-lyrics\/core/);
+    assert.match(onboarding, /MeshGradientRenderer/);
+    assert.match(onboarding, /setStaticMode\(false\)/);
+    assert.match(onboarding, /renderer\.resume\(\)/);
+    assert.match(packageJson.scripts.prestart, /prebuild:onboarding/);
+    assert.match(packageJson.scripts.predev, /prebuild:onboarding/);
+    assert.match(packageJson.scripts.build, /prebuild:onboarding/);
+    assert.doesNotMatch(JSON.stringify(packageJson.scripts), /prebuild:soto-background/);
+});
+
+test('existing settings profiles do not unexpectedly show first-run onboarding', () => {
+    assert.match(mainJs, /savedSettings\.onboardingCompleted === undefined/);
+    assert.match(mainJs, /settings\.onboardingCompleted = true/);
+    assert.match(read('src/renderer/js/onboarding.js'), /settings\.onboardingCompleted !== false/);
+});
+
+test('code stress testing is not gated on account login', () => {
+    assert.doesNotMatch(rendererIndex, /no-login-message|compare-login-btn/);
+    assert.doesNotMatch(rendererMainJs, /noLoginMsg|compareLoginBtn/);
+});
+
+test('Monaco on-type formatting uses the supported API and checks availability', () => {
+    assert.match(monacoManagerJs, /registerOnTypeFormattingEditProvider/);
+    assert.match(monacoManagerJs, /typeof registerProvider !== 'function'/);
+    assert.match(monacoManagerJs, /updateOptions\.insertSpaces = this\.clangFormatStyle\.UseTab === 'Never'/);
+    assert.doesNotMatch(monacoManagerJs, /registerOnTypeFormattingProvider/);
+});
+
+test('expected missing sample config files are not logged as errors', () => {
+    const start = mainJs.indexOf("ipcMain.handle('check-file-exists'");
+    assert.ok(start >= 0, 'check-file-exists handler not found');
+    const handler = mainJs.slice(start, mainJs.indexOf("ipcMain.handle('path-join'", start));
+    assert.match(handler, /error\?\.code === 'ENOENT'/);
+    assert.doesNotMatch(handler, /logInfo\(.*文件不存在/);
 });

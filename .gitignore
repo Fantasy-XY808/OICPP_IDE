@@ -8,9 +8,6 @@ out/
 # Local build dependencies (compiler + clangd — downloaded/generated locally)
 build/
 
-# Local IDE config
-.oicpp/
-
 # Logs
 logs/
 *.log
@@ -34,3 +31,6 @@ temp/
 *.tmp
 # Office temp files
 ~$*
+
+# Local Development Reference Folder
+examples/

@@ -4,7 +4,7 @@
             BasedOnStyle: 'LLVM',
             IndentWidth: 4,
             TabWidth: 4,
-            UseTab: 'Never',
+            UseTab: 'Always',
             ColumnLimit: 0,
             BreakBeforeBraces: 'Attach',
             AllowShortIfStatementsOnASingleLine: 'Never',

@@ -1585,7 +1585,12 @@ class MonacoEditorManager {
             const key = `${language}:onTypeFormatting`;
             if (this._lspProviders.has(key)) continue;
             logInfo('[LSP] 注册输入时格式化提供器 (语言:', language, ')');
-            const disposable = monaco.languages.registerOnTypeFormattingProvider(language, {
+            const registerProvider = monaco.languages.registerOnTypeFormattingEditProvider;
+            if (typeof registerProvider !== 'function') {
+                logWarn('[LSP] 当前 Monaco 版本不支持输入时格式化提供器，已跳过注册');
+                continue;
+            }
+            const disposable = registerProvider(language, {
                 autoFormatTriggerCharacters: [';', '}', ')'],
                 provideOnTypeFormattingEdits: async (model, position, ch, options) => {
                     try {
@@ -3226,6 +3231,7 @@ class MonacoEditorManager {
             let fontLigaturesEnabled = true; // 字体连字
             let unifiedPreprocessorColor = false;
             let tabSize = 4;
+            let insertSpaces = false;
             let autoCompletionEnabled = true;
             let lineHeightSetting = 0;
             let syntaxSettings = {
@@ -3276,6 +3282,8 @@ class MonacoEditorManager {
                         }
                         this.loadKeybindingsFromSettings(allSettings);
                         this.updateFormatterSettings(allSettings);
+                        this.updateClangFormatSettings(allSettings);
+                        insertSpaces = this.clangFormatStyle.UseTab === 'Never';
                     }
                 }
             } catch (error) {
@@ -3336,7 +3344,7 @@ class MonacoEditorManager {
                 scrollBeyondLastLine: true,
                 wordWrap: 'off',
                 tabSize,
-                insertSpaces: false,
+                insertSpaces,
                 // Do not keep indentation or other whitespace that Monaco
                 // inserted automatically after the cursor leaves a line.
                 trimAutoWhitespace: true,
@@ -4791,6 +4799,7 @@ class MonacoEditorManager {
                     updateOptions.tabSize = parsedTabSize;
                 }
             }
+            updateOptions.insertSpaces = this.clangFormatStyle.UseTab === 'Never';
             
             if (settings.wordWrap !== undefined) {
                 updateOptions.wordWrap = settings.wordWrap ? 'on' : 'off';
@@ -4857,7 +4866,7 @@ class MonacoEditorManager {
             BasedOnStyle: 'LLVM',
             IndentWidth: 4,
             TabWidth: 4,
-            UseTab: 'Never',
+            UseTab: 'Always',
             ColumnLimit: 0,
             BreakBeforeBraces: 'Attach',
             AllowShortIfStatementsOnASingleLine: 'Never',
@@ -5145,6 +5154,7 @@ class MonacoEditorManager {
                         updateOptions.tabSize = parsedTabSize;
                     }
                 }
+                updateOptions.insertSpaces = this.clangFormatStyle.UseTab === 'Never';
                 if (settings.wordWrap !== undefined) {
                     updateOptions.wordWrap = settings.wordWrap ? 'on' : 'off';
                 }
