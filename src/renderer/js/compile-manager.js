@@ -403,14 +403,6 @@ class CompilerManager {
                     ) + '\n',
                     'info'
                 );
-            } else {
-                if (!compilerArgs.includes('-g')) {
-                    compilerArgs = compilerArgs + ' -g';
-                    this.appendOutput(
-                        this.t('compileOutput.modeNormal', null, 'Compilation mode: Normal (with debug info)') + '\n',
-                        'info'
-                    );
-                }
             }
 
             const compileCommand = this.buildCompileCommand(inputFile, outputFile, compilerArgs);
@@ -419,39 +411,8 @@ class CompilerManager {
             logInfo(`目标文件: ${outputFile}`);
             logInfo(`编译命令: ${compileCommand}`);
 
-            const isWinPlatform = !!(
-                typeof window !== 'undefined' &&
-                window.process &&
-                window.process.platform === 'win32'
-            );
-
-            // 集成终端模式:编译与运行均在终端内完成,编译完成后清屏再运行,不切换窗口
-            if (this.isIntegratedRunMode() && this.shouldRunAfterCompile) {
-                const runCwd = this.getWorkingDirectory(inputFile);
-                const tid = await this.ensureRunTerminal(runCwd);
-                if (tid) {
-                    this.hideOutput();
-                    // 终端编译运行：直接输出编译信息和程序结果，不输出额外标题日志
-                    const escapedCompileCmd = compileCommand.replace(/"/g, '""');
-                    if (isWinPlatform) {
-                        const chainCmd = `cmd /c "${escapedCompileCmd} 2>&1"; if ($LASTEXITCODE -eq 0) { Clear-Host; & "${outputFile}" }`;
-                        this.writeRunTerminal(chainCmd + '\r\n');
-                    } else {
-                        const bashEscapedCmd = compileCommand.replace(/"/g, '\\"');
-                        const bashEscapedExe = outputFile.replace(/"/g, '\\"');
-                        const chainCmd = `${bashEscapedCmd} 2>&1 && { clear; "${bashEscapedExe}"; }`;
-                        this.writeRunTerminal(chainCmd + '\r\n');
-                    }
-                    logInfo('[终端编译运行] 命令已写入终端');
-                    this.isCompiling = false;
-                    this.shouldRunAfterCompile = false;
-                    this.setStatus(this.t('compileOutput.terminalMode', null, 'Terminal'));
-                    return;
-                }
-                logWarn('[终端编译运行] 无法获取终端,回退到 IPC 编译模式');
-            }
-
-            // 非集成终端模式或回退:使用 IPC 编译
+            // Compile through the main-process spawn API, then hand only the
+            // resulting executable to the integrated terminal after success.
             if (!this.isIntegratedRunMode() || !this.shouldRunAfterCompile) {
                 this.showOutput();
             }
@@ -470,6 +431,9 @@ class CompilerManager {
 
             if (typeof require !== 'undefined') {
                 try {
+                    if (this.isIntegratedRunMode() && this.shouldRunAfterCompile) {
+                        await this.ensureRunTerminal(this.getWorkingDirectory(inputFile));
+                    }
                     const { ipcRenderer } = require('electron');
                     const result = await ipcRenderer.invoke('compile-file', {
                         inputFile,
@@ -1491,6 +1455,9 @@ class CompilerManager {
                 this.runCurrentFile();
             }
         } else {
+            if (this.isIntegratedRunMode()) {
+                this.showOutput();
+            }
             this.setStatus(this.t('compileOutput.failSimple', null, 'Compilation failed'));
             this.appendOutput(this.t('compileOutput.failSimple', null, 'Compilation failed') + '!\n', 'error');
             this.shouldRunAfterCompile = false;

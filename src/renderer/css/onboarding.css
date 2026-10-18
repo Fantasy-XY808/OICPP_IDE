@@ -139,7 +139,7 @@ body.onboarding-active > .titlebar .titlebar-button.close-btn svg {
     padding: 30px 34px 24px;
     border: 1px solid var(--onboarding-border);
     border-radius: 14px;
-    background: rgba(24, 26, 33, 0.76);
+    background: rgba(24, 26, 33, 0.96);
     box-shadow: 0 18px 54px rgba(0, 0, 0, 0.24);
     -webkit-backdrop-filter: blur(18px) saturate(125%);
     backdrop-filter: blur(18px) saturate(125%);
@@ -310,15 +310,20 @@ body.onboarding-active > .titlebar .titlebar-button.close-btn svg {
 }
 
 .onboarding-select {
+    appearance: none;
     width: 100%;
     min-height: 40px;
     padding: 0 11px;
+    padding-right: 36px;
     border: 1px solid rgba(255, 255, 255, 0.17);
-    border-radius: 7px;
-    background: rgba(255, 255, 255, 0.065);
+    border-radius: 5px;
+    background-color: rgba(14, 16, 22, 0.82);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2 4 4 4 4-4' fill='none' stroke='%23c8cbd2' stroke-width='1.4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
     color: #f2f3f6;
     font: inherit;
-    outline: none;
+    color-scheme: dark;
 }
 
 .onboarding-select:focus-visible,
@@ -331,6 +336,10 @@ body.onboarding-active > .titlebar .titlebar-button.close-btn svg {
 .onboarding-select option {
     background: #202127;
     color: #f2f3f6;
+}
+
+.onboarding-select option:checked {
+    background: #374151;
 }
 
 .onboarding-theme-options {
@@ -561,14 +570,20 @@ body.onboarding-active > .titlebar .titlebar-button.close-btn svg {
 }
 
 .onboarding-overlay[data-theme='light'] .onboarding-select {
+    color-scheme: light;
     border-color: rgba(47, 53, 67, 0.18);
-    background: rgba(255, 255, 255, 0.55);
+    background-color: rgba(255, 255, 255, 0.94);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2 4 4 4 4-4' fill='none' stroke='%23434a56' stroke-width='1.4'/%3E%3C/svg%3E");
     color: #252832;
 }
 
 .onboarding-overlay[data-theme='light'] .onboarding-select option {
     background: #f5f6f8;
     color: #252832;
+}
+
+.onboarding-overlay[data-theme='light'] .onboarding-select option:checked {
+    background: #e1e6ed;
 }
 
 .onboarding-overlay[data-theme='light'] .onboarding-back {

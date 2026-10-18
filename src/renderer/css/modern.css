@@ -24,6 +24,7 @@ body {
     /* 派生表面：面板间隙透出的应用底色（比编辑区更暗一档） */
     --app-bg: color-mix(in srgb, var(--bg-color) 88%, #000);
     --panel-border: color-mix(in srgb, var(--border-color) 60%, transparent);
+    --editor-surface-border: color-mix(in srgb, var(--text-color) 12%, transparent);
     --hover-soft: color-mix(in srgb, var(--text-color) 8%, transparent);
     --hover-soft-strong: color-mix(in srgb, var(--text-color) 13%, transparent);
 
@@ -163,9 +164,7 @@ body[data-theme='dracula'] {
 }
 
 /* ---------------------------------------------------------
-   3. 主窗口框架：悬浮圆角面板布局
-   （标题栏 / 侧栏 / 编辑区 / 状态栏各自成为独立圆角面板，
-     面板之间留出透出 --app-bg 的间隙）
+   3. 主窗口框架：VS Code Modern UI 式圆角表面
    --------------------------------------------------------- */
 body:has(> .main-container) {
     display: flex;
@@ -184,10 +183,9 @@ body:has(> .main-container) .main-container {
     background: transparent;
 }
 
-/* 统一以 0-2-1 特异性覆盖主题级规则 */
-body:has(> .main-container) :is(.titlebar, .sidebar, .sidebar-panel, .editor-container, .status-bar) {
-    border-radius: var(--radius-md);
+body:has(> .main-container) :is(.titlebar, .sidebar-panel, .status-bar) {
     border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
     box-shadow: var(--panel-shadow);
 }
 
@@ -197,6 +195,7 @@ body:has(> .main-container) :is(.titlebar) {
     height: 38px;
     background-color: var(--titlebar-bg);
     overflow: visible;
+    border-bottom: 1px solid var(--panel-border);
 }
 
 /* 最大化时必须是直角。
@@ -353,7 +352,7 @@ body .titlebar-button {
 }
 
 body .titlebar-button:hover {
-    background-color: var(--hover-soft);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 body .titlebar-button.close-btn {
@@ -365,12 +364,44 @@ body .titlebar-button.close-btn:hover {
     color: #ffffff;
 }
 
+body .titlebar-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+body .titlebar-button.close-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+body .titlebar.maximized .maximize-btn::after {
+    width: 14px;
+    height: 14px;
+}
+
+body .titlebar-button svg path {
+    stroke-width: 1.5;
+}
+
+body .titlebar-button.close-btn svg path {
+    stroke-width: 1.8;
+}
+
+body:has(> .main-container) .editor-container {
+    border: 1px solid var(--editor-surface-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--panel-shadow);
+    box-sizing: border-box;
+    overflow: hidden;
+    outline: none;
+}
+
 /* ---------------------------------------------------------
    4. 活动栏（图标栏）与侧边面板
    --------------------------------------------------------- */
 body:has(> .main-container) :is(.sidebar) {
-    background: transparent;
-    border: none;
+    background: var(--sidebar-bg);
+    border: 0;
     box-shadow: none;
     gap: 6px;
 }
@@ -381,7 +412,7 @@ body .sidebar-icons {
     gap: 4px;
     border: 1px solid var(--panel-border);
     border-radius: var(--radius-md);
-    background-color: var(--card-bg);
+    background-color: var(--activity-bar-bg);
     box-shadow: var(--panel-shadow);
 }
 
@@ -494,10 +525,17 @@ body .cloud-upload-progress-fill {
 }
 
 /* ---------------------------------------------------------
-   5. 编辑区：圆角面板 + 现代标签页
+   5. 编辑区：连续工作区 + 标签页
    --------------------------------------------------------- */
 body:has(> .main-container) :is(.editor-container) {
     background-color: var(--editor-bg);
+}
+
+body:has(> .main-container) :is(.editor-group, .editor-area, .monaco-editor-container) {
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
 }
 
 body .editor-group + .editor-group {
@@ -505,12 +543,11 @@ body .editor-group + .editor-group {
 }
 
 body .tab-bar {
-    gap: 1px;
-    min-height: 40px;
-    padding: 4px 6px 0;
+    gap: 0;
+    min-height: 36px;
+    padding: 0;
     background-color: var(--tab-bg);
-    /* 与编辑区用色差分隔（VS Code 式），不再画横线以免穿过激活标签底部 */
-    border-bottom: none;
+    border-bottom: 1px solid var(--panel-border);
 }
 
 /* 标签滚动改由滚轮驱动（tabs.js 已监听 wheel），隐藏占位滚动条以保证标签与底边齐平 */
@@ -520,12 +557,12 @@ body .tab-bar::-webkit-scrollbar {
 }
 
 body .tab {
-    height: 36px;
-    margin-top: 0;
+    height: 35px;
+    margin: 0;
     min-width: 0;
     width: auto;
     padding: 0 8px 0 12px;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    border-radius: var(--radius-xs) !important;
     border-right: none;
     background-color: transparent;
     transition: background-color 0.08s var(--ease-out);
@@ -536,9 +573,10 @@ body .tab:hover {
 }
 
 body .tab.active {
+    border-radius: var(--radius-xs) !important;
     background-color: var(--tab-active-bg);
     border-bottom: 1px solid var(--tab-active-bg);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--primary-color) 65%, transparent);
+    box-shadow: none;
 }
 
 body .tab-close {
@@ -590,6 +628,7 @@ body .empty-state-button {
    --------------------------------------------------------- */
 body:has(> .main-container) :is(.status-bar) {
     flex: 0 0 auto;
+    border-top: 1px solid var(--panel-border);
     height: 26px;
     padding: 0 6px;
     font-size: 12px;
@@ -639,14 +678,14 @@ body .integrated-terminal-header {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-bottom: 1px solid var(--panel-border);
+    border-bottom: 0;
 }
 
 body .integrated-terminal-tabs {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-bottom: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--border-color);
     padding: 3px 6px;
     gap: 3px;
 }
@@ -1033,6 +1072,10 @@ body.glass-effect-enabled:has(> .main-container)
     -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
     backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
     border-color: var(--glass-border, rgba(255, 255, 255, 0.14));
+}
+
+body.glass-effect-enabled:has(> .main-container) .sidebar {
+    border-right-color: var(--glass-border, rgba(255, 255, 255, 0.14));
 }
 
 body.glass-effect-enabled .sidebar-icons,
@@ -1694,7 +1737,9 @@ body :is(.resize-handle, .editor-group-resizer):hover::after {
 /* 终端顶部分隔条：横排三点 */
 body .integrated-terminal-resizer {
     position: relative;
-    height: 6px;
+    height: 4px;
+    min-height: 4px;
+    border: 0;
 }
 
 body .integrated-terminal-resizer::after {
@@ -1703,23 +1748,16 @@ body .integrated-terminal-resizer::after {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 22px;
-    height: 4px;
-    background-image: radial-gradient(
-        circle,
-        color-mix(in srgb, var(--text-color) 40%, transparent) 1px,
-        transparent 1.3px
-    );
-    background-size: 7px 4px;
-    background-position: center;
-    opacity: 0.7;
+    width: 100%;
+    height: 1px;
+    background: var(--primary-color);
+    opacity: 0;
     transition: opacity 0.09s var(--ease-out);
     pointer-events: none;
 }
 
 body .integrated-terminal-resizer:hover::after,
 body .integrated-terminal-resizer.dragging::after {
-    background-image: radial-gradient(circle, var(--primary-color) 1.1px, transparent 1.4px);
     opacity: 1;
 }
 
@@ -1818,6 +1856,7 @@ body .tab-bar {
 body .tab {
     height: 32px;
     padding: 0 8px 0 10px;
+    border-radius: var(--radius-xs) !important;
 }
 
 body .tab-file-icon {
@@ -1881,9 +1920,47 @@ body .tab-actions-menu {
     min-width: 160px;
 }
 
-/* Monaco 内部元素不显示浏览器 focus 外框(编辑器自有光标/选区指示) */
-.monaco-editor textarea:focus-visible,
-.monaco-editor :focus-visible,
-.monaco-editor-container:focus-visible {
+/* The standalone Monaco bundle outlines its editor root; VS Code's workbench does not. */
+body:has(> .main-container) .editor-area .monaco-editor {
     outline: none !important;
+}
+
+body.onboarding-active .onboarding-select,
+body.onboarding-active .onboarding-select:focus,
+body.onboarding-active .onboarding-select:focus-visible {
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: none;
+    outline: none;
+}
+
+body.onboarding-active .onboarding-overlay[data-theme='light'] .onboarding-select,
+body.onboarding-active .onboarding-overlay[data-theme='light'] .onboarding-select:focus,
+body.onboarding-active .onboarding-overlay[data-theme='light'] .onboarding-select:focus-visible {
+    border-color: rgba(47, 53, 67, 0.24);
+}
+
+body:has(> .main-container) .editor-group + .editor-group {
+    border-left: 0;
+}
+
+body .editor-group-resizer {
+    width: 4px;
+    background: transparent;
+}
+
+body .editor-group-resizer::after {
+    left: 50%;
+    width: 1px;
+    margin-left: -0.5px;
+    background: var(--panel-border);
+    background-image: none;
+    opacity: 0;
+    transition: opacity 0.12s var(--ease-out);
+}
+
+body .editor-group-resizer:hover::after,
+body .editor-group-resizer.dragging::after {
+    background: var(--panel-border);
+    background-image: none;
+    opacity: 1;
 }

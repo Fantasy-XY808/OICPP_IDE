@@ -8,22 +8,29 @@ const path = require('path');
 const SRC = process.env.MSYS2_PREFIX || 'C:/msys64/ucrt64';
 const DEST = path.join(__dirname, '..', 'build', 'compiler', 'win32');
 
-// bin 里需要的工具与 gcc 运行/驱动依赖 DLL
-const BIN_EXES = ['cpp.exe', 'gcc.exe', 'g++.exe', 'c++.exe', 'c++filt.exe', 'as.exe', 'ld.exe', 'ld.bfd.exe'];
-const BIN_DLLS = [
-    'libgcc_s_seh-1.dll',
-    'libstdc++-6.dll',
-    'libwinpthread-1.dll',
-    'libgmp-10.dll',
-    'libgmpxx-4.dll',
-    'libisl-23.dll',
-    'libmpc-3.dll',
-    'libmpfr-6.dll',
-    'libzstd.dll',
-    'zlib1.dll',
-    'libatomic-1.dll',
-    'libssp-0.dll',
+// bin 里的 GCC/GDB 工具；DLL 全量复制以覆盖 MSYS2 滚动更新后的依赖名称。
+const BIN_EXES = [
+    'cpp.exe',
+    'gcc.exe',
+    'g++.exe',
+    'c++.exe',
+    'c++filt.exe',
+    'as.exe',
+    'ld.exe',
+    'ld.bfd.exe',
+    'gdb.exe',
 ];
+const REQUIRED_BIN_EXES = ['g++.exe', 'gdb.exe'];
+const PYTHON_EXCLUDED_DIRS = new Set([
+    '__pycache__',
+    'ensurepip',
+    'idlelib',
+    'pydoc_data',
+    'test',
+    'tests',
+    'tkinter',
+    'turtledemo',
+]);
 
 // lib 根下的导入库：排除 UWP/驱动开发用的大块非必需项
 const LIB_A_EXCLUDE = [
@@ -54,7 +61,9 @@ function copyTree(src, dest, filterFn) {
         const s = path.join(src, entry.name);
         const d = path.join(dest, entry.name);
         if (entry.isDirectory()) {
-            copyTree(s, d, filterFn);
+            if (!filterFn || filterFn(s, entry.name, true)) {
+                copyTree(s, d, filterFn, true);
+            }
         } else if (!filterFn || filterFn(s, entry.name)) {
             fs.copyFileSync(s, d);
         }
@@ -67,9 +76,46 @@ function main() {
         return;
     }
 
-    if (!fs.existsSync(path.join(SRC, 'bin', 'g++.exe'))) {
-        console.error('未找到 MSYS2 UCRT64 前缀:', SRC);
-        console.error('请安装 MSYS2 并安装 mingw-w64-ucrt-x86_64-gcc，或设置 MSYS2_PREFIX 指向其前缀。');
+    const binSrc = path.join(SRC, 'bin');
+    const missingExecutables = REQUIRED_BIN_EXES.filter((name) => !fs.existsSync(path.join(binSrc, name)));
+    const gccLibDir = path.join(SRC, 'lib', 'gcc', 'x86_64-w64-mingw32');
+    const gccVersions = fs.existsSync(gccLibDir)
+        ? fs
+              .readdirSync(gccLibDir, { withFileTypes: true })
+              .filter((entry) => entry.isDirectory())
+              .map((entry) => entry.name)
+              .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }))
+        : [];
+    const pythonLibRoot = path.join(SRC, 'lib');
+    const pythonLibDirs = fs.existsSync(pythonLibRoot)
+        ? fs
+              .readdirSync(pythonLibRoot, { withFileTypes: true })
+              .filter((entry) => entry.isDirectory() && /^python\d+\.\d+$/.test(entry.name))
+              .map((entry) => entry.name)
+              .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }))
+        : [];
+    const pythonLibName = pythonLibDirs[0];
+    const pythonLib = pythonLibName ? path.join(pythonLibRoot, pythonLibName) : '';
+    const missingRuntimePaths = [
+        !fs.existsSync(path.join(SRC, 'share', 'gdb')) && 'share/gdb',
+        (!pythonLib || !fs.existsSync(path.join(pythonLib, 'encodings', '__init__.py'))) && 'lib/pythonX.Y/encodings',
+        !fs.existsSync(path.join(SRC, 'include', 'ctype.h')) && 'include/ctype.h',
+        !fs.existsSync(path.join(SRC, 'include', 'c++', gccVersions[0], 'bits', 'stdc++.h')) &&
+            'include/c++/GCC_VERSION/bits/stdc++.h',
+    ].filter(Boolean);
+
+    if (missingExecutables.length || gccVersions.length === 0 || missingRuntimePaths.length > 0) {
+        console.error('MSYS2 UCRT64 工具链不完整:', SRC);
+        if (missingExecutables.length) {
+            console.error('缺少:', missingExecutables.join(', '));
+        }
+        if (gccVersions.length === 0) {
+            console.error('未找到 GCC 私有工具目录:', gccLibDir);
+        }
+        if (missingRuntimePaths.length > 0) {
+            console.error('缺少 GDB 运行时文件:', missingRuntimePaths.join(', '));
+        }
+        console.error('请在 MSYS2 UCRT64 中成功安装 GCC 和 GDB 后重试。');
         process.exit(1);
     }
 
@@ -82,22 +128,20 @@ function main() {
     ensureDir(DEST);
 
     // 1) bin: 编译驱动 + 依赖 DLL
-    const binSrc = path.join(SRC, 'bin');
     const binDest = path.join(DEST, 'bin');
     for (const name of BIN_EXES) {
         const s = path.join(binSrc, name);
         if (fs.existsSync(s)) copyFile(s, path.join(binDest, name));
         else console.warn('  [warn] 缺少', name);
     }
-    for (const name of BIN_DLLS) {
-        const s = path.join(binSrc, name);
-        if (fs.existsSync(s)) copyFile(s, path.join(binDest, name));
-        else console.warn('  [warn] 缺少 DLL', name);
+    for (const name of fs.readdirSync(binSrc)) {
+        if (/\.dll$/i.test(name)) {
+            copyFile(path.join(binSrc, name), path.join(binDest, name));
+        }
     }
 
     // 2) gcc 私有目录: cc1/cc1plus/collect2 + 静态库 + gcc 自带头文件
-    const gccLibDir = path.join(SRC, 'lib', 'gcc', 'x86_64-w64-mingw32');
-    const ver = fs.readdirSync(gccLibDir)[0];
+    const ver = gccVersions[0];
     copyTree(path.join(gccLibDir, ver), path.join(DEST, 'lib', 'gcc', 'x86_64-w64-mingw32', ver), (_src, name) => {
         return name !== 'install-tools' && name !== 'plugin';
     });
@@ -108,7 +152,13 @@ function main() {
     // 4) C/C++ 标准库与系统头文件
     copyTree(path.join(SRC, 'include'), path.join(DEST, 'include'));
 
-    // 5) Windows API 导入库 + 启动对象 (crt2.o / default-manifest.o 等)
+    // 5) GDB data files and Python runtime required by its embedded Python.
+    copyTree(path.join(SRC, 'share', 'gdb'), path.join(DEST, 'share', 'gdb'));
+    copyTree(pythonLib, path.join(DEST, 'lib', pythonLibName), (_src, name, isDirectory) =>
+        isDirectory ? !PYTHON_EXCLUDED_DIRS.has(name) : !name.endsWith('.pyc') && !name.endsWith('.pyo')
+    );
+
+    // 6) Windows API 导入库 + 启动对象 (crt2.o / default-manifest.o 等)
     const libSrc = path.join(SRC, 'lib');
     for (const entry of fs.readdirSync(libSrc, { withFileTypes: true })) {
         if (!entry.isFile()) continue;

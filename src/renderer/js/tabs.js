@@ -4743,18 +4743,22 @@ class TabManager {
 
     markTabAsModified(fileName) {
         const tabData = this.getTabByFileName(fileName);
-        if (tabData && !tabData.modified) {
-            tabData.modified = true;
-            this.refreshTabLabels();
+        if (tabData) {
+            if (!tabData.modified) {
+                tabData.modified = true;
+                this.refreshTabLabels();
+            }
             this.triggerAutoSaveForTab(tabData);
         }
     }
 
     markTabAsModifiedByUniqueKey(uniqueKey) {
         const tabData = this.tabs.get(uniqueKey);
-        if (tabData && !tabData.modified) {
-            tabData.modified = true;
-            this.refreshTabLabels();
+        if (tabData) {
+            if (!tabData.modified) {
+                tabData.modified = true;
+                this.refreshTabLabels();
+            }
             this.triggerAutoSaveForTab(tabData);
         }
     }
@@ -4801,7 +4805,7 @@ class TabManager {
             .map((tab) => tab.fileName);
     }
 
-    async autoSaveModifiedTabs() {
+    async autoSaveModifiedTabs(filePath = null) {
         if (this.isDiscardCloseInProgress()) {
             return 0;
         }
@@ -4810,12 +4814,19 @@ class TabManager {
             return 0;
         }
 
-        if (!this.monacoEditorManager) {
-            this.tryGetEditorManagerReference();
-        }
-
+        const normalizePath = (value) => {
+            const normalized = String(value || '').replace(/\\/g, '/');
+            return window.process?.platform === 'win32' ? normalized.toLowerCase() : normalized;
+        };
+        const requestedPath = filePath ? normalizePath(filePath) : null;
         const modifiedEntries = Array.from(this.tabs.entries()).filter(([, tabData]) => {
-            return tabData && tabData.modified && !tabData.isTempFile && tabData.viewType !== 'pdf';
+            return (
+                tabData &&
+                tabData.modified &&
+                !tabData.isTempFile &&
+                tabData.viewType !== 'pdf' &&
+                (!requestedPath || normalizePath(tabData.filePath) === requestedPath)
+            );
         });
 
         if (modifiedEntries.length === 0) {
@@ -4845,10 +4856,17 @@ class TabManager {
 
             try {
                 await window.electronAPI.saveFile(filePath, content);
-                if (typeof this.markTabAsSavedByUniqueKey === 'function') {
-                    this.markTabAsSavedByUniqueKey(uniqueKey);
-                } else if (typeof this.markTabAsSaved === 'function') {
-                    this.markTabAsSaved(tabData.fileName);
+                const latestContent = this.getTabContentForSave(tabData);
+                if (latestContent === content) {
+                    tabData.content = content;
+                    if (typeof this.markTabAsSavedByUniqueKey === 'function') {
+                        this.markTabAsSavedByUniqueKey(uniqueKey);
+                    } else if (typeof this.markTabAsSaved === 'function') {
+                        this.markTabAsSaved(tabData.fileName);
+                    }
+                    window.oicppApp?.cancelAutoSave?.(filePath);
+                } else if (typeof this.triggerAutoSaveForTab === 'function') {
+                    this.triggerAutoSaveForTab(tabData);
                 }
                 savedCount += 1;
             } catch (error) {

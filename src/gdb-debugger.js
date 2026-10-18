@@ -96,6 +96,9 @@ class GDBDebugger extends EventEmitter {
         const env = options.env ? { ...process.env, ...options.env } : { ...process.env };
         const gdbExe = options.gdbPath || 'gdb';
         const args = ['-fullname', '-quiet'];
+        if (options.gdbDataDirectory) {
+            args.push(`--data-directory=${options.gdbDataDirectory}`);
+        }
         if (options.disableInit) args.unshift('-nx');
         this.gdbProcess = spawn(gdbExe, args, { stdio: ['pipe', 'pipe', 'pipe'], env, windowsHide: false });
         this.gdbProcess.stdout.on('data', (d) => this._onData(d.toString()));

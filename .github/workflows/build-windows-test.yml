@@ -72,7 +72,7 @@ jobs:
               uses: msys2/setup-msys2@v2
               with:
                   msystem: UCRT64
-                  install: mingw-w64-ucrt-x86_64-gcc
+                  install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-gdb
 
             - name: Prepare clangd bundle
               env:
@@ -102,14 +102,69 @@ jobs:
                   }
                   '@ | node
 
+            - name: Verify bundled GCC and GDB
+              shell: powershell
+              run: |
+                  npm run prebuild:compiler
+                  $gdbPath = "build\compiler\win32\bin\gdb.exe"
+                  $compilerPath = "build\compiler\win32\bin\g++.exe"
+                  if (-not (Test-Path $gdbPath)) {
+                    throw "Bundled gdb.exe was not created."
+                  }
+                  if (-not (Test-Path $compilerPath)) {
+                    throw "Bundled g++.exe was not created."
+                  }
+                  $toolchainRoot = (Resolve-Path "build\compiler\win32").Path
+                  $env:PATH = "$toolchainRoot\bin;$env:SystemRoot\System32;$env:SystemRoot"
+                  $env:PYTHONHOME = $toolchainRoot
+                  $gdbOutput = & $gdbPath "--data-directory=$toolchainRoot\share\gdb" --batch -ex "python print('OICPP_GDB_PYTHON_OK')" -ex quit 2>&1
+                  if ($LASTEXITCODE -ne 0 -or ($gdbOutput -notmatch "OICPP_GDB_PYTHON_OK")) {
+                    throw "Bundled gdb.exe failed to start: $gdbOutput"
+                  }
+                  $smokeSource = Join-Path $env:RUNNER_TEMP "oicpp-toolchain-smoke.cpp"
+                  $smokeExecutable = Join-Path $env:RUNNER_TEMP "oicpp-toolchain-smoke.exe"
+                  Set-Content -Path $smokeSource -Value "int main() { return 0; }" -Encoding ascii
+                  & $compilerPath "--sysroot=$toolchainRoot" $smokeSource -o $smokeExecutable
+                  if ($LASTEXITCODE -ne 0) {
+                    throw "Bundled g++ failed to compile the smoke test."
+                  }
+                  $env:PATH = "$toolchainRoot\bin;$env:SystemRoot\System32;$env:SystemRoot"
+                  & $smokeExecutable
+                  if ($LASTEXITCODE -ne 0) {
+                    throw "The executable built by bundled g++ failed to start."
+                  }
+
             - name: Build Windows app for NSIS
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   npm run prebuild:buildinfo
                   npm run prebuild:icons
-                  npm run prebuild:compiler
                   npx electron-builder --win dir
+
+            - name: Verify packaged GCC and GDB
+              shell: powershell
+              run: |
+                  $toolchainRoot = "dist\win-unpacked\resources\compiler"
+                  $compilerPath = Join-Path $toolchainRoot "bin\g++.exe"
+                  $gdbPath = Join-Path $toolchainRoot "bin\gdb.exe"
+                  if (-not (Test-Path $compilerPath) -or -not (Test-Path $gdbPath)) {
+                    throw "GCC/GDB were not packaged under resources\compiler\bin."
+                  }
+                  $toolchainRoot = (Resolve-Path $toolchainRoot).Path
+                  $env:PATH = "$toolchainRoot\bin;$env:SystemRoot\System32;$env:SystemRoot"
+                  $env:PYTHONHOME = $toolchainRoot
+                  $source = Join-Path $env:RUNNER_TEMP "oicpp-packaged-smoke.cpp"
+                  $executable = Join-Path $env:RUNNER_TEMP "oicpp-packaged-smoke.exe"
+                  Set-Content -Path $source -Value "int main() { return 0; }" -Encoding ascii
+                  & $compilerPath "--sysroot=$toolchainRoot" $source -o $executable
+                  if ($LASTEXITCODE -ne 0) { throw "Packaged g++ failed to compile the smoke test." }
+                  & $executable
+                  if ($LASTEXITCODE -ne 0) { throw "The program built by packaged g++ failed to start." }
+                  $gdbOutput = & $gdbPath "--data-directory=$toolchainRoot\share\gdb" --batch -ex "python print('OICPP_PACKAGED_GDB_OK')" -ex quit 2>&1
+                  if ($LASTEXITCODE -ne 0 -or ($gdbOutput -notmatch "OICPP_PACKAGED_GDB_OK")) {
+                    throw "Packaged GDB failed to initialize its bundled Python runtime: $gdbOutput"
+                  }
 
             - name: Verify packaged language files
               shell: powershell

@@ -575,6 +575,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('external-file-changed', listener);
         return () => ipcRenderer.removeListener('external-file-changed', listener);
     },
+    onWorkspaceDirectoryChanged: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('workspace-directory-changed', listener);
+        return () => ipcRenderer.removeListener('workspace-directory-changed', listener);
+    },
+    onWorkspaceDirectoryWatchError: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('workspace-directory-watch-error', listener);
+        return () => ipcRenderer.removeListener('workspace-directory-watch-error', listener);
+    },
     onSampleTesterCreateProblem: (callback) =>
         ipcRenderer.on('sample-tester-create-problem', (_e, data) => callback && callback(data)),
     onTerminalData: (callback) => ipcRenderer.on('terminal-data', (_event, payload) => callback && callback(payload)),

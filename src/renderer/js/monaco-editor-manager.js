@@ -185,8 +185,8 @@ class MonacoEditorManager {
                         inherit: true,
                         rules: [],
                         colors: {
-                            editorLineHighlight: '#23232300',
-                            editorLineHighlightBorder: '#00000000',
+                            'editor.lineHighlightBackground': '#23232300',
+                            'editor.lineHighlightBorder': '#00000000',
                             'editorIndentGuide.background': '#ffffff25',
                             'editorIndentGuide.activeBackground': '#ffffff55',
                             'editorBracketPairGuide.background1': '#90caf925',
@@ -1572,6 +1572,12 @@ class MonacoEditorManager {
     }
 
     _registerLspCodeLensProvider() {
+        const serverCapabilities = this.lspClient?.getServerCapabilities?.();
+        if (!serverCapabilities?.codeLensProvider) {
+            logInfo('[LSP] clangd 未声明 CodeLens 支持，跳过 CodeLens 提供器注册');
+            return;
+        }
+
         const languages = ['cpp', 'c'];
         for (const language of languages) {
             const key = `${language}:codeLens`;
@@ -1627,6 +1633,7 @@ class MonacoEditorManager {
                             };
                             return codeLens;
                         }
+                        if (!serverCapabilities.codeLensProvider.resolveProvider) return codeLens;
                         const resolved = await this.lspClient.request('codeLens/resolve', raw);
                         if (resolved && resolved.command) {
                             codeLens.command = {
@@ -1786,9 +1793,10 @@ class MonacoEditorManager {
                 continue;
             }
             const disposable = registerProvider(language, {
-                autoFormatTriggerCharacters: [';', '}', ')'],
+                autoFormatTriggerCharacters: ['}', ')'],
                 provideOnTypeFormattingEdits: async (model, position, ch, options) => {
                     try {
+                        if (ch === ';') return [];
                         if (!model || (typeof model.isDisposed === 'function' && model.isDisposed())) return [];
                         const lspReady = await this._ensureLspDocumentReady(model);
                         if (!lspReady || !this.lspClient) return [];
@@ -2520,7 +2528,10 @@ class MonacoEditorManager {
                     ...this.buildSyntaxColorRules(normalized.colors, normalized.styles, theme),
                 ],
                 semanticTokenColors: this.buildSemanticTokenColors(normalized.colors, normalized.styles),
-                colors: themePreset.colors || {},
+                colors: {
+                    ...(themePreset.colors || {}),
+                    'editor.lineHighlightBorder': '#00000000',
+                },
             });
             return customThemeName;
         } catch (err) {
@@ -3593,7 +3604,7 @@ class MonacoEditorManager {
                 autoClosingDelete: 'always', // 删除配对括号时连带删除
                 autoIndent: 'advanced', // 自动缩进：新行保持层级、括号内自动加深
                 inlayHints: { enabled: 'on' }, // clangd 内联提示（参数名/类型）
-                formatOnType: true, // 输入时自动格式化（clangd）
+                formatOnType: false,
                 guides: {
                     indentation: true,
                     highlightActiveIndentation: true,
@@ -3610,8 +3621,8 @@ class MonacoEditorManager {
                 letterSpacing: 0,
                 lineHeight: this.getLineHeightValue(fontSize, lineHeightSetting),
                 lineNumbers: 'on',
-                lineNumbersMinChars: 2,
-                lineDecorationsWidth: 8,
+                lineNumbersMinChars: 1,
+                lineDecorationsWidth: 0,
                 minimap: { enabled: true },
                 scrollBeyondLastLine: true,
                 wordWrap: 'off',
@@ -5958,20 +5969,20 @@ class MonacoEditorManager {
         }
     }
 
-    async formatCode() {
-        if (this.currentEditor && this.currentEditor.getModel) {
+    async formatCode(editor = this.currentEditor) {
+        if (editor && editor.getModel) {
             try {
                 logInfo('开始格式化代码...');
 
-                const model = this.currentEditor.getModel();
+                const model = editor.getModel();
                 const language = model.getLanguageId();
                 logInfo('当前文件语言:', language);
 
                 if (language === 'cpp' || language === 'c') {
-                    return await this.formatCppCode();
+                    return await this.formatCppCode(editor);
                 }
 
-                const formatAction = this.currentEditor.getAction('editor.action.formatDocument');
+                const formatAction = editor.getAction('editor.action.formatDocument');
                 if (formatAction) {
                     await formatAction.run();
                     logInfo('代码格式化完成');
@@ -5986,12 +5997,13 @@ class MonacoEditorManager {
         }
     }
 
-    async formatCppCode() {
+    async formatCppCode(editor = this.currentEditor) {
         try {
-            const model = this.currentEditor.getModel();
+            if (!editor?.getModel) return false;
+            const model = editor.getModel();
             const content = model.getValue();
 
-            const opts = this.currentEditor.getOptions();
+            const opts = editor.getOptions();
             const editorTabSize = opts.get(monaco.editor.EditorOption.tabSize) || 4;
             const style = this.normalizeClangFormatStyle(this.clangFormatStyle);
             const tabSize = style.IndentWidth || editorTabSize;
@@ -6019,7 +6031,7 @@ class MonacoEditorManager {
                     text: formattedContent,
                 };
 
-                this.currentEditor.executeEdits('format', [edit]);
+                editor.executeEdits('format', [edit]);
                 return true;
             } else {
                 return true;

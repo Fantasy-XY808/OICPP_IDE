@@ -35,11 +35,10 @@ class OICPPApp {
         this._debugSessionTerminalId = null;
         this.terminalPanel = null;
         this.autoSaveController = {
-            timerId: null,
+            timers: new Map(),
             enabled: true,
             debounceMs: 1000,
-            running: false,
-            pendingFile: null,
+            runningFiles: new Set(),
         };
         this.supportedDropTextExtensions = new Set([
             'cpp',
@@ -966,11 +965,10 @@ class OICPPApp {
     configureAutoSave() {
         if (!this.autoSaveController) {
             this.autoSaveController = {
-                timerId: null,
+                timers: new Map(),
                 enabled: true,
                 debounceMs: 1000,
-                running: false,
-                pendingFile: null,
+                runningFiles: new Set(),
             };
         }
 
@@ -981,25 +979,44 @@ class OICPPApp {
         this.autoSaveController.debounceMs = Math.max(100, debounceMs);
         this.autoSaveController.enabled = enabled;
 
-        if (this.autoSaveController.timerId) {
-            clearTimeout(this.autoSaveController.timerId);
-            this.autoSaveController.timerId = null;
+        for (const timerId of this.autoSaveController.timers.values()) {
+            clearTimeout(timerId);
+        }
+        this.autoSaveController.timers.clear();
+
+        if (enabled && window.tabManager?.tabs?.values) {
+            for (const tabData of window.tabManager.tabs.values()) {
+                if (tabData?.modified && !tabData.isTempFile && tabData.viewType !== 'pdf' && tabData.filePath) {
+                    this.triggerAutoSave(tabData.filePath);
+                }
+            }
         }
     }
 
     triggerAutoSave(filePath) {
         const ctrl = this.autoSaveController;
-        if (!ctrl?.enabled) return;
+        if (!ctrl?.enabled || typeof filePath !== 'string' || !filePath.trim()) return;
 
-        if (ctrl.timerId) {
-            clearTimeout(ctrl.timerId);
-        }
+        const key = this.normalizeAutoSavePath(filePath);
+        const previousTimer = ctrl.timers.get(key);
+        if (previousTimer) clearTimeout(previousTimer);
 
-        if (filePath) {
-            ctrl.pendingFile = filePath;
-        }
+        const timerId = setTimeout(() => this.handleAutoSaveTick(filePath), ctrl.debounceMs);
+        ctrl.timers.set(key, timerId);
+    }
 
-        ctrl.timerId = setTimeout(() => this.handleAutoSaveTick(), ctrl.debounceMs);
+    normalizeAutoSavePath(filePath) {
+        const normalized = String(filePath || '').replace(/\\/g, '/');
+        return this.isWindowsPlatform() ? normalized.toLowerCase() : normalized;
+    }
+
+    cancelAutoSave(filePath) {
+        const ctrl = this.autoSaveController;
+        if (!ctrl || typeof filePath !== 'string') return;
+        const key = this.normalizeAutoSavePath(filePath);
+        const timerId = ctrl.timers.get(key);
+        if (timerId) clearTimeout(timerId);
+        ctrl.timers.delete(key);
     }
 
     updateMenuCheckmarks() {
@@ -1032,30 +1049,30 @@ class OICPPApp {
         }
     }
 
-    async handleAutoSaveTick() {
+    async handleAutoSaveTick(filePath) {
         const ctrl = this.autoSaveController;
-        if (!ctrl?.enabled) return;
-
-        if (ctrl.running) {
-            this.triggerAutoSave(ctrl.pendingFile);
+        if (!ctrl?.enabled || !filePath) return;
+        const key = this.normalizeAutoSavePath(filePath);
+        ctrl.timers.delete(key);
+        if (ctrl.runningFiles.has(key)) {
+            this.triggerAutoSave(filePath);
             return;
         }
 
-        ctrl.running = true;
-        ctrl.pendingFile = null;
+        ctrl.runningFiles.add(key);
         try {
-            const savedCount = await this.performAutoSave();
+            const savedCount = await this.performAutoSave(filePath);
             if (savedCount > 0) {
                 logInfo(`[自动保存] 已保存 ${savedCount} 个文件`);
             }
         } catch (error) {
             logError('[自动保存] 执行失败:', error);
         } finally {
-            ctrl.running = false;
+            ctrl.runningFiles.delete(key);
         }
     }
 
-    async performAutoSave() {
+    async performAutoSave(filePath) {
         try {
             if (window.__oicppDiscardClose) {
                 return 0;
@@ -1065,7 +1082,7 @@ class OICPPApp {
             return 0;
         }
         try {
-            const count = await window.tabManager.autoSaveModifiedTabs();
+            const count = await window.tabManager.autoSaveModifiedTabs(filePath);
             return Number.isFinite(count) ? count : 0;
         } catch (error) {
             logError('[自动保存] TabManager 自动保存失败:', error);

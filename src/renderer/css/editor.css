@@ -26,7 +26,7 @@
 }
 
 .editor-group + .editor-group {
-    border-left: 1px solid var(--border-color, #464647);
+    border-left: 0;
 }
 
 .editor-group.collapsed {
@@ -225,8 +225,6 @@ body[data-editor-theme='light'] .pdf-viewer-container {
 
 body.glass-effect-enabled .editor-container {
     background-color: var(--glass-surface, rgba(16, 19, 27, 0.42));
-    border-left: 1px solid var(--glass-border, rgba(255, 255, 255, 0.14));
-    box-shadow: var(--glass-shadow, 0 16px 44px rgba(0, 0, 0, 0.38));
     -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
     backdrop-filter: blur(var(--glass-blur, 18px)) saturate(130%);
 }

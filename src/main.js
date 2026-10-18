@@ -344,7 +344,8 @@ function queryCompilerHeaderIncludeDir(compilerPath, headerName = 'bits/stdc++.h
             return;
         }
 
-        const args = ['-print-file-name=' + headerName];
+        const sysroot = getBundledCompilerSysroot(compilerPath);
+        const args = [...(sysroot ? [`--sysroot=${sysroot}`] : []), '-print-file-name=' + headerName];
         logInfo('[LSP] 正在查询编译器头文件位置:', compilerPath, args.join(' '));
 
         let stdout = '';
@@ -511,7 +512,8 @@ function queryCompilerInfo(compilerPath, extraArgs = []) {
             return;
         }
 
-        const args = ['-E', '-x', 'c++', '-', '-v'];
+        const sysroot = getBundledCompilerSysroot(compilerPath);
+        const args = [...(sysroot ? [`--sysroot=${sysroot}`] : []), '-E', '-x', 'c++', '-', '-v'];
         for (const arg of extraArgs) {
             if (arg && (arg.startsWith('-std=') || arg.startsWith('-m'))) {
                 args.push(arg);
@@ -619,6 +621,7 @@ class ClangdLspManager {
     constructor() {
         this.proc = null;
         this.buffer = Buffer.alloc(0);
+        this.stderrBuffer = '';
         this.pending = new Map();
         this.nextId = 1;
         this.procGeneration = 0;
@@ -626,6 +629,21 @@ class ClangdLspManager {
 
     isRunning() {
         return !!this.proc;
+    }
+
+    logClangdStderr(data, flush = false) {
+        this.stderrBuffer += data.toString('utf8');
+        const lines = this.stderrBuffer.split(/\r?\n/);
+        if (flush) this.stderrBuffer = '';
+        else this.stderrBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+            const message = line.trim();
+            if (!message) continue;
+            if (/^I\[/.test(message)) logInfo('[clangd]', message);
+            else if (/^E\[/.test(message)) logError('[clangd]', message);
+            else logWarn('[clangd]', message);
+        }
     }
 
     async start(options = {}) {
@@ -754,12 +772,9 @@ class ClangdLspManager {
         const proc = spawn(clangdPath, args, { stdio: 'pipe' });
         const generation = ++this.procGeneration;
         this.proc = proc;
+        this.stderrBuffer = '';
         proc.stdout.on('data', (data) => this._handleData(data));
-        proc.stderr.on('data', (data) => {
-            try {
-                logWarn('[clangd]', data.toString('utf8').trim());
-            } catch (_) {}
-        });
+        proc.stderr.on('data', (data) => this.logClangdStderr(data));
         proc.on('exit', (code, signal) => {
             if (generation !== this.procGeneration) {
                 logInfo(
@@ -769,6 +784,7 @@ class ClangdLspManager {
                 );
                 return;
             }
+            this.logClangdStderr(Buffer.alloc(0), true);
             logInfo('[LSP] clangd 进程已退出, code=' + (code ?? 'null') + (signal ? ', signal=' + signal : ''));
             this.proc = null;
             this.buffer = Buffer.alloc(0);
@@ -1563,6 +1579,79 @@ let pendingStartupWorkspaceToOpen = null;
 // Used to avoid forcibly changing the workspace when an external file is opened
 // while a workspace is already open (e.g. double-clicking a .cpp file in Explorer).
 let currentExternalWorkspacePath = null;
+let workspaceDirectoryWatcher = null;
+let workspaceDirectoryWatchTimer = null;
+
+function closeWorkspaceDirectoryWatcher() {
+    if (workspaceDirectoryWatchTimer) {
+        clearTimeout(workspaceDirectoryWatchTimer);
+        workspaceDirectoryWatchTimer = null;
+    }
+    if (workspaceDirectoryWatcher) {
+        workspaceDirectoryWatcher.close();
+        workspaceDirectoryWatcher = null;
+    }
+}
+
+function watchWorkspaceDirectory(folderPath) {
+    closeWorkspaceDirectoryWatcher();
+    if (!folderPath || !fs.existsSync(folderPath)) return;
+
+    try {
+        const watcher = fs.watch(
+            folderPath,
+            process.platform === 'win32' || process.platform === 'darwin' ? { recursive: true } : {},
+            (_eventType, filename) => {
+                if (workspaceDirectoryWatchTimer) clearTimeout(workspaceDirectoryWatchTimer);
+                workspaceDirectoryWatchTimer = setTimeout(() => {
+                    workspaceDirectoryWatchTimer = null;
+                    const changedPath =
+                        typeof filename === 'string' && filename ? path.resolve(folderPath, filename) : null;
+                    try {
+                        if (mainWindow && !mainWindow.isDestroyed()) {
+                            mainWindow.webContents.send('workspace-directory-changed', {
+                                workspacePath: folderPath,
+                                changedPath,
+                            });
+                        }
+                    } catch (error) {
+                        logWarn('[工作区监视] 推送目录变更失败:', error?.message || error);
+                    }
+                }, 150);
+            }
+        );
+        watcher.on('error', (error) => {
+            if (workspaceDirectoryWatcher === watcher) {
+                workspaceDirectoryWatcher = null;
+            }
+            watcher.close();
+            logError('[工作区监视] 目录监视失败:', folderPath, error?.message || error);
+            try {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('workspace-directory-watch-error', {
+                        workspacePath: folderPath,
+                        message: error?.message || String(error),
+                    });
+                }
+            } catch (sendError) {
+                logWarn('[工作区监视] 无法通知渲染进程目录监视错误:', sendError?.message || sendError);
+            }
+        });
+        workspaceDirectoryWatcher = watcher;
+    } catch (error) {
+        logError('[工作区监视] 无法监视目录:', folderPath, error?.message || error);
+        try {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('workspace-directory-watch-error', {
+                    workspacePath: folderPath,
+                    message: error?.message || String(error),
+                });
+            }
+        } catch (sendError) {
+            logWarn('[工作区监视] 无法通知渲染进程目录监视错误:', sendError?.message || sendError);
+        }
+    }
+}
 
 function getDefaultSettings() {
     let compilerArgs = '-std=c++14 -O2 -static';
@@ -1998,6 +2087,8 @@ async function ensureConsolePauserExecutable(compilerPath) {
     const compileOnce = async (extraArgs = []) => {
         const baseArgs = ['-O2', '-o', consolePauserPath, sourcePath];
         const args = [...extraArgs, ...baseArgs];
+        const sysroot = getBundledCompilerSysroot(compilerPath);
+        if (sysroot) args.unshift(`--sysroot=${sysroot}`);
         const env = {
             ...process.env,
             PATH: [...getCompilerRuntimeBinPaths(compilerPath), process.env.PATH || ''].join(path.delimiter),
@@ -2258,7 +2349,7 @@ function createWindow() {
         frame: false,
         titleBarStyle: 'hidden',
         trafficLightPosition: isMacPlatform ? { x: 1124, y: 8 } : undefined,
-        opacity: settings.windowOpacity || 1.0,
+        opacity: settings.onboardingCompleted === false ? 1 : (settings.windowOpacity ?? 1),
         show: false,
     });
 
@@ -3055,7 +3146,11 @@ function setupIPC() {
 
     ipcMain.on('settings-preview', (event, previewSettings) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-            if (typeof previewSettings?.windowOpacity === 'number' && Number.isFinite(previewSettings.windowOpacity)) {
+            if (
+                settings.onboardingCompleted !== false &&
+                typeof previewSettings?.windowOpacity === 'number' &&
+                Number.isFinite(previewSettings.windowOpacity)
+            ) {
                 mainWindow.setOpacity(Math.max(0.2, Math.min(1, previewSettings.windowOpacity)));
             }
             logInfo('接收到预览设置并转发给主窗口:', previewSettings);
@@ -3078,6 +3173,7 @@ function setupIPC() {
     // the user closes the workspace or restores it from startup).
     ipcMain.on('workspace-path-report', (_event, folderPath) => {
         currentExternalWorkspacePath = typeof folderPath === 'string' && folderPath.trim() ? folderPath : null;
+        watchWorkspaceDirectory(currentExternalWorkspacePath);
     });
 
     ipcMain.on('logger-log', (event, payload) => {
@@ -3111,7 +3207,7 @@ function setupIPC() {
             settings = { ...settings, ...incomingSettings };
 
             if (mainWindow && !mainWindow.isDestroyed()) {
-                if (typeof incomingSettings.windowOpacity === 'number') {
+                if (settings.onboardingCompleted !== false && typeof incomingSettings.windowOpacity === 'number') {
                     mainWindow.setOpacity(incomingSettings.windowOpacity);
                 }
             }
@@ -6622,7 +6718,7 @@ function decodeBufferAuto(buffer) {
 
 function getBundledCompilerPath() {
     // 自包含：随安装包内置的精简 MinGW-w64 工具链（scripts/prepare-compiler.js 生成）
-    const rel = path.join('compiler', 'win32', 'bin', 'g++.exe');
+    const rel = path.join('compiler', 'bin', 'g++.exe');
     const candidates = [];
     if (process.resourcesPath) candidates.push(path.join(process.resourcesPath, rel));
     candidates.push(path.join(__dirname, '..', 'build', 'compiler', 'win32', 'bin', 'g++.exe'));
@@ -6636,7 +6732,23 @@ function getBundledCompilerPath() {
     return null;
 }
 
-async function detectInstalledCompilers() {
+function getBundledCompilerSysroot(compilerPath) {
+    if (process.platform !== 'win32' || !compilerPath) return '';
+    const bundledCompilerPath = getBundledCompilerPath();
+    if (!bundledCompilerPath) return '';
+    if (path.resolve(compilerPath).toLowerCase() !== path.resolve(bundledCompilerPath).toLowerCase()) return '';
+    return path.dirname(path.dirname(bundledCompilerPath));
+}
+
+function getBundledGdbPath() {
+    const relativePath = path.join('compiler', 'bin', 'gdb.exe');
+    const candidates = [];
+    if (process.resourcesPath) candidates.push(path.join(process.resourcesPath, relativePath));
+    candidates.push(path.join(__dirname, '..', 'build', 'compiler', 'win32', 'bin', 'gdb.exe'));
+    return candidates.find((candidate) => fs.existsSync(candidate)) || '';
+}
+
+function detectInstalledCompilers() {
     const found = [];
     const seen = new Set();
     const push = (name, p, kind) => {
@@ -6712,6 +6824,9 @@ async function readDirectory(dirPath) {
             const fullPath = path.join(dirPath, entry.name);
 
             if (entry.name.startsWith('.')) {
+                continue;
+            }
+            if (entry.name.toLowerCase().endsWith('.oicpp-cache')) {
                 continue;
             }
             if (entry.name.toLowerCase().endsWith('.dsym')) {
@@ -7827,13 +7942,10 @@ async function compileFile(options) {
 
     try {
         if (process.platform === 'win32') {
-            // These checks spawn PowerShell processes.  Run the two target-specific
-            // cleanups together so recompiling after a program run does not pay for
-            // two sequential process-table scans.  Do not kill every gdb.exe here:
-            // it is unrelated to a normal build and made every compilation wait for
-            // an additional process launch.
+            // Query the process table once; separate PowerShell launches add
+            // noticeable latency to every build.
             if (outputFile) {
-                await Promise.all([killByExePathWindows(outputFile), killConsolePauserForTargetWindows(outputFile)]);
+                await killCompileTargetProcessesWindows(outputFile);
             }
             try {
                 await ensureConsolePauserExecutable(compilerPath);
@@ -7889,8 +8001,14 @@ async function compileFile(options) {
             }
         } catch (_) {}
         const parsedUserArgs = parseArgsPreservingQuotes(userArgsStr).filter((a) => a && a.trim());
-        const compileCacheVersion = 1;
-        const cacheMetadataPath = outputFile ? `${path.resolve(outputFile)}.oicpp-cache` : '';
+        const compileCacheVersion = 2;
+        const cacheMetadataPath = outputFile
+            ? path.join(
+                  app.getPath('userData'),
+                  'compile-cache',
+                  `${crypto.createHash('sha256').update(path.resolve(outputFile)).digest('hex')}.json`
+              )
+            : '';
         let compileCacheRecord = null;
 
         const createCompileCacheRecord = () => {
@@ -7980,7 +8098,14 @@ async function compileFile(options) {
             }
         }
 
-        const args = [actualInputFile, ...parsedUserArgs, '-o', outputFile];
+        const sysroot = getBundledCompilerSysroot(compilerPath);
+        const args = [
+            ...(sysroot ? [`--sysroot=${sysroot}`] : []),
+            actualInputFile,
+            ...parsedUserArgs,
+            '-o',
+            outputFile,
+        ];
 
         if (tempInputFile) {
             const originalDir = path.dirname(inputFile);
@@ -8235,6 +8360,7 @@ async function compileFile(options) {
                 try {
                     const latestRecord = createCompileCacheRecord();
                     if (latestRecord?.signature === compileCacheRecord.signature) {
+                        fs.mkdirSync(path.dirname(cacheMetadataPath), { recursive: true });
                         fs.writeFileSync(cacheMetadataPath, JSON.stringify(latestRecord), 'utf8');
                     } else {
                         logWarn('[编译缓存] 编译期间源文件或编译环境发生变化，跳过写入签名');
@@ -9437,7 +9563,18 @@ async function checkGDBAvailability() {
             }
         }
 
-        const testProcess = spawn('gdb', ['--version'], {
+        const bundledGdbPath = getBundledGdbPath();
+        if (bundledGdbPath) {
+            const toolchainRoot = path.dirname(path.dirname(bundledGdbPath));
+            gdbEnv.PYTHONHOME = toolchainRoot;
+        }
+        const gdbCommand = bundledGdbPath || 'gdb';
+        const gdbArgs = ['--version'];
+        if (bundledGdbPath) {
+            const toolchainRoot = path.dirname(path.dirname(bundledGdbPath));
+            gdbArgs.unshift(`--data-directory=${path.join(toolchainRoot, 'share', 'gdb')}`);
+        }
+        const testProcess = spawn(gdbCommand, gdbArgs, {
             stdio: ['pipe', 'pipe', 'pipe'],
             env: gdbEnv,
         });
@@ -9600,6 +9737,46 @@ async function killConsolePauserForTargetWindows(targetExePath) {
     } catch (_) {}
 }
 
+async function killCompileTargetProcessesWindows(targetExePath) {
+    if (process.platform !== 'win32' || !targetExePath) return;
+
+    const escapedTarget = String(targetExePath).replace(/'/g, "''");
+    const command = [
+        `$target = '${escapedTarget}'`,
+        '$processes = Get-CimInstance Win32_Process',
+        "$processes | Where-Object { $_.ExecutablePath -ieq $target -or ($_.ExecutablePath -match '(?i)consolepauser\\.exe$' -and $_.CommandLine -and $_.CommandLine.IndexOf($target, [StringComparison]::OrdinalIgnoreCase) -ge 0) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }",
+    ].join('; ');
+
+    await new Promise((resolve) => {
+        let settled = false;
+        let timeout;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            resolve();
+        };
+        const process = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command], {
+            stdio: 'ignore',
+            windowsHide: true,
+        });
+        timeout = setTimeout(() => {
+            logWarn('[编译前] 清理旧运行进程超时，继续编译:', targetExePath);
+            finish();
+        }, 2000);
+        process.on('close', (code) => {
+            if (code !== 0) {
+                logWarn('[编译前] 清理旧运行进程返回非零状态:', code);
+            }
+            finish();
+        });
+        process.on('error', (error) => {
+            logWarn('[编译前] 无法清理旧运行进程:', error?.message || error);
+            finish();
+        });
+    });
+}
+
 async function startDebugSession(filePath, options = {}) {
     try {
         logInfo('[主进程] 开始调试会话:', filePath);
@@ -9737,6 +9914,11 @@ async function startDebugSession(filePath, options = {}) {
 
         logInfo('[主进程] 启动调试器...');
         let gdbEnv = { ...process.env };
+        const bundledGdbPath = getBundledGdbPath();
+        const bundledToolchainRoot = bundledGdbPath ? path.dirname(path.dirname(bundledGdbPath)) : '';
+        if (bundledToolchainRoot) {
+            gdbEnv.PYTHONHOME = bundledToolchainRoot;
+        }
         try {
             const compilerPath = settings.compilerPath || '';
             if (compilerPath && fs.existsSync(compilerPath)) {
@@ -9759,7 +9941,9 @@ async function startDebugSession(filePath, options = {}) {
         }
         try {
             const startOptions = {
+                gdbPath: bundledGdbPath || debuggerConfig.command,
                 env: gdbEnv,
+                ...(bundledToolchainRoot ? { gdbDataDirectory: path.join(bundledToolchainRoot, 'share', 'gdb') } : {}),
                 noNewConsole: shouldUseIntegratedTerminal,
                 ...(requestedInferiorTTY && !useInputBridge ? { inferiorTTY: requestedInferiorTTY } : {}),
                 ...(process.platform === 'linux'

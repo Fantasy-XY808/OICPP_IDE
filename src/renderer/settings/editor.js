@@ -1571,7 +1571,7 @@ class EditorSettings {
                     autoSave: allSettings.autoSave !== false,
                     formatOnSave: allSettings.formatOnSave !== false,
                     autoSaveInterval:
-                        typeof allSettings.autoSaveInterval === 'number' ? allSettings.autoSaveInterval : 60000,
+                        typeof allSettings.autoSaveInterval === 'number' ? allSettings.autoSaveInterval : 1000,
                     autoOpenLastWorkspace: allSettings.autoOpenLastWorkspace !== false,
                     receiveBetaUpdates: allSettings.receiveBetaUpdates === true,
                     glassEffectEnabled: allSettings.glassEffectEnabled !== false,
@@ -1602,7 +1602,7 @@ class EditorSettings {
                     foldingEnabled: true,
                     enableAutoCompletion: true,
                     autoSave: true,
-                    autoSaveInterval: 60000,
+                    autoSaveInterval: 1000,
                     formatOnSave: true,
                     autoOpenLastWorkspace: true,
                     receiveBetaUpdates: false,
@@ -1634,7 +1634,7 @@ class EditorSettings {
                 foldingEnabled: true,
                 enableAutoCompletion: true,
                 autoSave: true,
-                autoSaveInterval: 60000,
+                autoSaveInterval: 1000,
                 formatOnSave: true,
                 autoOpenLastWorkspace: true,
                 receiveBetaUpdates: false,
@@ -2116,7 +2116,7 @@ class EditorSettings {
             const intervalMs =
                 Number.isFinite(this.settings.autoSaveInterval) && this.settings.autoSaveInterval > 0
                     ? this.settings.autoSaveInterval
-                    : 60000;
+                    : 1000;
             autoSaveIntervalInput.value = Math.max(1, Math.round(intervalMs / 1000));
             this.toggleAutoSaveInterval(autoSaveIntervalInput, autoSaveEnabled);
         }

@@ -23,8 +23,36 @@ class FileExplorer {
         this._pendingDragOverRoot = false;
         this._dragHoverFrame = null;
         this.isDragging = false;
+        this._workspaceWatchDisposables = [];
+        this._workspaceRefreshTimer = null;
 
         this.setupKeyboardShortcuts();
+        this.setupWorkspaceDirectoryWatch();
+    }
+
+    setupWorkspaceDirectoryWatch() {
+        const electronAPI = window.electronAPI;
+        if (typeof electronAPI?.onWorkspaceDirectoryChanged === 'function') {
+            this._workspaceWatchDisposables.push(
+                electronAPI.onWorkspaceDirectoryChanged((payload) => {
+                    if (!payload || payload.workspacePath !== this.currentPath || !this.hasWorkspace) return;
+                    if (this._workspaceRefreshTimer) clearTimeout(this._workspaceRefreshTimer);
+                    this._workspaceRefreshTimer = setTimeout(() => {
+                        this._workspaceRefreshTimer = null;
+                        this.loadWorkspaceFiles();
+                    }, 100);
+                })
+            );
+        }
+        if (typeof electronAPI?.onWorkspaceDirectoryWatchError === 'function') {
+            this._workspaceWatchDisposables.push(
+                electronAPI.onWorkspaceDirectoryWatchError((payload) => {
+                    if (payload?.workspacePath === this.currentPath) {
+                        logWarn('[工作区监视] 文件树自动刷新不可用:', payload.message);
+                    }
+                })
+            );
+        }
     }
 
     /**
@@ -1594,6 +1622,10 @@ class FileExplorer {
     async openFile(file) {
         if (file.type === 'file') {
             logInfo('打开文件:', file.name);
+            if (String(file.extension || '').toLowerCase() === '.exe') {
+                window.oicppApp?.showMessage?.('可执行文件是二进制文件，不能在文本编辑器中打开。', 'info');
+                return;
+            }
 
             try {
                 const isPdf = typeof file.name === 'string' && file.name.toLowerCase().endsWith('.pdf');
